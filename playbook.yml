@@ -11,6 +11,10 @@
   import_playbook: playbooks/git.yml
   tags: [git, tools, dev]
 
+- name: Setup Tmux
+  import_playbook: playbooks/tmux.yml
+  tags: [tmux, tools, cli]
+
 # Containerization
 - name: Setup Docker
   import_playbook: playbooks/docker.yml

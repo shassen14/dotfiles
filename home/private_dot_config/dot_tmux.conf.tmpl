@@ -1,0 +1,167 @@
+# ~/.tmux.conf -- Tmux Configuration managed by Chezmoi
+
+#--------------------------------------------------------------------------
+# Basic Settings
+#--------------------------------------------------------------------------
+
+# Set prefix key to C-a (like screen) instead of C-b
+unbind C-b
+set -g prefix C-a
+bind C-a send-prefix
+
+# Allow C-a C-a to toggle last window
+bind C-a last-window
+
+# Increase history limit
+set -g history-limit 10000
+
+# Start window and pane numbering from 1 for easier switching
+set -g base-index 1
+setw -g pane-base-index 1
+set -g renumber-windows on # Renumber windows when one is closed
+
+# Set terminal type to enable 256 colors and italics etc.
+set -g default-terminal "tmux-256color"
+# set -as terminal-overrides ",xterm*:Tc" # Alternative way to enable True Color
+set -as terminal-features ",*:RGB" # Another True Color setting if needed
+
+# Reduce escape key delay for faster responsiveness (e.g., in Vim)
+set -sg escape-time 0
+
+# Automatically set window title
+set -g set-titles on
+set -g set-titles-string '#S:#I:#W - #{pane_title}'
+
+# Focus events for Vim integration (helps with autoread)
+set -g focus-events on
+
+# Enable mouse support (scrolling, pane/window selection)
+set -g mouse on
+
+#--------------------------------------------------------------------------
+# Key Bindings
+#--------------------------------------------------------------------------
+
+# Reload config file with Prefix + r
+bind r source-file ~/.tmux.conf \; display-message "Tmux config reloaded!"
+
+# Pane Splitting (use | and - like Vim, keep current path)
+unbind % # Default horizontal split
+unbind '"' # Default vertical split
+bind | split-window -h -c "#{pane_current_path}"
+bind - split-window -v -c "#{pane_current_path}"
+
+# Pane Navigation (Vim-style)
+bind h select-pane -L
+bind j select-pane -D
+bind k select-pane -U
+bind l select-pane -R
+
+# Pane Resizing (repeatable with Prefix + H/J/K/L)
+bind -r H resize-pane -L 5
+bind -r J resize-pane -D 5
+bind -r K resize-pane -U 5
+bind -r L resize-pane -R 5
+
+# Window Navigation
+bind -r C-h previous-window # Prefix + Ctrl+h
+bind -r C-l next-window     # Prefix + Ctrl+l
+bind > swap-pane -D # Swap current pane with the next one
+bind < swap-pane -U # Swap current pane with the previous one
+
+# Kill panes and windows without confirmation
+bind x kill-pane
+bind X kill-window
+
+#--------------------------------------------------------------------------
+# Copy Mode (Vi Style) & Clipboard Integration (OS Specific)
+#--------------------------------------------------------------------------
+
+# Use Vi keybindings in copy mode
+setw -g mode-keys vi
+
+# Setup 'v' to begin selection and 'y' to yank (copy)
+# Use 'C-v' for rectangle toggle like Vim visual block mode
+bind-key -T copy-mode-vi v send-keys -X begin-selection
+bind-key -T copy-mode-vi C-v send-keys -X rectangle-toggle
+# Conditional copy command based on OS detected by Chezmoi
+{{ if eq .chezmoi.os "darwin" }}
+# macOS: Use pbcopy
+bind-key -T copy-mode-vi y send-keys -X copy-pipe-and-cancel 'pbcopy'
+bind-key -T copy-mode-vi Enter send-keys -X copy-pipe-and-cancel 'pbcopy'
+{{ else if eq .chezmoi.os "linux" }}
+# Linux: Use xclip (requires xclip package)
+# Check if DISPLAY is set for X11, otherwise could be Wayland (wl-copy needs separate install)
+bind-key -T copy-mode-vi y send-keys -X copy-pipe-and-cancel 'if [ -n "$DISPLAY" ]; then xclip -i -selection clipboard > /dev/null; else cat > /dev/null; fi'
+bind-key -T copy-mode-vi Enter send-keys -X copy-pipe-and-cancel 'if [ -n "$DISPLAY" ]; then xclip -i -selection clipboard > /dev/null; else cat > /dev/null; fi'
+# Note: This Linux command is basic. If Wayland is primary, installing wl-clipboard and using wl-copy might be preferred.
+# Or use a plugin like tmux-yank which handles this more robustly.
+{{ end }}
+
+# Paste buffer
+bind p paste-buffer
+
+#--------------------------------------------------------------------------
+# Status Bar Appearance
+#--------------------------------------------------------------------------
+set -g status on
+set -g status-position bottom
+set -g status-interval 1 # Update status bar every second
+
+# Basic colors (adjust as desired)
+set -g status-style bg=black,fg=white
+set -g message-style bg=black,fg=brightred
+
+# Window status alignment and separator
+set -g status-justify left
+set -g window-status-separator " | "
+
+# Left side: Session name
+set -g status-left-length 40
+set -g status-left "#[fg=brightgreen,bold]S: #S #[fg=white]| "
+
+# Right side: Date and Time
+set -g status-right-length 40
+set -g status-right "#[fg=cyan]%Y-%m-%d #[fg=brightblue]%H:%M "
+
+# Window status format (current vs other)
+# Use #I for index, #W for window name, #F for flags (e.g., Z for zoomed)
+setw -g window-status-style bg=black,fg=gray # Non-current windows
+setw -g window-status-format "#I:#W#F"
+
+setw -g window-status-current-style bg=blue,fg=brightwhite,bold # Current window
+setw -g window-status-current-format "#I:#W#F"
+
+# Activity monitoring
+setw -g monitor-activity on
+set -g visual-activity on # Show message when activity occurs in background window
+
+# Pane borders
+set -g pane-border-style fg=black
+set -g pane-active-border-style fg=blue
+
+#--------------------------------------------------------------------------
+# Plugin Management (TPM - Tmux Plugin Manager)
+#--------------------------------------------------------------------------
+
+# List of plugins
+# Supports `github_username/repo` or full git URLs
+set -g @plugin 'tmux-plugins/tpm'            # Plugin manager itself
+set -g @plugin 'tmux-plugins/tmux-sensible'    # Basic tmux settings sensible defaults
+set -g @plugin 'tmux-plugins/tmux-resurrect'   # Persists tmux environment across reboots
+set -g @plugin 'tmux-plugins/tmux-continuum'  # Automatic saving/restoring (requires resurrect)
+# set -g @plugin 'tmux-plugins/tmux-yank'        # Better copy/paste, handles OS differences robustly (alternative to manual config above)
+# set -g @plugin 'tmux-plugins/tmux-open'        # Quickly open highlighted text in browser/editor
+# set -g @plugin 'tmux-plugins/tmux-sidebar'     # Tree view sidebar
+# set -g @plugin 'dracula/tmux'                 # Example theme (requires `brew install dracula-install` or manual install)
+
+# Continuum settings (optional)
+set -g @continuum-restore 'on' # Enable automatic restore
+
+# Initialize TPM (keep this line at the very bottom of tmux.conf)
+# Make sure the directory exists before trying to run the script
+run 'if [ -d ~/.tmux/plugins/tpm ]; then ~/.tmux/plugins/tpm/tpm; else echo "TPM not found. Run Prefix+I to install plugins."; fi'
+
+#--------------------------------------------------------------------------
+# End of Configuration
+#--------------------------------------------------------------------------

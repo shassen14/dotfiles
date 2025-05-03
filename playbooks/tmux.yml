@@ -1,0 +1,62 @@
+# playbooks/tmux.yml: Installs Tmux terminal multiplexer and dependencies.
+- name: Install Tmux and Dependencies
+  hosts: all
+  become: true # Package installs usually need sudo
+  gather_facts: true
+  tags: [tmux, tools, cli] # Add relevant tags
+
+  tasks:
+    # --- Tmux Installation ---
+    - name: Install tmux on Debian/Ubuntu
+      ansible.builtin.apt:
+        name: tmux
+        state: present
+        update_cache: true
+      when: ansible_os_family == "Debian"
+      tags: [tmux, package, debian]
+
+    - name: Install tmux on RedHat/CentOS/Fedora
+      ansible.builtin.dnf:
+        name: tmux
+        state: present
+      when: ansible_os_family == "RedHat"
+      tags: [tmux, package, redhat, fedora]
+
+    - name: Install tmux on Arch Linux
+      community.general.pacman:
+        name: tmux
+        state: present
+      when: ansible_os_family == "Archlinux"
+      tags: [tmux, package, arch]
+
+    - name: Install tmux via Homebrew (macOS)
+      become: false # Homebrew runs as user
+      community.general.homebrew:
+        name: tmux
+        state: present
+      when: ansible_os_family == "Darwin"
+      tags: [tmux, package, macos]
+
+    # --- Dependency Installation (xclip for Linux clipboard) ---
+    - name: Install xclip on Debian/Ubuntu (for tmux copy/paste)
+      ansible.builtin.apt:
+        name: xclip
+        state: present
+      when: ansible_os_family == "Debian"
+      tags: [tmux, package, debian, prerequisites]
+
+    - name: Install xclip on RedHat/CentOS/Fedora (for tmux copy/paste)
+      ansible.builtin.dnf:
+        name: xclip
+        state: present
+      when: ansible_os_family == "RedHat"
+      tags: [tmux, package, redhat, fedora, prerequisites]
+
+    - name: Install xclip on Arch Linux (for tmux copy/paste)
+      community.general.pacman:
+        name: xclip
+        state: present
+      when: ansible_os_family == "Archlinux"
+      tags: [tmux, package, arch, prerequisites]
+
+    # Note: No equivalent needed for macOS as pbcopy/pbpaste are built-in
