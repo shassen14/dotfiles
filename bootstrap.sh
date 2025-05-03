@@ -36,6 +36,58 @@ elif [[ "$OSTYPE" == "darwin"* ]]; then
     OS_FAMILY="Darwin"
     OS_DISTRO="macos"
     echo "✅ macOS Detected"
+
+    # --- Manage Homebrew ---
+    if ! command -v brew &> /dev/null; then
+        echo "🍺 Homebrew not found. Installing Homebrew..."
+        # Run non-interactively
+        NONINTERACTIVE=1 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)" || { echo "❌ Failed to install Homebrew."; exit 1; }
+        # Add brew to PATH for the current script session immediately
+        echo "🍺 Adding Homebrew to PATH for this session (post-install)..."
+        if [[ "$(uname -m)" == "arm64" ]]; then
+          eval "$(/opt/homebrew/bin/brew shellenv)"
+        else
+          eval "$(/usr/local/bin/brew shellenv)"
+        fi
+    else
+         echo "✅ Homebrew already installed."
+    fi
+
+    # --- Update Homebrew (Optional but recommended) ---
+    # Attempt update, but don't fail script if update fails in CI
+    echo "🍺 Updating Homebrew..."
+    brew update --quiet || echo "⚠️ Failed to update Homebrew formulas, continuing..."
+    # Optional: cleanup might help sometimes but adds time
+    # echo "🍺 Cleaning up Homebrew..."
+    # brew cleanup --quiet || echo "⚠️ Failed to cleanup Homebrew, continuing..."
+
+    # --- Install Ansible via Homebrew ---
+    if ! command -v ansible &>/dev/null; then
+        echo "🍺 Installing Ansible via Homebrew (with verbosity)..."
+        brew install -v ansible || { echo "❌ Failed to install Ansible via Homebrew."; exit 1; }
+        echo "✅ Ansible installed successfully via Homebrew."
+    else
+        echo "✅ Ansible already installed."
+    fi
+
+    # --- CRITICAL: Ensure Brew Environment is Set BEFORE Running Ansible ---
+    # This needs to run *after* all brew commands and *before* ansible-playbook
+    # It ensures the shell running ansible-playbook knows where brew installed things
+    echo "🍺 Ensuring Homebrew environment is sourced..."
+    if [[ "$(uname -m)" == "arm64" ]]; then
+      eval "$(/opt/homebrew/bin/brew shellenv)"
+      export PATH="/opt/homebrew/bin:$PATH" # Explicitly add to PATH too
+    else
+      eval "$(/usr/local/bin/brew shellenv)"
+      export PATH="/usr/local/bin:$PATH" # Explicitly add to PATH too
+    fi
+    echo "🍺 Homebrew environment sourced."
+    # Add a small delay in case of race conditions (less likely needed, but low cost)
+    # echo "⏳ Adding short delay before playbook execution..."
+    # sleep 3
+
+    # --- Now proceed to run Ansible Playbook (logic moved outside OS case) ---
+
 else
     echo "❌ Unsupported Operating System: $OSTYPE"
     exit 1
@@ -73,25 +125,25 @@ if ! command -v ansible &>/dev/null; then
             $INSTALL_CMD ansible || { echo "❌ Failed to install Ansible."; exit 1; }
             ;;
         Darwin)
-            if ! command -v brew &> /dev/null; then
-                echo "🍺 Homebrew not found. Installing Homebrew..."
-                /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)" || { echo "❌ Failed to install Homebrew."; exit 1; }
-                # Add brew to PATH for the current script session (needed immediately)
-                echo "🍺 Adding Homebrew to PATH for this session..."
-                if [[ "$(uname -m)" == "arm64" ]]; then
-                  eval "$(/opt/homebrew/bin/brew shellenv)"
-                else
-                  eval "$(/usr/local/bin/brew shellenv)"
-                fi
-                echo "🍺 Homebrew added to PATH."
-            else
-                 echo "✅ Homebrew already installed."
-            fi
+            # if ! command -v brew &> /dev/null; then
+            #     echo "🍺 Homebrew not found. Installing Homebrew..."
+            #     /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)" || { echo "❌ Failed to install Homebrew."; exit 1; }
+            #     # Add brew to PATH for the current script session (needed immediately)
+            #     echo "🍺 Adding Homebrew to PATH for this session..."
+            #     if [[ "$(uname -m)" == "arm64" ]]; then
+            #       eval "$(/opt/homebrew/bin/brew shellenv)"
+            #     else
+            #       eval "$(/usr/local/bin/brew shellenv)"
+            #     fi
+            #     echo "🍺 Homebrew added to PATH."
+            # else
+            #      echo "✅ Homebrew already installed."
+            # fi
 
-            # Update Homebrew before installing packages in CI
-            # Use --quiet to avoid excessive logs unless debugging
-            echo "🍺 Updating Homebrew..."
-            brew update --quiet || echo "⚠️ Failed to update Homebrew, continuing..."
+            # # Update Homebrew before installing packages in CI
+            # # Use --quiet to avoid excessive logs unless debugging
+            # echo "🍺 Updating Homebrew..."
+            # brew update --quiet || echo "⚠️ Failed to update Homebrew, continuing..."
 
             echo "🍺 Installing Ansible via Homebrew (with verbosity)..."
             # Use -v for verbose output to help diagnose cancellation issues

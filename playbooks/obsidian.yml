@@ -1,13 +1,14 @@
-# playbooks/obsidian.yml: Installs Obsidian note-taking app.
+# playbooks/obsidian.yml
 - name: Install Obsidian on supported platforms
   hosts: all
-  become: true # Default to become for package installs, override where needed
+  become: true
   gather_facts: true
 
   vars:
-    # Use the correct arch naming for Debian downloads
+    # Define architecture mapping for Debian package names
     obsidian_deb_arch: "{% if ansible_architecture == 'x86_64' %}amd64{% elif ansible_architecture == 'aarch64' %}arm64{% else %}{{ ansible_architecture }}{% endif %}"
-    obsidian_deb_path: "/tmp/obsidian_{{ obsidian_deb_arch }}.deb"
+    # Temporary path for downloaded file (filename is now dynamic)
+    obsidian_deb_tmp_path: "/tmp/obsidian_latest.deb"
 
   tasks:
     # --- macOS ---
@@ -29,21 +30,48 @@
         - not obsidian_app_stat.stat.exists # <-- Only run if stat check shows it doesn't exist
       tags: [obsidian, gui, package, macos]
 
-    # --- Debian ---
-    - name: Download Obsidian .deb package (Debian)
-      ansible.builtin.get_url:
-        # Use the variable with the correct architecture mapping
-        url: "https://github.com/obsidianmd/obsidian-releases/releases/latest/download/obsidian_{{ obsidian_deb_arch }}.deb"
-        dest: "{{ obsidian_deb_path }}"
-        mode: '0644'
+# --- Debian/Ubuntu ---
+    - name: Install prerequisite for GitHub API parsing (jq)
+      ansible.builtin.package: # Changed from apt to generic package
+        name: jq
+        state: present
+      when: ansible_os_family == "Debian" # Or adjust if needed for other families
+      tags: [obsidian, prerequisites, debian]
+
+    - name: Get latest Obsidian .deb download URL from GitHub API
+      # Use shell module with curl and jq to extract the URL
+      # Delegates to localhost because API query doesn't need target context beyond curl/jq
+      delegate_to: localhost
+      become: false # API query runs as user
+      ansible.builtin.shell: >
+        curl -s https://api.github.com/repos/obsidianmd/obsidian-releases/releases/latest |
+        jq -r '.assets[] | select(.name | endswith("_{{ obsidian_deb_arch }}.deb")) | .browser_download_url'
+      register: obsidian_deb_url_result
+      changed_when: false # Getting URL is not a change
+      check_mode: false # Needs to run even in check mode to get URL
       when: ansible_os_family == "Debian"
       tags: [obsidian, gui, package, debian, download]
 
-    - name: Install Obsidian from .deb package (Debian)
+    - name: Download Obsidian .deb package (Debian)
+      # Use the dynamically obtained URL
+      ansible.builtin.get_url:
+        url: "{{ obsidian_deb_url_result.stdout }}"
+        dest: "{{ obsidian_deb_tmp_path }}"
+        mode: '0644'
+      when:
+        - ansible_os_family == "Debian"
+        - obsidian_deb_url_result.stdout is defined
+        - obsidian_deb_url_result.stdout != "" # Only run if URL was found
+      tags: [obsidian, gui, package, debian, download]
+
+    - name: Install Obsidian from downloaded .deb package (Debian)
       ansible.builtin.apt:
-        deb: "{{ obsidian_deb_path }}"
-        state: present # Ensure state is present
-      when: ansible_os_family == "Debian"
+        deb: "{{ obsidian_deb_tmp_path }}"
+        state: present
+      when:
+        - ansible_os_family == "Debian"
+        - obsidian_deb_url_result.stdout is defined
+        - obsidian_deb_url_result.stdout != "" # Only run if download likely succeeded
       tags: [obsidian, gui, package, debian, install]
 
     # --- RedHat ---
@@ -124,14 +152,11 @@
       # or passwordless sudo is configured for pacman.
 
     # --- Cleanup ---
-    - name: Clean up downloaded packages (.deb, .rpm)
+    - name: Clean up downloaded Obsidian package (.deb)
       ansible.builtin.file:
-        path: "{{ item }}"
+        path: "{{ obsidian_deb_tmp_path }}"
         state: absent
-      loop:
-        - "{{ obsidian_deb_path }}"
-        # - "{{ obsidian_rpm_path }}" # Uncomment if using RPM download
-      when: item is defined and (ansible_os_family == "Debian" or ansible_os_family == "RedHat")
+      when: ansible_os_family == "Debian"
       tags: [obsidian, cleanup]
 
     - name: Clean up yay build directory
