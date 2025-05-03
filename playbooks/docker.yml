@@ -1,6 +1,6 @@
 # playbooks/docker.yml: Installs and configures Docker.
 - hosts: all
-  become: true # Most Docker setup tasks require root
+  become: true # Most Docker setup tasks require root, default to true
   gather_facts: true
 
   tasks:
@@ -15,7 +15,7 @@
 
     - name: Add Docker GPG key (Debian)
       ansible.builtin.apt_key:
-        url: https://download.docker.com/linux/{{ ansible_distribution | lower }}/gpg
+        url: "https://download.docker.com/linux/{{ ansible_distribution | lower }}/gpg"
         state: present
       when: ansible_os_family == "Debian"
       tags: [docker, install, repo, debian]
@@ -30,7 +30,7 @@
     - name: Install Docker CE packages (Debian)
       ansible.builtin.apt:
         name: [docker-ce, docker-ce-cli, containerd.io, docker-compose-plugin]
-        state: present # Use present instead of latest for more predictable state
+        state: present
         update_cache: true
       when: ansible_os_family == "Debian"
       tags: [docker, install, package, debian]
@@ -60,8 +60,8 @@
 
     # --- Arch Linux Setup (Using Community Repo) ---
     - name: Install Docker package (Arch)
-      community.general.pacman: # Use the specific pacman module
-        name: [docker, docker-compose] # Install compose too
+      community.general.pacman:
+        name: [docker, docker-compose]
         state: present
       when: ansible_os_family == "Archlinux"
       tags: [docker, install, package, arch]
@@ -79,31 +79,29 @@
       ansible.builtin.user:
         name: "{{ target_user }}" # Use the variable defined in group_vars/all.yml
         groups: docker
-        append: yes # Important: Append to existing groups
+        append: yes
       when: ansible_os_family != "Darwin"
       tags: [docker, config, user]
       # Note: User needs to log out and back in for group change to take full effect.
 
     # --- macOS Setup ---
     - name: Cleanup Homebrew cache before Docker install (macOS)
-      # Try to mitigate potential cache-related install issues
       become: false
       ansible.builtin.command:
-        cmd: brew cleanup -s # -s scrubs old downloads and cache
+        cmd: brew cleanup -s
       when: ansible_os_family == "Darwin"
-      changed_when: false # Cleaning cache isn't a configuration change
-      tags: [docker, prerequisites, macos] # Use prerequisites tag
+      changed_when: false
+      tags: [docker, prerequisites, macos]
 
     - name: Install Docker Desktop via Homebrew Cask (macOS)
-      become: false # Homebrew runs as user
+      become: false
       community.general.homebrew_cask:
         name: docker
-        state: present # Ensures Docker Desktop is installed or updated
+        state: present
       when: ansible_os_family == "Darwin"
       tags: [docker, install, package, macos]
 
     - name: Check if Docker.app exists after install (macOS)
-      # Verify the application directory is actually present
       become: false
       ansible.builtin.stat:
         path: "/Applications/Docker.app"
@@ -112,58 +110,75 @@
       tags: [docker, config, service, macos]
 
     - name: Ensure Docker Desktop application is started using path (macOS)
-      # Use the absolute path which is more reliable immediately after install
       become: false
       ansible.builtin.command:
-        cmd: open /Applications/Docker.app # <-- Use absolute path
+        cmd: open /Applications/Docker.app
       when:
         - ansible_os_family == "Darwin"
-        - docker_app_stat.stat.exists # <-- Only run if the app exists
-      changed_when: false # Opening an app isn't really a config change
+        - docker_app_stat.stat.exists
+      changed_when: false
       tags: [docker, config, service, macos]
 
-    - name: List Docker contexts for debugging (macOS)
-      # Helps verify the 'desktop-macos' context exists
+    - name: Pause for Docker Desktop to initialize (macOS)
+      ansible.builtin.pause:
+        seconds: 60 # Adjust pause time if needed
+      when: ansible_os_family == "Darwin"
+      tags: [docker, config, service, macos]
+
+    - name: Check Docker contexts rigorously after pause (macOS)
+      # Run 'docker context ls' and FAIL if it errors or doesn't list 'desktop-linux'
       become: false
       ansible.builtin.command:
         cmd: docker context ls
       register: docker_context_ls_result
-      changed_when: false # Listing isn't a change
+      changed_when: false
+      # FAIL if command errors OR the CORRECT context 'desktop-linux' is missing
+      failed_when: docker_context_ls_result.rc != 0 or 'desktop-linux' not in docker_context_ls_result.stdout
       when: ansible_os_family == "Darwin"
-      tags: [docker, config, service, debug] # Added debug tag
-      ignore_errors: true # Don't fail if docker command isn't ready yet
+      tags: [docker, config, service, prerequisites, macos]
 
-    - name: Display Docker context list output
+    - name: Display Docker context list output (if successful)
       ansible.builtin.debug:
         msg: "{{ docker_context_ls_result.stdout_lines | default([]) }}"
       when:
        - ansible_os_family == "Darwin"
-       - docker_context_ls_result is defined
+       - docker_context_ls_result is defined and docker_context_ls_result.rc == 0
       tags: [docker, config, service, debug]
 
-    - name: Wait for Docker daemon to be ready via Docker Desktop context (macOS)
+    - name: Wait for Docker context 'desktop-linux' to be resolvable (macOS)
+      # Checks if the CLI can find and parse the context definition
+      become: false
+      ansible.builtin.command:
+        cmd: docker context inspect desktop-linux # Use the CORRECT name
+      register: docker_context_check
+      retries: 24 # Number of times to retry
+      delay: 5   # Seconds to wait between retries
+      until: docker_context_check.rc == 0 # Loop until inspect command succeeds
+      changed_when: false
+      ignore_errors: false # Fail if context never becomes resolvable
+      when: ansible_os_family == "Darwin"
+      tags: [docker, config, service]
+
+    - name: Check Docker daemon readiness via context after context resolution (macOS)
+      # Final check using 'docker info' with the correct context
       become: false
       ansible.builtin.command:
         cmd: docker info
-      register: docker_check
-      retries: 36
-      delay: 5 
-      until: docker_check.rc == 0
-      changed_when: false
-      ignore_errors: false
-      # Explicitly set the Docker context for the command
       environment:
-        DOCKER_CONTEXT: desktop-macos
-      when: ansible_os_family == "Darwin" # Only apply context on macOS
+        # Use the CORRECT context name 'desktop-linux'
+        DOCKER_CONTEXT: desktop-linux
+      changed_when: false
+      when: ansible_os_family == "Darwin"
       tags: [docker, config, service]
 
+    # --- Linux Wait Task ---
     - name: Wait for Docker daemon to be ready (Linux)
       # Separate task for Linux which doesn't need the context override
       become: false
       ansible.builtin.command:
         cmd: docker info
       register: docker_check_linux
-      retries: 12 
+      retries: 15
       delay: 5
       until: docker_check_linux.rc == 0
       changed_when: false
