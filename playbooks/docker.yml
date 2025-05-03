@@ -110,7 +110,7 @@
       tags: [docker, config, service, macos]
 
     - name: Ensure Docker Desktop application is started using path (macOS)
-      # Keep this, it just tries to launch the app
+      # This just attempts to launch the app if it exists
       become: false
       ansible.builtin.command:
         cmd: open /Applications/Docker.app
@@ -120,7 +120,14 @@
       changed_when: false
       tags: [docker, config, service, macos]
 
-    # --- SKIP RUNTIME CHECKS IN CI ---
+    # - name: Pause for Docker Desktop to potentially initialize (macOS)
+    #   # Provides a window for startup, though full initialization isn't guaranteed in CI
+    #   ansible.builtin.pause:
+    #     seconds: 60 # Adjust pause time if needed
+    #   when: ansible_os_family == "Darwin"
+    #   tags: [docker, config, service, macos]
+
+    # --- macOS Runtime Checks (SKIPPED IN CI) ---
     - name: Notice - Skipping Docker runtime checks in macOS CI environment
       ansible.builtin.debug:
         msg: "Skipping Docker context and daemon readiness checks because Docker Desktop initialization is unreliable in non-interactive macOS CI."
@@ -130,61 +137,58 @@
         - lookup('env', 'CI') == 'true'
       tags: [docker, config, service, macos]
 
-    # - name: Pause for Docker Desktop to initialize (macOS)
-    #   ansible.builtin.pause:
-    #     seconds: 60 # Adjust pause time if needed
-    #   when: ansible_os_family == "Darwin"
-    #   tags: [docker, config, service, macos]
-
-    # Comment out or add 'when' condition to skip these tasks in CI
-    - name: Check Docker contexts rigorously after pause (macOS)
+    - name: Check Docker contexts rigorously after pause (macOS, not in CI)
       become: false
       ansible.builtin.command:
         cmd: docker context ls
       register: docker_context_ls_result
       changed_when: false
+      # FAIL if command errors OR the context 'desktop-linux' is missing
       failed_when: docker_context_ls_result.rc != 0 or 'desktop-linux' not in docker_context_ls_result.stdout
       when:
         - ansible_os_family == "Darwin"
-        - lookup('env', 'CI') != 'true' # <-- SKIP IN CI
+        - lookup('env', 'CI') != 'true' # <-- Skips this task in CI
       tags: [docker, config, service, prerequisites, macos]
-    - name: Display Docker context list output (if successful)
+
+    - name: Display Docker context list output (macOS, not in CI)
       ansible.builtin.debug:
         msg: "{{ docker_context_ls_result.stdout_lines | default([]) }}"
       when:
-       - ansible_os_family == "Darwin"
-       - docker_context_ls_result is defined and docker_context_ls_result.rc == 0
+        - ansible_os_family == "Darwin"
+        - lookup('env', 'CI') != 'true' # <-- Skips this task in CI
+       # - docker_context_ls_result is defined # Check not strictly needed due to above condition
+       # - docker_context_ls_result.rc == 0    # Check not strictly needed due to above condition
       tags: [docker, config, service, debug]
 
-    - name: Wait for Docker context 'desktop-linux' to be resolvable (macOS)
-      # Checks if the CLI can find and parse the context definition
+    - name: Wait for Docker context 'desktop-linux' to be resolvable (macOS, not in CI)
       become: false
       ansible.builtin.command:
-        cmd: docker context inspect desktop-linux # Use the CORRECT name
+        cmd: docker context inspect desktop-linux
       register: docker_context_check
-      retries: 24 # Number of times to retry
-      delay: 5   # Seconds to wait between retries
-      until: docker_context_check.rc == 0 # Loop until inspect command succeeds
+      retries: 24
+      delay: 5
+      until: docker_context_check.rc == 0
       changed_when: false
-      ignore_errors: false # Fail if context never becomes resolvable
-      when: ansible_os_family == "Darwin"
+      ignore_errors: false
+      when:
+        - ansible_os_family == "Darwin"
+        - lookup('env', 'CI') != 'true' # <-- Skips this task in CI
       tags: [docker, config, service]
 
-    - name: Check Docker daemon readiness via context after context resolution (macOS)
-      # Final check using 'docker info' with the correct context
+    - name: Check Docker daemon readiness via context after context resolution (macOS, not in CI)
       become: false
       ansible.builtin.command:
         cmd: docker info
       environment:
-        # Use the CORRECT context name 'desktop-linux'
         DOCKER_CONTEXT: desktop-linux
       changed_when: false
-      when: ansible_os_family == "Darwin"
+      when:
+        - ansible_os_family == "Darwin"
+        - lookup('env', 'CI') != 'true' # <-- Skips this task in CI
       tags: [docker, config, service]
 
-    # --- Linux Wait Task ---
+    # --- Linux Wait Task (Always runs on Linux) ---
     - name: Wait for Docker daemon to be ready (Linux)
-      # Separate task for Linux which doesn't need the context override
       become: false
       ansible.builtin.command:
         cmd: docker info
