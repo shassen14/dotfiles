@@ -123,14 +123,14 @@
       tags: [docker, config, service, macos]
 
     - name: Wait for Docker daemon to be ready (macOS and Linux)
-      # This checks if the 'docker info' command succeeds
-      become: false # Docker client command runs as user (assuming group membership on Linux)
+      # Increased retries and delay significantly for Docker Desktop startup time
+      become: false # Docker client command runs as user
       ansible.builtin.command:
         cmd: docker info
       register: docker_check
-      retries: 12 # ~1 minute total wait
-      delay: 5 # Wait 5 seconds between retries
+      retries: 30
+      delay: 10 
       until: docker_check.rc == 0
-      changed_when: false # Checking status isn't a change
-      ignore_errors: false # Fail the playbook if Docker doesn't become ready
+      changed_when: false
+      ignore_errors: false # Fail if Docker doesn't become ready eventually
       tags: [docker, config, service]
