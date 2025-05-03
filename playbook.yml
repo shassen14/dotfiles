@@ -1,0 +1,36 @@
+---
+- hosts: all
+  become: true
+  vars_files:
+    - group_vars/all.yml
+  tasks:
+    - name: Install required packages on Debian
+      apt:
+        name: [git, curl]
+        state: present
+      when: ansible_os_family == "Debian"
+
+    - name: Install required packages on RedHat
+      dnf:
+        name: [git, curl]
+        state: present
+      when: ansible_os_family == "RedHat"
+
+    - name: Install required packages on Arch
+      pacman:
+        name: [git, curl]
+        state: present
+      when: ansible_os_family == "Archlinux"
+
+    - name: Install chezmoi (universal)
+      shell: |
+        sh -c "$(curl -fsLS get.chezmoi.io)" -- -b /usr/local/bin
+      args:
+        creates: /usr/local/bin/chezmoi
+
+    - name: Initialize chezmoi with your repo
+      shell: |
+        chezmoi init --branch {{ chezmoi_branch }} {{ chezmoi_repo }}
+        chezmoi apply
+      args:
+        creates: ~/.local/share/chezmoi
