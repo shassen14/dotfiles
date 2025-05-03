@@ -1,0 +1,60 @@
+- name: Install Visual Studio Code
+  hosts: all
+  become: true
+  tasks:
+
+    - name: Add Microsoft GPG key (Debian)
+      apt_key:
+        url: https://packages.microsoft.com/keys/microsoft.asc
+        state: present
+      when: ansible_os_family == "Debian"
+
+    - name: Add VSCode repo (Debian)
+      apt_repository:
+        repo: "deb [arch=amd64] https://packages.microsoft.com/repos/vscode stable main"
+        state: present
+      when: ansible_os_family == "Debian"
+
+    - name: Install VSCode (Debian)
+      apt:
+        name: code
+        state: present
+        update_cache: yes
+      when: ansible_os_family == "Debian"
+
+    - name: Add VSCode repo (RedHat)
+      yum_repository:
+        name: vscode
+        description: Visual Studio Code
+        baseurl: https://packages.microsoft.com/yumrepos/vscode
+        gpgcheck: yes
+        gpgkey: https://packages.microsoft.com/keys/microsoft.asc
+      when: ansible_os_family == "RedHat"
+
+    - name: Install VSCode (RedHat)
+      dnf:
+        name: code
+        state: present
+      when: ansible_os_family == "RedHat"
+
+    - name: Install VSCode (Arch)
+      pacman:
+        name: code
+        state: present
+      when: ansible_os_family == "Archlinux"
+
+    - name: Check if VSCode is already installed (macOS)
+      stat:
+        path: "/Applications/Visual Studio Code.app"
+      register: vscode_app_check
+      when: ansible_os_family == "Darwin"
+
+    - name: Install VSCode using Homebrew (macOS)
+      homebrew_cask:
+        name: visual-studio-code
+        state: present
+      become: false
+      when:
+        - ansible_os_family == "Darwin"
+        - not (vscode_app_check.stat.exists | default(false))
+      register: vscode_install_result
