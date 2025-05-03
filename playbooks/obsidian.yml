@@ -5,11 +5,9 @@
   gather_facts: true
 
   vars:
-    # Define temporary download paths
-    obsidian_deb_path: "/tmp/obsidian_{{ ansible_architecture }}.deb"
-    obsidian_rpm_path: "/tmp/obsidian_{{ ansible_architecture }}.rpm"
-    # Adjust if Obsidian provides arch-specific RPMs, otherwise use generic name
-    # obsidian_rpm_path: "/tmp/obsidian.x86_64.rpm"
+    # Use the correct arch naming for Debian downloads
+    obsidian_deb_arch: "{% if ansible_architecture == 'x86_64' %}amd64{% elif ansible_architecture == 'aarch64' %}arm64{% else %}{{ ansible_architecture }}{% endif %}"
+    obsidian_deb_path: "/tmp/obsidian_{{ obsidian_deb_arch }}.deb"
 
   tasks:
     # --- macOS ---
@@ -34,9 +32,8 @@
     # --- Debian ---
     - name: Download Obsidian .deb package (Debian)
       ansible.builtin.get_url:
-        # Fetch latest URL dynamically if possible, or update manually. Pinned version example:
-        # url: "https://github.com/obsidianmd/obsidian-releases/releases/download/v1.5.3/obsidian_1.5.3_amd64.deb"
-        url: "https://github.com/obsidianmd/obsidian-releases/releases/latest/download/obsidian_{{ ansible_architecture }}.deb"
+        # Use the variable with the correct architecture mapping
+        url: "https://github.com/obsidianmd/obsidian-releases/releases/latest/download/obsidian_{{ obsidian_deb_arch }}.deb"
         dest: "{{ obsidian_deb_path }}"
         mode: '0644'
       when: ansible_os_family == "Debian"
@@ -45,6 +42,7 @@
     - name: Install Obsidian from .deb package (Debian)
       ansible.builtin.apt:
         deb: "{{ obsidian_deb_path }}"
+        state: present # Ensure state is present
       when: ansible_os_family == "Debian"
       tags: [obsidian, gui, package, debian, install]
 
