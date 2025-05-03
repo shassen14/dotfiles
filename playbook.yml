@@ -1,4 +1,8 @@
+# first things first
 - import_playbook: playbooks/chezmoi.yml
+
+# Misc
 - import_playbook: playbooks/docker.yml
 - import_playbook: playbooks/git.yml
 - import_playbook: playbooks/vscode.yml
+- import_playbook: playbooks/obsidian.yml

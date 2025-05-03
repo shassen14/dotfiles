@@ -1,0 +1,49 @@
+- name: Install Obsidian on supported platforms
+  hosts: all
+  become: true
+
+  tasks:
+    - name: Check if Obsidian is already installed (macOS)
+      stat:
+        path: "/Applications/Obsidian.app"
+      register: obsidian_app
+
+    - name: Install Obsidian on macOS using Homebrew Cask
+      homebrew_cask:
+        name: obsidian
+        state: present
+      become: false
+      when:
+        - ansible_facts['os_family'] == "Darwin"
+        - not obsidian_app.stat.exists
+
+    - name: Download Obsidian .deb package on Debian-based systems
+      get_url:
+        url: "https://github.com/obsidianmd/obsidian-releases/releases/latest/download/obsidian_amd64.deb"
+        dest: "/tmp/obsidian_latest.deb"
+      when: ansible_facts['os_family'] == "Debian"
+
+    - name: Install Obsidian on Debian-based systems
+      apt:
+        deb: "/tmp/obsidian_latest.deb"
+      when: ansible_facts['os_family'] == "Debian"
+
+    - name: Download Obsidian .rpm package on RedHat-based systems
+      get_url:
+        url: "https://github.com/obsidianmd/obsidian-releases/releases/latest/download/obsidian.x86_64.rpm"
+        dest: "/tmp/obsidian_latest.rpm"
+      when: ansible_facts['os_family'] == "RedHat"
+
+    - name: Install Obsidian on RedHat-based systems
+      dnf:
+        name: "/tmp/obsidian_latest.rpm"
+        state: present
+      when: ansible_facts['os_family'] == "RedHat"
+
+    - name: Install Obsidian from AUR on Arch-based systems (requires yay)
+      become: false
+      shell: |
+        yay -S --noconfirm obsidian
+      args:
+        creates: "/usr/bin/obsidian"
+      when: ansible_facts['os_family'] == "Archlinux"
