@@ -76,16 +76,26 @@ if ! command -v ansible &>/dev/null; then
             if ! command -v brew &> /dev/null; then
                 echo "🍺 Homebrew not found. Installing Homebrew..."
                 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)" || { echo "❌ Failed to install Homebrew."; exit 1; }
-                # Add brew to PATH for the current script session
-                # Check for Apple Silicon vs Intel paths
+                # Add brew to PATH for the current script session (needed immediately)
+                echo "🍺 Adding Homebrew to PATH for this session..."
                 if [[ "$(uname -m)" == "arm64" ]]; then
                   eval "$(/opt/homebrew/bin/brew shellenv)"
                 else
                   eval "$(/usr/local/bin/brew shellenv)"
                 fi
+                echo "🍺 Homebrew added to PATH."
+            else
+                 echo "✅ Homebrew already installed."
             fi
-            echo "🍺 Installing Ansible via Homebrew..."
-            brew install ansible || { echo "❌ Failed to install Ansible via Homebrew."; exit 1; }
+
+            # Update Homebrew before installing packages in CI
+            # Use --quiet to avoid excessive logs unless debugging
+            echo "🍺 Updating Homebrew..."
+            brew update --quiet || echo "⚠️ Failed to update Homebrew, continuing..."
+
+            echo "🍺 Installing Ansible via Homebrew (with verbosity)..."
+            # Use -v for verbose output to help diagnose cancellation issues
+            brew install -v ansible || { echo "❌ Failed to install Ansible via Homebrew."; exit 1; }
             ;;
     esac
     echo "✅ Ansible installed successfully."
