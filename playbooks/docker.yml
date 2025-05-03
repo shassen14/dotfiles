@@ -99,7 +99,6 @@
       community.general.homebrew_cask:
         name: docker
         state: present # Ensures Docker Desktop is installed or updated
-        install_options: ["--verbose"] # Add verbosity for better logs if it fails
       when: ansible_os_family == "Darwin"
       tags: [docker, install, package, macos]
 
