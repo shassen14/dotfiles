@@ -1,5 +1,6 @@
-# ~/.config/chezmoi/chezmoi.toml - Managed by Chezmoi
-# Template location: {{ .chezmoi.sourceFile | quote }}
+# Managed by Chezmoi
+# Source: {{ .chezmoi.sourceFile | quote }}
+# Target: ~/.config/chezmoi/chezmoi.toml
 
 # Set the source directory to the 'home' subdirectory within the repo clone.
 # We use .chezmoi.homeDir to make it portable across users/machines.
@@ -8,12 +9,12 @@ sourceDir = "{{ .chezmoi.homeDir }}/dotfiles/home"
 # Use templating to add other dynamic data if needed
 [data]
   name = "Samir Hassen" # Or use Ansible/env vars if preferred
-  email = "your_email@example.com"
+  email = "your_email@example.com" # Replace with your actual email
   # Example of OS-specific data (can also use '.chezmoi.os' directly in templates)
 {{ if eq .chezmoi.os "darwin" }}
-  # macOS specific data if needed
+  # macOS specific data can go here if needed later
 {{ else if eq .chezmoi.os "linux" }}
-  # Linux specific data if needed
+  # Linux specific data can go here if needed later
 {{ end }}
 
 # Add other chezmoi settings as needed (e.g., encryption, scripting config)

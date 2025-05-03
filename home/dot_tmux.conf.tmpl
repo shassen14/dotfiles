@@ -1,4 +1,6 @@
-# ~/.tmux.conf -- Tmux Configuration managed by Chezmoi
+# Managed by Chezmoi
+# Source: {{ .chezmoi.sourceFile | quote }}
+# Target: ~/.tmux.conf
 
 #--------------------------------------------------------------------------
 # Basic Settings
@@ -94,8 +96,6 @@ bind-key -T copy-mode-vi Enter send-keys -X copy-pipe-and-cancel 'pbcopy'
 # Check if DISPLAY is set for X11, otherwise could be Wayland (wl-copy needs separate install)
 bind-key -T copy-mode-vi y send-keys -X copy-pipe-and-cancel 'if [ -n "$DISPLAY" ]; then xclip -i -selection clipboard > /dev/null; else cat > /dev/null; fi'
 bind-key -T copy-mode-vi Enter send-keys -X copy-pipe-and-cancel 'if [ -n "$DISPLAY" ]; then xclip -i -selection clipboard > /dev/null; else cat > /dev/null; fi'
-# Note: This Linux command is basic. If Wayland is primary, installing wl-clipboard and using wl-copy might be preferred.
-# Or use a plugin like tmux-yank which handles this more robustly.
 {{ end }}
 
 # Paste buffer
