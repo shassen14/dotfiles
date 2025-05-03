@@ -1,49 +1,167 @@
+# playbooks/obsidian.yml
 - name: Install Obsidian on supported platforms
   hosts: all
   become: true
+  gather_facts: true
+
+  vars:
+    # Define architecture mapping for Debian package names
+    obsidian_deb_arch: "{% if ansible_architecture == 'x86_64' %}amd64{% elif ansible_architecture == 'aarch64' %}arm64{% else %}{{ ansible_architecture }}{% endif %}"
+    # Temporary path for downloaded file (filename is now dynamic)
+    obsidian_deb_tmp_path: "/tmp/obsidian_latest.deb"
 
   tasks:
-    - name: Check if Obsidian is already installed (macOS)
-      stat:
+    # --- macOS ---
+    - name: Check if Obsidian.app exists (macOS)
+      become: false
+      ansible.builtin.stat:
         path: "/Applications/Obsidian.app"
-      register: obsidian_app
+      register: obsidian_app_stat
+      when: ansible_os_family == "Darwin"
+      tags: [obsidian, gui, package, macos]
 
-    - name: Install Obsidian on macOS using Homebrew Cask
-      homebrew_cask:
+    - name: Install Obsidian on macOS using Homebrew Cask (only if not found)
+      become: false # Homebrew cask runs as user
+      community.general.homebrew_cask:
         name: obsidian
         state: present
-      become: false
       when:
-        - ansible_facts['os_family'] == "Darwin"
-        - not obsidian_app.stat.exists
+        - ansible_os_family == "Darwin"
+        - not obsidian_app_stat.stat.exists # <-- Only run if stat check shows it doesn't exist
+      tags: [obsidian, gui, package, macos]
 
-    - name: Download Obsidian .deb package on Debian-based systems
-      get_url:
-        url: "https://github.com/obsidianmd/obsidian-releases/releases/latest/download/obsidian_amd64.deb"
-        dest: "/tmp/obsidian_latest.deb"
-      when: ansible_facts['os_family'] == "Debian"
-
-    - name: Install Obsidian on Debian-based systems
-      apt:
-        deb: "/tmp/obsidian_latest.deb"
-      when: ansible_facts['os_family'] == "Debian"
-
-    - name: Download Obsidian .rpm package on RedHat-based systems
-      get_url:
-        url: "https://github.com/obsidianmd/obsidian-releases/releases/latest/download/obsidian.x86_64.rpm"
-        dest: "/tmp/obsidian_latest.rpm"
-      when: ansible_facts['os_family'] == "RedHat"
-
-    - name: Install Obsidian on RedHat-based systems
-      dnf:
-        name: "/tmp/obsidian_latest.rpm"
+# --- Debian/Ubuntu ---
+    - name: Install prerequisite for GitHub API parsing (jq)
+      ansible.builtin.package: # Changed from apt to generic package
+        name: jq
         state: present
-      when: ansible_facts['os_family'] == "RedHat"
+      when: ansible_os_family == "Debian" # Or adjust if needed for other families
+      tags: [obsidian, prerequisites, debian]
 
-    - name: Install Obsidian from AUR on Arch-based systems (requires yay)
-      become: false
-      shell: |
-        yay -S --noconfirm obsidian
+    - name: Get latest Obsidian .deb download URL from GitHub API
+      # Use shell module with curl and jq to extract the URL
+      # Delegates to localhost because API query doesn't need target context beyond curl/jq
+      delegate_to: localhost
+      become: false # API query runs as user
+      ansible.builtin.shell: >
+        curl -s https://api.github.com/repos/obsidianmd/obsidian-releases/releases/latest |
+        jq -r '.assets[] | select(.name | endswith("_{{ obsidian_deb_arch }}.deb")) | .browser_download_url'
+      register: obsidian_deb_url_result
+      changed_when: false # Getting URL is not a change
+      check_mode: false # Needs to run even in check mode to get URL
+      when: ansible_os_family == "Debian"
+      tags: [obsidian, gui, package, debian, download]
+
+    - name: Download Obsidian .deb package (Debian)
+      # Use the dynamically obtained URL
+      ansible.builtin.get_url:
+        url: "{{ obsidian_deb_url_result.stdout }}"
+        dest: "{{ obsidian_deb_tmp_path }}"
+        mode: '0644'
+      when:
+        - ansible_os_family == "Debian"
+        - obsidian_deb_url_result.stdout is defined
+        - obsidian_deb_url_result.stdout != "" # Only run if URL was found
+      tags: [obsidian, gui, package, debian, download]
+
+    - name: Install Obsidian from downloaded .deb package (Debian)
+      ansible.builtin.apt:
+        deb: "{{ obsidian_deb_tmp_path }}"
+        state: present
+      when:
+        - ansible_os_family == "Debian"
+        - obsidian_deb_url_result.stdout is defined
+        - obsidian_deb_url_result.stdout != "" # Only run if download likely succeeded
+      tags: [obsidian, gui, package, debian, install]
+
+    # --- RedHat ---
+    # Note: Obsidian doesn't seem to provide official RPMs directly. AppImage or Flatpak might be better.
+    # Assuming a hypothetical RPM download for demonstration.
+    # - name: Download Obsidian .rpm package (RedHat)
+    #   ansible.builtin.get_url:
+    #     url: "URL_TO_OBSIDIAN_RPM" # Replace with actual URL if available
+    #     dest: "{{ obsidian_rpm_path }}"
+    #     mode: '0644'
+    #   when: ansible_os_family == "RedHat"
+    #   tags: [obsidian, gui, package, redhat, download]
+    #
+    # - name: Install Obsidian from .rpm package (RedHat)
+    #   ansible.builtin.dnf:
+    #     name: "{{ obsidian_rpm_path }}"
+    #     state: present
+    #     disable_gpg_check: true # If the RPM isn't signed or key isn't imported
+    #   when: ansible_os_family == "RedHat"
+    #   tags: [obsidian, gui, package, redhat, install]
+    - name: Notify about manual Obsidian install on RedHat
+      ansible.builtin.debug:
+        msg: "Obsidian RPMs are not officially provided. Please install manually via AppImage, Flatpak, or other means on {{ ansible_distribution }}."
+      when: ansible_os_family == "RedHat"
+      tags: [obsidian, gui, package, redhat]
+
+
+    # --- Arch Linux (AUR) ---
+    # Prerequisites for building AUR packages (like yay)
+    - name: Install base-devel and git (Arch AUR prerequisites)
+      community.general.pacman:
+        name: ['base-devel', 'git']
+        state: present
+      when: ansible_os_family == "Archlinux"
+      tags: [obsidian, aur, prerequisites, arch]
+
+    # Install yay AUR helper if not present
+    - name: Check if yay is installed
+      ansible.builtin.command: "which yay"
+      register: yay_check
+      ignore_errors: true
+      changed_when: false
+      when: ansible_os_family == "Archlinux"
+      tags: [obsidian, aur, prerequisites, arch]
+
+    - name: Clone yay repository
+      become: false # Run git clone as the target user
+      ansible.builtin.git:
+        repo: 'https://aur.archlinux.org/yay.git'
+        dest: "/tmp/yay" # Clone to a temporary directory
+      when:
+        - ansible_os_family == "Archlinux"
+        - yay_check.rc != 0 # Only clone if yay is not found
+      tags: [obsidian, aur, prerequisites, arch]
+
+    - name: Build and install yay
+      become: false # makepkg should run as user
+      ansible.builtin.command:
+        # Run makepkg; -s installs deps, -i installs package, --noconfirm skips prompts
+        cmd: "makepkg -si --noconfirm"
       args:
-        creates: "/usr/bin/obsidian"
-      when: ansible_facts['os_family'] == "Archlinux"
+        chdir: "/tmp/yay" # Run in the cloned directory
+        creates: "/usr/bin/yay" # Idempotency check
+      when:
+        - ansible_os_family == "Archlinux"
+        - yay_check.rc != 0 # Only build/install if yay was not found
+      tags: [obsidian, aur, prerequisites, arch]
+
+    - name: Install Obsidian from AUR using yay
+      become: false # yay runs as user but may prompt for sudo password internally
+      ansible.builtin.command:
+        cmd: "yay -S --noconfirm obsidian" # Use yay to install
+      args:
+        creates: "/usr/bin/obsidian" # Idempotency check
+      when: ansible_os_family == "Archlinux"
+      tags: [obsidian, gui, package, aur, arch, install]
+      # Note: This assumes yay can handle sudo password prompt if needed,
+      # or passwordless sudo is configured for pacman.
+
+    # --- Cleanup ---
+    - name: Clean up downloaded Obsidian package (.deb)
+      ansible.builtin.file:
+        path: "{{ obsidian_deb_tmp_path }}"
+        state: absent
+      when: ansible_os_family == "Debian"
+      tags: [obsidian, cleanup]
+
+    - name: Clean up yay build directory
+      ansible.builtin.file:
+        path: "/tmp/yay"
+        state: absent
+      when: ansible_os_family == "Archlinux"
+      tags: [obsidian, cleanup, aur]

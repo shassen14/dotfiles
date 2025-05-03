@@ -1,71 +1,202 @@
+# playbooks/docker.yml: Installs and configures Docker.
 - hosts: all
-  become: true
+  become: true # Most Docker setup tasks require root, default to true
   gather_facts: true
 
   tasks:
-    - name: Install Docker on Debian-based systems
-      apt:
+    # --- Debian/Ubuntu Setup ---
+    - name: Install Docker prerequisites (Debian)
+      ansible.builtin.apt:
         name: [apt-transport-https, ca-certificates, curl, gnupg, lsb-release]
         state: present
-      when: ansible_os_family == "Debian"
-
-    - name: Add Docker GPG key (Debian)
-      apt_key:
-        url: https://download.docker.com/linux/debian/gpg
-        state: present
-      when: ansible_os_family == "Debian"
-
-    - name: Add Docker repo (Debian)
-      apt_repository:
-        repo: "deb [arch=amd64] https://download.docker.com/linux/debian {{ ansible_distribution_release }} stable"
-        state: present
-      when: ansible_os_family == "Debian"
-
-    - name: Install Docker packages (Debian)
-      apt:
-        name: [docker-ce, docker-ce-cli, containerd.io]
-        state: latest
         update_cache: true
       when: ansible_os_family == "Debian"
+      tags: [docker, install, prerequisites, debian]
 
-    - name: Install Docker on Fedora
-      dnf:
-        name: [docker, docker-cli, containerd]
+    - name: Add Docker GPG key (Debian)
+      ansible.builtin.apt_key:
+        url: "https://download.docker.com/linux/{{ ansible_distribution | lower }}/gpg"
+        state: present
+      when: ansible_os_family == "Debian"
+      tags: [docker, install, repo, debian]
+
+    - name: Add Docker repository (Debian)
+      ansible.builtin.apt_repository:
+        repo: "deb [arch=amd64] https://download.docker.com/linux/{{ ansible_distribution | lower }} {{ ansible_distribution_release }} stable"
+        state: present
+      when: ansible_os_family == "Debian"
+      tags: [docker, install, repo, debian]
+
+    - name: Install Docker CE packages (Debian)
+      ansible.builtin.apt:
+        name: [docker-ce, docker-ce-cli, containerd.io, docker-compose-plugin]
+        state: present
+        update_cache: true
+      when: ansible_os_family == "Debian"
+      tags: [docker, install, package, debian]
+
+    # --- Fedora Setup (Using Official Repo) ---
+    - name: Install Docker prerequisites (Fedora)
+      ansible.builtin.dnf:
+        name: [dnf-plugins-core]
         state: present
       when: ansible_distribution == "Fedora"
+      tags: [docker, install, prerequisites, fedora]
 
-    - name: Install Docker on Arch
-      pacman:
-        name: docker
+    - name: Add Docker CE repository (Fedora)
+      ansible.builtin.command:
+        cmd: sudo dnf config-manager --add-repo https://download.docker.com/linux/fedora/docker-ce.repo
+      args:
+        creates: /etc/yum.repos.d/docker-ce.repo # Idempotency check
+      when: ansible_distribution == "Fedora"
+      tags: [docker, install, repo, fedora]
+
+    - name: Install Docker CE packages (Fedora)
+      ansible.builtin.dnf:
+        name: [docker-ce, docker-ce-cli, containerd.io, docker-compose-plugin]
+        state: present
+      when: ansible_distribution == "Fedora"
+      tags: [docker, install, package, fedora]
+
+    # --- Arch Linux Setup (Using Community Repo) ---
+    - name: Install Docker package (Arch)
+      community.general.pacman:
+        name: [docker, docker-compose]
         state: present
       when: ansible_os_family == "Archlinux"
+      tags: [docker, install, package, arch]
 
-    - name: Start and enable Docker service (Linux)
-      service:
+    # --- Linux Service Management ---
+    - name: Ensure Docker service is started and enabled (Linux)
+      ansible.builtin.service:
         name: docker
         state: started
         enabled: true
       when: ansible_os_family != "Darwin"
+      tags: [docker, config, service]
 
-    - name: Install Docker on macOS using Homebrew
-      homebrew:
+    - name: Add target user to the docker group (Linux)
+      ansible.builtin.user:
+        name: "{{ target_user }}" # Use the variable defined in group_vars/all.yml
+        groups: docker
+        append: yes
+      when: ansible_os_family != "Darwin"
+      tags: [docker, config, user]
+      # Note: User needs to log out and back in for group change to take full effect.
+
+    # --- macOS Setup ---
+    - name: Cleanup Homebrew cache before Docker install (macOS)
+      become: false
+      ansible.builtin.command:
+        cmd: brew cleanup -s
+      when: ansible_os_family == "Darwin"
+      changed_when: false
+      tags: [docker, prerequisites, macos]
+
+    - name: Install Docker Desktop via Homebrew Cask (macOS)
+      become: false
+      community.general.homebrew_cask:
         name: docker
         state: present
-      become: false
       when: ansible_os_family == "Darwin"
+      tags: [docker, install, package, macos]
 
-    - name: Ensure Docker.app is started
-      shell: open -a Docker
-      args:
-        creates: /Applications/Docker.app
-      when: ansible_os_family == "Darwin"
+    - name: Check if Docker.app exists after install (macOS)
       become: false
+      ansible.builtin.stat:
+        path: "/Applications/Docker.app"
+      register: docker_app_stat
+      when: ansible_os_family == "Darwin"
+      tags: [docker, config, service, macos]
 
-    - name: Wait for Docker CLI to be ready
-      shell: docker info > /dev/null 2>&1
-      register: docker_check
-      retries: 10
+    - name: Ensure Docker Desktop application is started using path (macOS)
+      # This just attempts to launch the app if it exists
+      become: false
+      ansible.builtin.command:
+        cmd: open /Applications/Docker.app
+      when:
+        - ansible_os_family == "Darwin"
+        - docker_app_stat.stat.exists
+      changed_when: false
+      tags: [docker, config, service, macos]
+
+    # - name: Pause for Docker Desktop to potentially initialize (macOS)
+    #   # Provides a window for startup, though full initialization isn't guaranteed in CI
+    #   ansible.builtin.pause:
+    #     seconds: 60 # Adjust pause time if needed
+    #   when: ansible_os_family == "Darwin"
+    #   tags: [docker, config, service, macos]
+
+    # --- macOS Runtime Checks (SKIPPED IN CI) ---
+    - name: Notice - Skipping Docker runtime checks in macOS CI environment
+      ansible.builtin.debug:
+        msg: "Skipping Docker context and daemon readiness checks because Docker Desktop initialization is unreliable in non-interactive macOS CI."
+      # Only show this message when on macOS AND in CI
+      when:
+        - ansible_os_family == "Darwin"
+        - lookup('env', 'CI') == 'true'
+      tags: [docker, config, service, macos]
+
+    - name: Check Docker contexts rigorously after pause (macOS, not in CI)
+      become: false
+      ansible.builtin.command:
+        cmd: docker context ls
+      register: docker_context_ls_result
+      changed_when: false
+      # FAIL if command errors OR the context 'desktop-linux' is missing
+      failed_when: docker_context_ls_result.rc != 0 or 'desktop-linux' not in docker_context_ls_result.stdout
+      when:
+        - ansible_os_family == "Darwin"
+        - lookup('env', 'CI') != 'true' # <-- Skips this task in CI
+      tags: [docker, config, service, prerequisites, macos]
+
+    - name: Display Docker context list output (macOS, not in CI)
+      ansible.builtin.debug:
+        msg: "{{ docker_context_ls_result.stdout_lines | default([]) }}"
+      when:
+        - ansible_os_family == "Darwin"
+        - lookup('env', 'CI') != 'true' # <-- Skips this task in CI
+       # - docker_context_ls_result is defined # Check not strictly needed due to above condition
+       # - docker_context_ls_result.rc == 0    # Check not strictly needed due to above condition
+      tags: [docker, config, service, debug]
+
+    - name: Wait for Docker context 'desktop-linux' to be resolvable (macOS, not in CI)
+      become: false
+      ansible.builtin.command:
+        cmd: docker context inspect desktop-linux
+      register: docker_context_check
+      retries: 24
       delay: 5
-      until: docker_check.rc == 0
-      ignore_errors: yes
+      until: docker_context_check.rc == 0
+      changed_when: false
+      ignore_errors: false
+      when:
+        - ansible_os_family == "Darwin"
+        - lookup('env', 'CI') != 'true' # <-- Skips this task in CI
+      tags: [docker, config, service]
+
+    - name: Check Docker daemon readiness via context after context resolution (macOS, not in CI)
       become: false
+      ansible.builtin.command:
+        cmd: docker info
+      environment:
+        DOCKER_CONTEXT: desktop-linux
+      changed_when: false
+      when:
+        - ansible_os_family == "Darwin"
+        - lookup('env', 'CI') != 'true' # <-- Skips this task in CI
+      tags: [docker, config, service]
+
+    # --- Linux Wait Task (Always runs on Linux) ---
+    - name: Wait for Docker daemon to be ready (Linux)
+      become: false
+      ansible.builtin.command:
+        cmd: docker info
+      register: docker_check_linux
+      retries: 15
+      delay: 5
+      until: docker_check_linux.rc == 0
+      changed_when: false
+      ignore_errors: false
+      when: ansible_os_family != "Darwin"
+      tags: [docker, config, service]

@@ -1,60 +1,84 @@
+# playbooks/vscode.yml: Installs Visual Studio Code.
 - name: Install Visual Studio Code
   hosts: all
-  become: true
+  become: true # Most package/repo tasks need sudo
+  gather_facts: true
   tasks:
 
+    # --- Debian ---
     - name: Add Microsoft GPG key (Debian)
-      apt_key:
+      ansible.builtin.apt_key:
         url: https://packages.microsoft.com/keys/microsoft.asc
         state: present
       when: ansible_os_family == "Debian"
+      tags: [vscode, editor, repo, debian]
 
-    - name: Add VSCode repo (Debian)
-      apt_repository:
-        repo: "deb [arch=amd64] https://packages.microsoft.com/repos/vscode stable main"
+    - name: Add VSCode repository (Debian)
+      ansible.builtin.apt_repository:
+        repo: "deb [arch=amd64] https://packages.microsoft.com/repos/code stable main"
         state: present
+        filename: vscode # Specify filename to avoid potential conflicts
       when: ansible_os_family == "Debian"
+      tags: [vscode, editor, repo, debian]
 
-    - name: Install VSCode (Debian)
-      apt:
+    - name: Install VSCode package (Debian)
+      ansible.builtin.apt:
         name: code
         state: present
         update_cache: yes
       when: ansible_os_family == "Debian"
+      tags: [vscode, editor, package, debian]
 
-    - name: Add VSCode repo (RedHat)
-      yum_repository:
-        name: vscode
+    # --- RedHat ---
+    - name: Import Microsoft GPG key (RedHat)
+      ansible.builtin.rpm_key:
+        state: present
+        key: https://packages.microsoft.com/keys/microsoft.asc
+      when: ansible_os_family == "RedHat"
+      tags: [vscode, editor, repo, redhat]
+
+    - name: Add VSCode repository (RedHat)
+      ansible.builtin.yum_repository:
+        name: code
         description: Visual Studio Code
         baseurl: https://packages.microsoft.com/yumrepos/vscode
-        gpgcheck: yes
+        enabled: true
+        gpgcheck: true
         gpgkey: https://packages.microsoft.com/keys/microsoft.asc
       when: ansible_os_family == "RedHat"
+      tags: [vscode, editor, repo, redhat]
 
-    - name: Install VSCode (RedHat)
-      dnf:
+    - name: Install VSCode package (RedHat)
+      ansible.builtin.dnf:
         name: code
         state: present
       when: ansible_os_family == "RedHat"
+      tags: [vscode, editor, package, redhat]
 
-    - name: Install VSCode (Arch)
-      pacman:
+    # --- Arch ---
+    - name: Install VSCode package (Arch - Community Repo 'code')
+      # Assumes using the open-source 'code' package.
+      # Use 'visual-studio-code-bin' from AUR for Microsoft build.
+      community.general.pacman:
         name: code
         state: present
       when: ansible_os_family == "Archlinux"
+      tags: [vscode, editor, package, arch]
+      # If wanting the official MS build via AUR:
+      # - name: Install VSCode MS Build from AUR using yay
+      #   become: false
+      #   ansible.builtin.command:
+      #     cmd: "yay -S --noconfirm visual-studio-code-bin"
+      #   args:
+      #     creates: "/usr/bin/code" # or appropriate path for MS build
+      #   when: ansible_os_family == "Archlinux"
+      #   tags: [vscode, editor, package, aur, arch]
 
-    - name: Check if VSCode is already installed (macOS)
-      stat:
-        path: "/Applications/Visual Studio Code.app"
-      register: vscode_app_check
-      when: ansible_os_family == "Darwin"
-
-    - name: Install VSCode using Homebrew (macOS)
-      homebrew_cask:
+    # --- macOS ---
+    - name: Install VSCode using Homebrew Cask (macOS)
+      become: false # Homebrew runs as user
+      community.general.homebrew_cask:
         name: visual-studio-code
-        state: present
-      become: false
-      when:
-        - ansible_os_family == "Darwin"
-        - not (vscode_app_check.stat.exists | default(false))
-      register: vscode_install_result
+        state: present # Ensures installed and allows updates via brew upgrade
+      when: ansible_os_family == "Darwin"
+      tags: [vscode, editor, package, macos]

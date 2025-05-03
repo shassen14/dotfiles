@@ -1,2 +1,7 @@
+# group_vars.yml
 chezmoi_repo: https://github.com/shassen14/dotfiles.git
 chezmoi_branch: main
+
+# Define the target user for tasks like adding to docker group.
+# Defaults to the user running ansible or the environment user.
+target_user: "{{ ansible_user_id | default(lookup('env', 'USER')) }}"
