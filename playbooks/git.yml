@@ -1,0 +1,43 @@
+- name: Install Git and GitHub CLI
+  hosts: all
+  become: true
+
+  tasks:
+    - name: Install Git and gh on Debian/Ubuntu
+      apt:
+        name:
+          - git
+          - gh
+        state: present
+        update_cache: true
+      when: ansible_os_family == "Debian"
+
+    - name: Install Git and gh on RedHat/CentOS/Fedora
+      dnf:
+        name:
+          - git
+          - gh
+        state: present
+      when: ansible_os_family == "RedHat"
+
+    - name: Install Git and gh on Arch Linux
+      pacman:
+        name:
+          - git
+          - gh
+        state: present
+      when: ansible_os_family == "Archlinux"
+
+    - name: Install Git via Homebrew on macOS
+      homebrew:
+        name: git
+        state: present
+      when: ansible_os_family == "Darwin"
+      become: false
+
+    - name: Install gh CLI via Homebrew on macOS
+      homebrew:
+        name: gh
+        state: present
+      when: ansible_os_family == "Darwin"
+      become: false
