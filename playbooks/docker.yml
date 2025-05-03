@@ -102,12 +102,23 @@
       when: ansible_os_family == "Darwin"
       tags: [docker, install, package, macos]
 
-    - name: Ensure Docker Desktop application is started (macOS)
-      # This just opens the app if closed, doesn't guarantee daemon readiness
+    - name: Check if Docker.app exists after install (macOS)
+      # Verify the application directory is actually present
+      become: false
+      ansible.builtin.stat:
+        path: "/Applications/Docker.app"
+      register: docker_app_stat
+      when: ansible_os_family == "Darwin"
+      tags: [docker, config, service, macos]
+
+    - name: Ensure Docker Desktop application is started using path (macOS)
+      # Use the absolute path which is more reliable immediately after install
       become: false
       ansible.builtin.command:
-        cmd: open -a Docker
-      when: ansible_os_family == "Darwin"
+        cmd: open /Applications/Docker.app # <-- Use absolute path
+      when:
+        - ansible_os_family == "Darwin"
+        - docker_app_stat.stat.exists # <-- Only run if the app exists
       changed_when: false # Opening an app isn't really a config change
       tags: [docker, config, service, macos]
 
