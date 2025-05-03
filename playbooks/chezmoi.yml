@@ -1,45 +1,73 @@
-# playbooks/chezmoi.yml
+# playbooks/chezmoi.yml: Installs and configures Chezmoi.
 - hosts: all
-  become: true
+  # No `become: true` needed at the host level if most tasks don't need it
   gather_facts: true
 
   tasks:
-    - name: Install required packages on Debian
-      apt:
-        name: [git, curl]
+    - name: Install prerequisites (git, curl) - Distribution Package Managers
+      become: true # Needs sudo for package install
+      ansible.builtin.package:
+        name:
+          - git
+          - curl
+          # Add any other *absolute* prerequisites for chezmoi/dotfiles here
         state: present
-      when: ansible_os_family == "Debian"
+      when: ansible_os_family != "Darwin"
+      tags: [always, chezmoi, prerequisites]
 
-    - name: Install required packages on RedHat
-      dnf:
-        name: [git, curl]
+    - name: Install prerequisites (git) - Homebrew (macOS)
+      # Curl is usually present on macOS. Git might be via Xcode tools, but ensure it.
+      become: false # Homebrew runs as user
+      community.general.homebrew:
+        name: git
         state: present
-      when: ansible_os_family == "RedHat"
+      when: ansible_os_family == "Darwin"
+      tags: [always, chezmoi, prerequisites]
 
-    - name: Install required packages on Arch
-      pacman:
-        name: [git, curl]
-        state: present
-      when: ansible_os_family == "Archlinux"
+    - name: Install chezmoi via script (Linux)
+      become: true # Install to /usr/local/bin needs sudo
+      ansible.builtin.shell:
+        cmd: sh -c "$(curl -fsLS get.chezmoi.io)" -- -b /usr/local/bin
+        warn: false # Suppress warnings about using shell for curl | sh
+      args:
+        creates: /usr/local/bin/chezmoi # Makes the task idempotent
+      when: ansible_os_family != "Darwin"
+      tags: [always, chezmoi, install]
 
-    - name: Install chezmoi on macOS using Homebrew
-      homebrew:
+    - name: Install chezmoi via Homebrew (macOS)
+      become: false # Homebrew runs as user
+      community.general.homebrew:
         name: chezmoi
         state: present
-      become: false
       when: ansible_os_family == "Darwin"
+      tags: [always, chezmoi, install]
 
-    - name: Install chezmoi on Linux (universal fallback)
-      shell: |
-        sh -c "$(curl -fsLS get.chezmoi.io)" -- -b /usr/local/bin
-      args:
-        creates: /usr/local/bin/chezmoi
-      when: ansible_os_family != "Darwin"
+    - name: Check if chezmoi repository is already initialized
+      become: false # Check runs as user
+      ansible.builtin.stat:
+        path: "{{ ansible_env.HOME }}/.local/share/chezmoi/.git" # Check for the git dir inside
+      register: chezmoi_repo_check
+      tags: [always, chezmoi, config]
 
-    - name: Initialize chezmoi
-      shell: |
-        chezmoi init --branch {{ chezmoi_branch }} {{ chezmoi_repo }}
-        chezmoi apply
+    - name: Initialize chezmoi repository if it doesn't exist
+      become: false # Chezmoi runs as user
+      ansible.builtin.command:
+        cmd: "chezmoi init --apply --branch {{ chezmoi_branch }} {{ chezmoi_repo }}"
+        # Use --apply here to do initial setup in one go if new
       args:
-        creates: ~/.local/share/chezmoi
-      become: false
+        chdir: "{{ ansible_env.HOME }}" # Run from home directory
+        creates: "{{ ansible_env.HOME }}/.local/share/chezmoi/.git" # Double check for idempotency
+      when: not chezmoi_repo_check.stat.exists
+      tags: [always, chezmoi, config]
+      # Notify if secrets tooling (pass, bw, op cli) needs to be installed *before* this apply
+      # Requires those tools to be installed in earlier tasks/plays
+
+    - name: Apply chezmoi changes on subsequent runs
+      become: false # Chezmoi runs as user
+      ansible.builtin.command:
+        cmd: "chezmoi apply -v" # Apply changes if repo already exists, -v for verbose
+      args:
+        chdir: "{{ ansible_env.HOME }}"
+      when: chezmoi_repo_check.stat.exists # Only run apply if repo was already there
+      changed_when: true # Assume chezmoi apply always makes changes for simplicity, or parse output
+      tags: [always, chezmoi, config]

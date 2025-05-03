@@ -1,44 +1,44 @@
-# playbooks/git.yml
+# playbooks/git.yml: Installs Git and GitHub CLI.
 - name: Install Git and GitHub CLI
   hosts: all
-  become: true
+  become: true # Package installs usually need sudo
+  gather_facts: true
 
   tasks:
     - name: Install Git and gh on Debian/Ubuntu
-      apt:
-        name:
-          - git
-          - gh
+      ansible.builtin.apt:
+        name: [git, gh]
         state: present
         update_cache: true
       when: ansible_os_family == "Debian"
+      tags: [git, tools, package, debian]
 
     - name: Install Git and gh on RedHat/CentOS/Fedora
-      dnf:
-        name:
-          - git
-          - gh
+      ansible.builtin.dnf:
+        name: [git, gh]
         state: present
       when: ansible_os_family == "RedHat"
+      tags: [git, tools, package, fedora, redhat]
 
     - name: Install Git and gh on Arch Linux
-      pacman:
-        name:
-          - git
-          - gh
+      community.general.pacman:
+        name: [git, github-cli] # Package name is github-cli on Arch
         state: present
       when: ansible_os_family == "Archlinux"
+      tags: [git, tools, package, arch]
 
-    - name: Install Git via Homebrew on macOS
-      homebrew:
+    - name: Install Git via Homebrew (macOS)
+      become: false
+      community.general.homebrew:
         name: git
         state: present
       when: ansible_os_family == "Darwin"
-      become: false
+      tags: [git, tools, package, macos]
 
-    - name: Install gh CLI via Homebrew on macOS
-      homebrew:
+    - name: Install gh CLI via Homebrew (macOS)
+      become: false
+      community.general.homebrew:
         name: gh
         state: present
       when: ansible_os_family == "Darwin"
-      become: false
+      tags: [git, tools, package, macos]

@@ -1,9 +1,26 @@
-# playbook.yml
-# first things first
-- import_playbook: playbooks/chezmoi.yml
+# playbook.yml: Main playbook orchestrating the setup.
+# Imports other playbooks for modularity.
 
-# Misc
-- import_playbook: playbooks/docker.yml
-- import_playbook: playbooks/git.yml
-- import_playbook: playbooks/vscode.yml
-- import_playbook: playbooks/obsidian.yml
+# Initial setup: Chezmoi first to get core dotfiles
+- name: Setup Chezmoi and core dotfiles
+  import_playbook: playbooks/chezmoi.yml
+  tags: [always, chezmoi, config] # Run chezmoi setup always
+
+# Core Development Tools
+- name: Setup Git and GitHub CLI
+  import_playbook: playbooks/git.yml
+  tags: [git, tools, dev]
+
+# Containerization
+- name: Setup Docker
+  import_playbook: playbooks/docker.yml
+  tags: [docker, tools, dev]
+
+# Editors / Notes
+- name: Setup VS Code
+  import_playbook: playbooks/vscode.yml
+  tags: [vscode, editor, tools, gui]
+
+- name: Setup Obsidian
+  import_playbook: playbooks/obsidian.yml
+  tags: [obsidian, notes, tools, gui]
