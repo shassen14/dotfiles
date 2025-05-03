@@ -122,15 +122,51 @@
       changed_when: false # Opening an app isn't really a config change
       tags: [docker, config, service, macos]
 
-    - name: Wait for Docker daemon to be ready (macOS and Linux)
-      # Increased retries and delay significantly for Docker Desktop startup time
-      become: false # Docker client command runs as user
+      - name: List Docker contexts for debugging (macOS)
+      # Helps verify the 'desktop-macos' context exists
+      become: false
+      ansible.builtin.command:
+        cmd: docker context ls
+      register: docker_context_ls_result
+      changed_when: false # Listing isn't a change
+      when: ansible_os_family == "Darwin"
+      tags: [docker, config, service, debug] # Added debug tag
+      ignore_errors: true # Don't fail if docker command isn't ready yet
+
+    - name: Display Docker context list output
+      ansible.builtin.debug:
+        msg: "{{ docker_context_ls_result.stdout_lines | default([]) }}"
+      when:
+       - ansible_os_family == "Darwin"
+       - docker_context_ls_result is defined
+      tags: [docker, config, service, debug]
+
+    - name: Wait for Docker daemon to be ready via Docker Desktop context (macOS)
+      become: false
       ansible.builtin.command:
         cmd: docker info
       register: docker_check
-      retries: 30
-      delay: 10 
+      retries: 36
+      delay: 5 
       until: docker_check.rc == 0
       changed_when: false
-      ignore_errors: false # Fail if Docker doesn't become ready eventually
+      ignore_errors: false
+      # Explicitly set the Docker context for the command
+      environment:
+        DOCKER_CONTEXT: desktop-macos
+      when: ansible_os_family == "Darwin" # Only apply context on macOS
+      tags: [docker, config, service]
+
+    - name: Wait for Docker daemon to be ready (Linux)
+      # Separate task for Linux which doesn't need the context override
+      become: false
+      ansible.builtin.command:
+        cmd: docker info
+      register: docker_check_linux
+      retries: 12 
+      delay: 5
+      until: docker_check_linux.rc == 0
+      changed_when: false
+      ignore_errors: false
+      when: ansible_os_family != "Darwin"
       tags: [docker, config, service]
