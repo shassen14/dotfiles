@@ -1,0 +1,44 @@
+- hosts: all
+  become: true
+  gather_facts: true
+
+  tasks:
+    - name: Install required packages on Debian
+      apt:
+        name: [git, curl]
+        state: present
+      when: ansible_os_family == "Debian"
+
+    - name: Install required packages on RedHat
+      dnf:
+        name: [git, curl]
+        state: present
+      when: ansible_os_family == "RedHat"
+
+    - name: Install required packages on Arch
+      pacman:
+        name: [git, curl]
+        state: present
+      when: ansible_os_family == "Archlinux"
+
+    - name: Install chezmoi on macOS using Homebrew
+      homebrew:
+        name: chezmoi
+        state: present
+      become: false
+      when: ansible_os_family == "Darwin"
+
+    - name: Install chezmoi on Linux (universal fallback)
+      shell: |
+        sh -c "$(curl -fsLS get.chezmoi.io)" -- -b /usr/local/bin
+      args:
+        creates: /usr/local/bin/chezmoi
+      when: ansible_os_family != "Darwin"
+
+    - name: Initialize chezmoi
+      shell: |
+        chezmoi init --branch {{ chezmoi_branch }} {{ chezmoi_repo }}
+        chezmoi apply
+      args:
+        creates: ~/.local/share/chezmoi
+      become: false

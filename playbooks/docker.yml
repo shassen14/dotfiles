@@ -1,0 +1,71 @@
+- hosts: all
+  become: true
+  gather_facts: true
+
+  tasks:
+    - name: Install Docker on Debian-based systems
+      apt:
+        name: [apt-transport-https, ca-certificates, curl, gnupg, lsb-release]
+        state: present
+      when: ansible_os_family == "Debian"
+
+    - name: Add Docker GPG key (Debian)
+      apt_key:
+        url: https://download.docker.com/linux/debian/gpg
+        state: present
+      when: ansible_os_family == "Debian"
+
+    - name: Add Docker repo (Debian)
+      apt_repository:
+        repo: "deb [arch=amd64] https://download.docker.com/linux/debian {{ ansible_distribution_release }} stable"
+        state: present
+      when: ansible_os_family == "Debian"
+
+    - name: Install Docker packages (Debian)
+      apt:
+        name: [docker-ce, docker-ce-cli, containerd.io]
+        state: latest
+        update_cache: true
+      when: ansible_os_family == "Debian"
+
+    - name: Install Docker on Fedora
+      dnf:
+        name: [docker, docker-cli, containerd]
+        state: present
+      when: ansible_distribution == "Fedora"
+
+    - name: Install Docker on Arch
+      pacman:
+        name: docker
+        state: present
+      when: ansible_os_family == "Archlinux"
+
+    - name: Start and enable Docker service (Linux)
+      service:
+        name: docker
+        state: started
+        enabled: true
+      when: ansible_os_family != "Darwin"
+
+    - name: Install Docker on macOS using Homebrew
+      homebrew:
+        name: docker
+        state: present
+      become: false
+      when: ansible_os_family == "Darwin"
+
+    - name: Ensure Docker.app is started
+      shell: open -a Docker
+      args:
+        creates: /Applications/Docker.app
+      when: ansible_os_family == "Darwin"
+      become: false
+
+    - name: Wait for Docker CLI to be ready
+      shell: docker info > /dev/null 2>&1
+      register: docker_check
+      retries: 10
+      delay: 5
+      until: docker_check.rc == 0
+      ignore_errors: yes
+      become: false
