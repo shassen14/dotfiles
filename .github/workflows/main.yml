@@ -1,0 +1,32 @@
+name: Main test
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  setup:
+    runs-on: ${{ matrix.os }}  # Matrix will define the OS for each job
+
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest]  # Define the platforms to test
+        include:
+          - os: ubuntu-latest
+          - os: macos-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v3
+
+      - name: Run bootstrap.sh to install dependencies and run playbook
+        run: |
+          chmod +x bootstrap.sh
+          ./bootstrap.sh playbook.yml inventory.ini
+        env:
+          CI: true
