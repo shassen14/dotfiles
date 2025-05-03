@@ -122,7 +122,7 @@
       changed_when: false # Opening an app isn't really a config change
       tags: [docker, config, service, macos]
 
-      - name: List Docker contexts for debugging (macOS)
+    - name: List Docker contexts for debugging (macOS)
       # Helps verify the 'desktop-macos' context exists
       become: false
       ansible.builtin.command:
