@@ -54,6 +54,14 @@ else
     echo "✅ Ansible already installed"
 fi
 
+# Default playbook and inventory paths (you can override them)
+PLAYBOOK=${1:-playbook.yml}
+INVENTORY=${2:-inventory.ini}
+
 # Run the playbook
 echo "🚀 Running Ansible Playbook..."
-ansible-playbook -i inventory.ini playbook.yml -K
+if [[ "$CI" == "true" ]]; then
+    ansible-playbook -i "$INVENTORY" "$PLAYBOOK"
+else
+    ansible-playbook -i "$INVENTORY" "$PLAYBOOK" -K
+fi
