@@ -26,9 +26,10 @@
 
     - name: Install chezmoi via script (Linux)
       become: true # Install to /usr/local/bin needs sudo
-      ansible.builtin.shell:
-        cmd: sh -c "$(curl -fsLS get.chezmoi.io)" -- -b /usr/local/bin
-        warn: false # Suppress warnings about using shell for curl | sh
+      ansible.builtin.shell: # Use FQDN
+        cmd: |
+          curl -fsSL -o /tmp/chezmoi_install.sh get.chezmoi.io
+          sh /tmp/chezmoi_install.sh -- -b /usr/local/bin
       args:
         creates: /usr/local/bin/chezmoi # Makes the task idempotent
       when: ansible_os_family != "Darwin"
