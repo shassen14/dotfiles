@@ -1,3 +1,4 @@
+# playbooks/obsidian.yml
 - name: Install Obsidian on supported platforms
   hosts: all
   become: true
