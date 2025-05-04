@@ -2,7 +2,7 @@
 # Example Starship configuration. Customize as needed!
 # See https://starship.rs/config/ for all options.
 # Inserts a blank line between shell prompts
-add_newline = true
+add_newline = false
 # Set command timeout (ms)
 command_timeout = 1000
 # Format string determines the order of modules
@@ -31,10 +31,10 @@ $kubernetes\
 [](fg:#A47F9B bg:#333333)\
 $time\
 [ ](fg:#333333)\
-$line_break\
 $character\
 """
 
+# $line_break\
 # Requires a Nerd Font for the powerline symbols ()
 # --- Module Configurations ---
 [os]
@@ -61,10 +61,12 @@ disabled = false
 
 [directory]
 style = "bg:#88A071 fg:#000000 bold"
-format = "[](fg:#555555 bg:#88A071)[ $path ]($style)"
-truncation_length = 4
+format = "[](fg:#555555 bg:#88A071)[ $path ]($style)[$read_only]($read_only_style)"
+truncation_length = 2 # Show current dir + 1 parent
 truncation_symbol = "../"
-home_symbol = "~"
+home_symbol = "~" # Use ~ for the home directory
+read_only_style = "fg:#FF0000" # Style for read-only indicator
+read_only = " 🔒" # Symbol for read-only indicator (optional)
 
 [git_branch]
 symbol = ""
@@ -95,9 +97,9 @@ format = '[ $time ]($style)'
 disabled = false
 
 [character] # Prompt character
-success_symbol = "[❯](bold green)"
-error_symbol = "[❯](bold red)"
-vimcmd_symbol = "[❮](bold green)"
+success_symbol = "[❯](bold green) "
+error_symbol = "[❯](bold red) "
+vimcmd_symbol = "[❮](bold green) "
 
 # Disable modules you don't use for faster prompt
 [c]
