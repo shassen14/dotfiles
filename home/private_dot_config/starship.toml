@@ -6,17 +6,14 @@ add_newline = false
 # Set command timeout (ms)
 command_timeout = 1000
 # Format string determines the order of modules
+# format = """$directory $git_branch$git_status $character"""
 format = """
-[](fg:#555555)\
 $os\
 $username\
 $hostname\
-[](bg:#88A071 fg:#555555)\
 $directory\
-[](fg:#88A071 bg:#668AAA)\
 $git_branch\
 $git_status\
-[](fg:#668AAA bg:#A47F9B)\
 $c\
 $rust\
 $golang\
@@ -28,9 +25,7 @@ $python\
 $terraform\
 $docker\
 $kubernetes\
-[](fg:#A47F9B bg:#333333)\
-$time\
-[ ](fg:#333333)\
+$time \
 $character\
 """
 
@@ -48,7 +43,7 @@ symbols.Fedora = "󰣛" # Nerd Font symbol for Fedora
 
 # Add other OS symbols as needed
 [username]
-show_always = true
+show_always = false
 format = "[$user]($style) "
 style_user = "bg:#555555 fg:#DDDDDD"
 style_root = "bg:#555555 fg:#FF0000 bold" # Red for root
@@ -60,35 +55,44 @@ style = "bg:#555555 fg:#DDDDDD bold"
 disabled = false
 
 [directory]
-style = "bg:#88A071 fg:#000000 bold"
-format = "[](fg:#555555 bg:#88A071)[ $path ]($style)[$read_only]($read_only_style)"
-truncation_length = 2 # Show current dir + 1 parent
+# Style: Just use color/attributes for text, no background
+style = "cyan bold"
+# Format: Display the path simply
+format = "[$path]($style)[$read_only]($read_only_style) "
+truncation_length = 2 # Show current dir + 1 parent (e.g., ~/dotfiles)
 truncation_symbol = "../"
-home_symbol = "~" # Use ~ for the home directory
-read_only_style = "fg:#FF0000" # Style for read-only indicator
-read_only = " 🔒" # Symbol for read-only indicator (optional)
+home_symbol = "~"
+read_only_style = "red"
+read_only = " 🔒" # Keep optional read-only lock
 
 [git_branch]
-symbol = ""
-style = "bg:#668AAA fg:#DDDDDD"
-format = "[ $symbol $branch ]($style)"
+# Style: Just use color/attributes for text, no background
+style = "purple bold"
+# Symbol: Keep branch symbol or use text like 'git:'
+symbol = " " # Or use "git:"
+# Format: Show the symbol and branch name
+format = "[$symbol$branch]($style)"
 
 [git_status]
-style = "bg:#668AAA fg:#DDDDDD"
-format = "[($all_status$ahead_behind )]($style)"
+# Style: Just use color/attributes for text, no background
+style = "purple" # Maybe slightly less emphasis than branch name
+# Format: Show status indicators compactly after branch name
+# Add a space before the status section if desired: " [$all_status$ahead_behind]($style)"
+format = "[$all_status$ahead_behind]($style)"
+# Keep indicator symbols (these are characters, not powerline separators)
 conflicted = "[](bold red)" # Nerd Font symbol
 ahead = "[ $count](bold green)" # Nerd Font symbol
 behind = "[ $count](bold red)" # Nerd Font symbol
 diverged = "[ $ahead_count  $behind_count](bold yellow)"
 untracked = "[? $count](bold bright-red)"
 stashed = "[ $count](bold bright-cyan)"
-modified = "[ $count](bold yellow)"
+modified = "[ $count](bold yellow)" # This likely corresponds to your '!'
 staged = '[ $count](bold green)'
 renamed = "[󰑚 $count](bold purple)"
-deleted = "[󰆴 $count](bold red)"
+deleted = "[󰆴 $count](bold red)" # This likely corresponds to your '✘'/'1'
 
 [time]
-disabled = false
+disabled = true
 time_format = "%H:%M:%S" # Use '%T' for HH:MM:SS
 style = "bg:#333333 fg:#AAAAAA"
 format = '[ $time ]($style)'
@@ -97,9 +101,9 @@ format = '[ $time ]($style)'
 disabled = false
 
 [character] # Prompt character
-success_symbol = "[❯](bold green) "
-error_symbol = "[❯](bold red) "
-vimcmd_symbol = "[❮](bold green) "
+success_symbol = "[❯](bold green)"
+error_symbol = "[❯](bold red)"
+vimcmd_symbol = "[❮](bold green)"
 
 # Disable modules you don't use for faster prompt
 [c]
@@ -129,8 +133,7 @@ disabled = false
 [terraform]
 disabled = true # Set to false if using terraform frequently
 
-[docker]
-disabled = false # Keep enabled if using docker
-
+# [docker]
+# disabled = false # Keep enabled if using docker
 [kubernetes]
 disabled = true # Set to false if using k8s frequently

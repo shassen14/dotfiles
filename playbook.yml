@@ -23,6 +23,11 @@
   import_playbook: playbooks/neovim.yml
   tags: [neovim, nvim, editor, tools, cli, dev]
 
+# Fonts for terminal output
+- name: Install Nerd Fonts
+  import_playbook: playbooks/nerdfonts.yml
+  tags: [fonts, nerdfonts, gui, prerequisites]
+
 # Containerization
 - name: Setup Docker
   import_playbook: playbooks/docker.yml

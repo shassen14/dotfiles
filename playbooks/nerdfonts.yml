@@ -1,0 +1,82 @@
+# playbooks/nerdfonts.yml: Installs recommended Nerd Fonts
+- name: Install Nerd Fonts
+  hosts: all
+  gather_facts: true
+  tags: [fonts, nerdfonts, gui, prerequisites] # Add relevant tags
+
+  tasks:
+    # --- macOS (using Homebrew Tap) ---
+    - name: Install FiraCode Nerd Font via Homebrew Cask (macOS)
+      community.general.homebrew_cask:
+        name: font-fira-code-nerd-font
+        state: present
+      become: false
+      when: ansible_os_family == "Darwin"
+      tags: [fonts, package, macos, homebrew]
+
+    - name: Install MesloLGS Nerd Font via Homebrew Cask (macOS)
+      community.general.homebrew_cask:
+        name: font-meslo-lg-nerd-font
+        state: present
+      become: false
+      when: ansible_os_family == "Darwin"
+      tags: [fonts, package, macos, homebrew]
+
+    # --- Linux (Manual Download/Install - More Complex) ---
+    # Automating font installation on Linux varies greatly.
+    # Manual download/extract to ~/.local/share/fonts is common.
+    # Some distros might package Nerd Fonts (check repos/AUR).
+    # This example shows manual download for FiraCode (adapt as needed).
+
+    - name: Create user fonts directory (Linux)
+      ansible.builtin.file:
+        path: "{{ ansible_env.HOME }}/.local/share/fonts"
+        state: directory
+        mode: '0755'
+      become: false # Create in user's home
+      when: ansible_os_family != "Darwin"
+      tags: [fonts, config, linux]
+
+    - name: Download FiraCode Nerd Font zip (Linux)
+      ansible.builtin.get_url:
+        # Go to Nerd Fonts releases page on GitHub to find latest zip URL
+        url: "https://github.com/ryanoasis/nerd-fonts/releases/download/v3.2.1/FiraCode.zip" # Example URL - CHECK FOR LATEST
+        dest: "/tmp/FiraCode.zip"
+        mode: '0644'
+      become: false
+      when: ansible_os_family != "Darwin"
+      tags: [fonts, package, linux]
+
+    - name: Install unzip package if needed (Linux)
+      ansible.builtin.package:
+        name: unzip
+        state: present
+      become: true # Needs sudo
+      when: ansible_os_family != "Darwin"
+      tags: [fonts, package, linux, prerequisites]
+
+    - name: Unarchive FiraCode Nerd Font zip (Linux)
+      ansible.builtin.unarchive:
+        src: "/tmp/FiraCode.zip"
+        dest: "{{ ansible_env.HOME }}/.local/share/fonts/"
+        remote_src: yes # Indicates the src is on the target machine
+        creates: "{{ ansible_env.HOME }}/.local/share/fonts/Fira Code Regular Nerd Font Complete.ttf" # Idempotency check
+      become: false # Unzip into user's home
+      when: ansible_os_family != "Darwin"
+      tags: [fonts, package, linux]
+
+    - name: Clean up downloaded font zip (Linux)
+      ansible.builtin.file:
+        path: "/tmp/FiraCode.zip"
+        state: absent
+      become: false
+      when: ansible_os_family != "Darwin"
+      tags: [fonts, package, linux, cleanup]
+
+    - name: Update font cache (Linux)
+      ansible.builtin.command:
+        cmd: fc-cache -fv
+      become: false # fc-cache usually run as user
+      changed_when: false # Running fc-cache isn't really a state change
+      when: ansible_os_family != "Darwin"
+      tags: [fonts, config, linux]
