@@ -5,11 +5,26 @@
   gather_facts: true
 
   tasks:
-    - name: Install Git and gh on Debian/Ubuntu
+    - name: Update apt cache before installing Git/gh (with retries)
+      become: true
       ansible.builtin.apt:
-        name: [git, gh]
+        update_cache: yes
+      retries: 3 # Number of retries
+      delay: 10  # Seconds between retries
+      register: apt_update_status
+      until: apt_update_status is succeeded # Retry until success
+      when: ansible_os_family == "Debian"
+      tags: [git, prerequisites, debian] # Add prerequisites tag
+
+    - name: Install Git and gh on Debian/Ubuntu
+      become: true
+      ansible.builtin.apt:
+        name:
+          - git
+          - gh
         state: present
-        update_cache: true
+        # update_cache: true # Set to false OR remove, as we updated explicitly before
+        update_cache: false
       when: ansible_os_family == "Debian"
       tags: [git, tools, package, debian]
 

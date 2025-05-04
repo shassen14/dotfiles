@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# bootstrap.sh: Installs Ansible and runs the main playbook.
+# bootstrap.sh: Installs dependencies, Chezmoi, runs initial init, then runs Ansible.
 
 set -e # Exit immediately if a command exits with a non-zero status.
 
@@ -12,27 +12,26 @@ OS_DISTRO=""
 UPDATE_CMD="" # Command to update package lists
 INSTALL_CMD="" # Command to install packages
 GIT_PKG="git" # Default git package name
+CURL_PKG="curl" # Default curl package name
 ANSIBLE_PKG="ansible" # Default ansible package name
 
 if [[ "$OSTYPE" == "linux-gnu"* ]]; then
     if command -v apt-get &> /dev/null; then
         OS_FAMILY="Debian"
         OS_DISTRO=$(lsb_release -is | tr '[:upper:]' '[:lower:]') || OS_DISTRO="debian"
-        # Define commands specific to Debian/Ubuntu
         UPDATE_CMD="sudo apt-get update"
         INSTALL_CMD="sudo apt-get install -y"
     elif command -v dnf &> /dev/null; then
         OS_FAMILY="RedHat"
         OS_DISTRO="fedora" # Assuming Fedora for dnf
-        UPDATE_CMD="sudo dnf check-update" # DNF uses check-update, install handles metadata sync
+        UPDATE_CMD="sudo dnf check-update"
         INSTALL_CMD="sudo dnf install -y"
-        ANSIBLE_PKG="ansible-core" # Prefer ansible-core on modern Fedora/RHEL
+        ANSIBLE_PKG="ansible-core"
     elif command -v pacman &> /dev/null; then
         OS_FAMILY="Archlinux"
         OS_DISTRO="arch"
-        UPDATE_CMD="sudo pacman -Sy" # Pacman needs Sy for syncing before install usually
+        UPDATE_CMD="sudo pacman -Sy"
         INSTALL_CMD="sudo pacman -S --noconfirm"
-        ANSIBLE_PKG="ansible"
     else
         echo "❌ Unsupported Linux distribution."
         exit 1
@@ -42,27 +41,73 @@ if [[ "$OSTYPE" == "linux-gnu"* ]]; then
 elif [[ "$OSTYPE" == "darwin"* ]]; then
     OS_FAMILY="Darwin"
     OS_DISTRO="macos"
-    # No system package manager update needed here, handled by brew later
     echo "✅ macOS Detected"
 else
     echo "❌ Unsupported Operating System: $OSTYPE"
     exit 1
 fi
 
-# --- Install Prerequisite: Git ---
+# --- Install Prerequisites (Git, Curl) ---
 if ! command -v git &> /dev/null; then
     echo "📦 Installing Git..."
     if [[ "$OS_FAMILY" == "Darwin" ]]; then
-        # On macOS, Homebrew (installed below) will handle Git.
         echo "ℹ️ Git not found. Will be installed via Homebrew or Command Line Tools."
     elif [[ -n "$INSTALL_CMD" ]]; then
-        # Run update before first package install on Linux
-        $UPDATE_CMD || { echo "⚠️ Failed to update package lists, continuing..."; } # Allow update failure
+        $UPDATE_CMD || { echo "⚠️ Failed to update package lists, continuing..."; }
         $INSTALL_CMD $GIT_PKG || { echo "❌ Failed to install Git."; exit 1; }
         echo "✅ Git installed."
     fi
 else
     echo "✅ Git already installed."
+fi
+
+if ! command -v curl &> /dev/null; then
+     echo "📦 Installing Curl..."
+     if [[ "$OS_FAMILY" == "Darwin" ]]; then
+        # Curl is typically built-in on macOS
+         echo "ℹ️ Curl not found, but usually present on macOS. Continuing..."
+     elif [[ -n "$INSTALL_CMD" ]]; then
+        # Assume update was run for Git if needed
+        $INSTALL_CMD $CURL_PKG || { echo "❌ Failed to install Curl."; exit 1; }
+         echo "✅ Curl installed."
+     fi
+else
+     echo "✅ Curl already installed."
+fi
+
+# --- CRITICAL: Run Initial Chezmoi Init BEFORE Ansible ---
+CHEZMOI_REPO_URL="https://github.com/shassen14/dotfiles.git"
+CHEZMOI_BRANCH="main"
+
+if [[ ! -d "$HOME/.local/share/chezmoi/.git" ]]; then
+  echo "🚀 Running initial 'chezmoi init' directly under strace..."
+  # Ensure strace is installed
+  if ! command -v strace &> /dev/null; then
+    echo "Installing strace for debugging..."
+    $UPDATE_CMD || echo "Warning: Update failed"
+    # Install strace - package name might vary slightly (e.g., on Fedora)
+    $INSTALL_CMD strace || { echo "❌ Failed to install strace."; exit 1; }
+  fi
+
+  # Run init under strace, logging to a file in the user's home directory
+  strace -o "$HOME/chezmoi_init_bootstrap_trace.log" -f \
+      chezmoi init --verbose --branch "$CHEZMOI_BRANCH" "$CHEZMOI_REPO_URL"
+
+  # Check the exit code explicitly
+  INIT_EXIT_CODE=$?
+  echo "✅ 'chezmoi init' command finished with exit code: $INIT_EXIT_CODE"
+
+  # Check if directory was created AFTER the command finished
+  if [[ ! -d "$HOME/.local/share/chezmoi/.git" ]]; then
+    echo "❌ CRITICAL FAILURE: 'chezmoi init' finished (exit code $INIT_EXIT_CODE) but cache dir '$HOME/.local/share/chezmoi/.git' was not created!"
+    echo "ℹ️ Check the trace log: $HOME/chezmoi_init_bootstrap_trace.log"
+    # Optional: print last few lines of trace log
+    # tail -n 50 "$HOME/chezmoi_init_bootstrap_trace.log"
+    exit 1 # Explicitly exit if verification fails
+  fi
+  echo "✅ Initial 'chezmoi init' completed and cache directory verified."
+else
+  echo "✅ Chezmoi internal repository already initialized."
 fi
 
 
@@ -71,21 +116,15 @@ if ! command -v ansible &>/dev/null; then
     echo "📦 Installing Ansible..."
     case "$OS_FAMILY" in
         Debian)
-            # Run update before installing dependencies
             $UPDATE_CMD || { echo "⚠️ Failed to update package lists, continuing..."; }
-            # Install dependency needed to add PPA
             $INSTALL_CMD software-properties-common || { echo "❌ Failed to install software-properties-common."; exit 1; }
-            # Add PPA and update package list automatically (--update flag)
             sudo apt-add-repository --yes --update ppa:ansible/ansible || { echo "❌ Failed to add Ansible PPA."; exit 1; }
-            # Now install Ansible (list is already updated by previous command)
             $INSTALL_CMD $ANSIBLE_PKG || { echo "❌ Failed to install Ansible."; exit 1; }
             ;;
         RedHat)
-            # Install Ansible (dnf handles metadata sync during install)
-            $INSTALL_CMD $ANSIBLE_PKG || $INSTALL_CMD ansible || { echo "❌ Failed to install Ansible/Ansible-Core."; exit 1; } # Try ansible if core fails
+            $INSTALL_CMD $ANSIBLE_PKG || $INSTALL_CMD ansible || { echo "❌ Failed to install Ansible/Ansible-Core."; exit 1; }
             ;;
         Archlinux)
-            # Install Ansible (pacman -S handles sync if -Sy was run recently or included)
             $UPDATE_CMD # Ensure list is synced before install for pacman
             $INSTALL_CMD $ANSIBLE_PKG || { echo "❌ Failed to install Ansible."; exit 1; }
             ;;
@@ -105,7 +144,6 @@ if ! command -v ansible &>/dev/null; then
             echo "🍺 Updating Homebrew formulas..."
             brew update --quiet || echo "⚠️ Failed to update Homebrew formulas, continuing..."
             echo "🍺 Installing Ansible via Homebrew..."
-            # No -v needed unless debugging brew itself
             brew install $ANSIBLE_PKG || { echo "❌ Failed to install Ansible via Homebrew."; exit 1; }
             ;;
     esac
@@ -114,7 +152,8 @@ else
     echo "✅ Ansible already installed."
 fi
 
-# --- CRITICAL: Ensure Brew Environment is Set BEFORE Running Ansible on macOS ---
+# --- Ensure Brew Environment is Set BEFORE Running Ansible on macOS ---
+# Needs to run AFTER all potential brew installs and BEFORE ansible-playbook
 if [[ "$OS_FAMILY" == "Darwin" ]]; then
     echo "🍺 Ensuring Homebrew environment is sourced for Ansible execution..."
     if [[ "$(uname -m)" == "arm64" ]]; then
@@ -141,6 +180,7 @@ if [[ ! -f "$INVENTORY" ]]; then
 fi
 
 echo "🚀 Running Ansible Playbook: $PLAYBOOK with Inventory: $INVENTORY"
+# Use -v with ansible-playbook for more verbose Ansible output if needed
 if [[ "$CI" == "true" ]]; then
     echo "ℹ️ Running in non-interactive CI mode (passwordless sudo assumed)."
     ansible-playbook -i "$INVENTORY" "$PLAYBOOK"
