@@ -2,30 +2,37 @@
 # bootstrap.sh: Installs Ansible and runs the main playbook.
 
 set -e # Exit immediately if a command exits with a non-zero status.
-# set -u # Treat unset variables as an error (optional, good practice)
-# set -o pipefail # Cause pipelines to fail on the first command that fails (optional, good practice)
 
 echo "🚀 Starting Dotfiles Bootstrap Process..."
 
-# --- Detect OS ---
+# --- Detect OS and Set Specific Commands ---
 echo "🔍 Detecting Operating System..."
-OS_FAMILY="" # e.g., Debian, RedHat, Archlinux, Darwin
-OS_DISTRO="" # e.g., ubuntu, fedora, arch, macos
-INSTALL_CMD="" # Package manager command
+OS_FAMILY=""
+OS_DISTRO=""
+UPDATE_CMD="" # Command to update package lists
+INSTALL_CMD="" # Command to install packages
+GIT_PKG="git" # Default git package name
+ANSIBLE_PKG="ansible" # Default ansible package name
 
 if [[ "$OSTYPE" == "linux-gnu"* ]]; then
     if command -v apt-get &> /dev/null; then
         OS_FAMILY="Debian"
-        OS_DISTRO=$(lsb_release -is | tr '[:upper:]' '[:lower:]') || OS_DISTRO="debian" # Get specific distro if lsb_release exists
-        INSTALL_CMD="sudo apt-get update && sudo apt-get install -y"
+        OS_DISTRO=$(lsb_release -is | tr '[:upper:]' '[:lower:]') || OS_DISTRO="debian"
+        # Define commands specific to Debian/Ubuntu
+        UPDATE_CMD="sudo apt-get update"
+        INSTALL_CMD="sudo apt-get install -y"
     elif command -v dnf &> /dev/null; then
         OS_FAMILY="RedHat"
         OS_DISTRO="fedora" # Assuming Fedora for dnf
+        UPDATE_CMD="sudo dnf check-update" # DNF uses check-update, install handles metadata sync
         INSTALL_CMD="sudo dnf install -y"
+        ANSIBLE_PKG="ansible-core" # Prefer ansible-core on modern Fedora/RHEL
     elif command -v pacman &> /dev/null; then
         OS_FAMILY="Archlinux"
         OS_DISTRO="arch"
-        INSTALL_CMD="sudo pacman -Sy --noconfirm" # Sync package lists before install
+        UPDATE_CMD="sudo pacman -Sy" # Pacman needs Sy for syncing before install usually
+        INSTALL_CMD="sudo pacman -S --noconfirm"
+        ANSIBLE_PKG="ansible"
     else
         echo "❌ Unsupported Linux distribution."
         exit 1
@@ -35,73 +42,24 @@ if [[ "$OSTYPE" == "linux-gnu"* ]]; then
 elif [[ "$OSTYPE" == "darwin"* ]]; then
     OS_FAMILY="Darwin"
     OS_DISTRO="macos"
+    # No system package manager update needed here, handled by brew later
     echo "✅ macOS Detected"
-
-    # --- Manage Homebrew ---
-    if ! command -v brew &> /dev/null; then
-        echo "🍺 Homebrew not found. Installing Homebrew..."
-        # Run non-interactively
-        NONINTERACTIVE=1 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)" || { echo "❌ Failed to install Homebrew."; exit 1; }
-        # Add brew to PATH for the current script session immediately
-        echo "🍺 Adding Homebrew to PATH for this session (post-install)..."
-        if [[ "$(uname -m)" == "arm64" ]]; then
-          eval "$(/opt/homebrew/bin/brew shellenv)"
-        else
-          eval "$(/usr/local/bin/brew shellenv)"
-        fi
-    else
-         echo "✅ Homebrew already installed."
-    fi
-
-    # --- Update Homebrew (Optional but recommended) ---
-    # Attempt update, but don't fail script if update fails in CI
-    echo "🍺 Updating Homebrew..."
-    brew update --quiet || echo "⚠️ Failed to update Homebrew formulas, continuing..."
-    # Optional: cleanup might help sometimes but adds time
-    # echo "🍺 Cleaning up Homebrew..."
-    # brew cleanup --quiet || echo "⚠️ Failed to cleanup Homebrew, continuing..."
-
-    # --- Install Ansible via Homebrew ---
-    if ! command -v ansible &>/dev/null; then
-        echo "🍺 Installing Ansible via Homebrew (with verbosity)..."
-        brew install -v ansible || { echo "❌ Failed to install Ansible via Homebrew."; exit 1; }
-        echo "✅ Ansible installed successfully via Homebrew."
-    else
-        echo "✅ Ansible already installed."
-    fi
-
-    # --- CRITICAL: Ensure Brew Environment is Set BEFORE Running Ansible ---
-    # This needs to run *after* all brew commands and *before* ansible-playbook
-    # It ensures the shell running ansible-playbook knows where brew installed things
-    echo "🍺 Ensuring Homebrew environment is sourced..."
-    if [[ "$(uname -m)" == "arm64" ]]; then
-      eval "$(/opt/homebrew/bin/brew shellenv)"
-      export PATH="/opt/homebrew/bin:$PATH" # Explicitly add to PATH too
-    else
-      eval "$(/usr/local/bin/brew shellenv)"
-      export PATH="/usr/local/bin:$PATH" # Explicitly add to PATH too
-    fi
-    echo "🍺 Homebrew environment sourced."
-    # Add a small delay in case of race conditions (less likely needed, but low cost)
-    # echo "⏳ Adding short delay before playbook execution..."
-    # sleep 3
-
-    # --- Now proceed to run Ansible Playbook (logic moved outside OS case) ---
-
 else
     echo "❌ Unsupported Operating System: $OSTYPE"
     exit 1
 fi
 
-# --- Install Prerequisite: Git (needed for some Ansible installs/Chezmoi) ---
+# --- Install Prerequisite: Git ---
 if ! command -v git &> /dev/null; then
     echo "📦 Installing Git..."
-    if [[ -n "$INSTALL_CMD" ]]; then
-        $INSTALL_CMD git || { echo "❌ Failed to install Git."; exit 1; }
-    elif [[ "$OS_FAMILY" == "Darwin" ]]; then
-        # On macOS, Xcode Command Line Tools often provide Git. Prompt if needed.
-        # Alternatively, Homebrew (installed below) will handle it.
+    if [[ "$OS_FAMILY" == "Darwin" ]]; then
+        # On macOS, Homebrew (installed below) will handle Git.
         echo "ℹ️ Git not found. Will be installed via Homebrew or Command Line Tools."
+    elif [[ -n "$INSTALL_CMD" ]]; then
+        # Run update before first package install on Linux
+        $UPDATE_CMD || { echo "⚠️ Failed to update package lists, continuing..."; } # Allow update failure
+        $INSTALL_CMD $GIT_PKG || { echo "❌ Failed to install Git."; exit 1; }
+        echo "✅ Git installed."
     fi
 else
     echo "✅ Git already installed."
@@ -113,41 +71,42 @@ if ! command -v ansible &>/dev/null; then
     echo "📦 Installing Ansible..."
     case "$OS_FAMILY" in
         Debian)
-            sudo apt-get update
-            sudo apt-get install -y software-properties-common
-            sudo apt-add-repository --yes --update ppa:ansible/ansible
-            $INSTALL_CMD ansible || { echo "❌ Failed to install Ansible."; exit 1; }
+            # Run update before installing dependencies
+            $UPDATE_CMD || { echo "⚠️ Failed to update package lists, continuing..."; }
+            # Install dependency needed to add PPA
+            $INSTALL_CMD software-properties-common || { echo "❌ Failed to install software-properties-common."; exit 1; }
+            # Add PPA and update package list automatically (--update flag)
+            sudo apt-add-repository --yes --update ppa:ansible/ansible || { echo "❌ Failed to add Ansible PPA."; exit 1; }
+            # Now install Ansible (list is already updated by previous command)
+            $INSTALL_CMD $ANSIBLE_PKG || { echo "❌ Failed to install Ansible."; exit 1; }
             ;;
         RedHat)
-            $INSTALL_CMD ansible-core || $INSTALL_CMD ansible || { echo "❌ Failed to install Ansible."; exit 1; } # Try ansible-core first
+            # Install Ansible (dnf handles metadata sync during install)
+            $INSTALL_CMD $ANSIBLE_PKG || $INSTALL_CMD ansible || { echo "❌ Failed to install Ansible/Ansible-Core."; exit 1; } # Try ansible if core fails
             ;;
         Archlinux)
-            $INSTALL_CMD ansible || { echo "❌ Failed to install Ansible."; exit 1; }
+            # Install Ansible (pacman -S handles sync if -Sy was run recently or included)
+            $UPDATE_CMD # Ensure list is synced before install for pacman
+            $INSTALL_CMD $ANSIBLE_PKG || { echo "❌ Failed to install Ansible."; exit 1; }
             ;;
         Darwin)
-            # if ! command -v brew &> /dev/null; then
-            #     echo "🍺 Homebrew not found. Installing Homebrew..."
-            #     /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)" || { echo "❌ Failed to install Homebrew."; exit 1; }
-            #     # Add brew to PATH for the current script session (needed immediately)
-            #     echo "🍺 Adding Homebrew to PATH for this session..."
-            #     if [[ "$(uname -m)" == "arm64" ]]; then
-            #       eval "$(/opt/homebrew/bin/brew shellenv)"
-            #     else
-            #       eval "$(/usr/local/bin/brew shellenv)"
-            #     fi
-            #     echo "🍺 Homebrew added to PATH."
-            # else
-            #      echo "✅ Homebrew already installed."
-            # fi
-
-            # # Update Homebrew before installing packages in CI
-            # # Use --quiet to avoid excessive logs unless debugging
-            # echo "🍺 Updating Homebrew..."
-            # brew update --quiet || echo "⚠️ Failed to update Homebrew, continuing..."
-
-            echo "🍺 Installing Ansible via Homebrew (with verbosity)..."
-            # Use -v for verbose output to help diagnose cancellation issues
-            brew install -v ansible || { echo "❌ Failed to install Ansible via Homebrew."; exit 1; }
+            if ! command -v brew &> /dev/null; then
+                echo "🍺 Homebrew not found. Installing Homebrew..."
+                NONINTERACTIVE=1 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)" || { echo "❌ Failed to install Homebrew."; exit 1; }
+                echo "🍺 Adding Homebrew to PATH for this session (post-install)..."
+                if [[ "$(uname -m)" == "arm64" ]]; then
+                  eval "$(/opt/homebrew/bin/brew shellenv)"
+                else
+                  eval "$(/usr/local/bin/brew shellenv)"
+                fi
+            else
+                 echo "✅ Homebrew already installed."
+            fi
+            echo "🍺 Updating Homebrew formulas..."
+            brew update --quiet || echo "⚠️ Failed to update Homebrew formulas, continuing..."
+            echo "🍺 Installing Ansible via Homebrew..."
+            # No -v needed unless debugging brew itself
+            brew install $ANSIBLE_PKG || { echo "❌ Failed to install Ansible via Homebrew."; exit 1; }
             ;;
     esac
     echo "✅ Ansible installed successfully."
@@ -155,12 +114,23 @@ else
     echo "✅ Ansible already installed."
 fi
 
+# --- CRITICAL: Ensure Brew Environment is Set BEFORE Running Ansible on macOS ---
+if [[ "$OS_FAMILY" == "Darwin" ]]; then
+    echo "🍺 Ensuring Homebrew environment is sourced for Ansible execution..."
+    if [[ "$(uname -m)" == "arm64" ]]; then
+      eval "$(/opt/homebrew/bin/brew shellenv)"
+      export PATH="/opt/homebrew/bin:$PATH"
+    else
+      eval "$(/usr/local/bin/brew shellenv)"
+      export PATH="/usr/local/bin:$PATH"
+    fi
+    echo "🍺 Homebrew environment sourced."
+fi
+
 # --- Run Ansible Playbook ---
-# Default playbook and inventory paths (can be overridden via arguments)
 PLAYBOOK=${1:-playbook.yml}
 INVENTORY=${2:-inventory.ini}
 
-# Check if files exist
 if [[ ! -f "$PLAYBOOK" ]]; then
     echo "❌ Playbook file not found: $PLAYBOOK"
     exit 1
@@ -171,11 +141,7 @@ if [[ ! -f "$INVENTORY" ]]; then
 fi
 
 echo "🚀 Running Ansible Playbook: $PLAYBOOK with Inventory: $INVENTORY"
-# Use -K to prompt for the become password (sudo).
-# For non-interactive use, configure passwordless sudo or use Ansible Vault.
-# Add -v for more verbose output if needed during debugging.
 if [[ "$CI" == "true" ]]; then
-    # CI usually needs non-interactive
     echo "ℹ️ Running in non-interactive CI mode (passwordless sudo assumed)."
     ansible-playbook -i "$INVENTORY" "$PLAYBOOK"
 else
