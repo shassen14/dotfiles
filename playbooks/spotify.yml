@@ -1,0 +1,96 @@
+# playbooks/spotify.yml: Installs Spotify music client following official guide.
+- name: Install Spotify
+  hosts: all
+  become: true # Most steps require sudo
+  gather_facts: true
+  tags: [spotify, app, multimedia, gui]
+
+  vars:
+    # Key URL from Spotify's official instructions
+    spotify_official_gpg_key_url: "https://download.spotify.com/debian/pubkey_C85668DF69375001.gpg"
+    # Target path in the global trusted directory (as per instructions)
+    spotify_official_gpg_target_path: "/etc/apt/trusted.gpg.d/spotify.gpg"
+
+  tasks:
+    # --- macOS Task (remains the same) ---
+    - name: Install Spotify via Homebrew Cask (macOS)
+      become: false
+      community.general.homebrew_cask:
+        name: spotify
+        state: present
+      when: ansible_os_family == "Darwin"
+      tags: [spotify, package, macos, homebrew]
+
+    # --- Debian/Ubuntu (Following Official Instructions) ---
+    - name: Install prerequisites for adding apt repository (Debian/Ubuntu)
+      ansible.builtin.apt:
+        # curl is needed to download the key, gpg needed for dearmor
+        name: [curl, gpg]
+        state: present
+        update_cache: true # Update cache before starting repo/key ops
+      when: ansible_os_family == "Debian"
+      tags: [spotify, package, debian, prerequisites]
+
+    - name: Download Spotify GPG key and place dearmored in trusted.gpg.d
+      # Uses shell to exactly replicate the curl | sudo gpg --dearmor command
+      ansible.builtin.shell: >
+        curl -fsSL {{ spotify_official_gpg_key_url }} |
+        gpg --dearmor --yes -o {{ spotify_official_gpg_target_path }}
+      args:
+        creates: "{{ spotify_official_gpg_target_path }}" # Idempotency based on target file
+      # This command implicitly needs root to write to /etc/apt/trusted.gpg.d/
+      # become: true is already set at the play level
+      register: spotify_key_add_result
+      changed_when: spotify_key_add_result.rc == 0 and not ansible_check_mode # Mark changed if successful
+      failed_when: spotify_key_add_result.rc != 0
+      when: ansible_os_family == "Debian"
+      tags: [spotify, package, debian, repo]
+
+    - name: Add Spotify Apt repository sources list file
+      # Replicates the echo "..." | sudo tee ... command
+      ansible.builtin.copy:
+        # Content to put in the file
+        content: "deb https://repository.spotify.com stable non-free\n"
+        # Target file path
+        dest: "/etc/apt/sources.list.d/spotify.list"
+        owner: root
+        group: root
+        mode: '0644'
+      when: ansible_os_family == "Debian"
+      notify: Update apt cache # Notify handler to update cache AFTER file is created
+      tags: [spotify, package, debian, repo]
+
+    # Handler to update apt cache (defined later or in handlers file)
+    # This ensures cache is updated only if the repo file changed.
+
+    - name: Install Spotify client package (Debian/Ubuntu)
+      ansible.builtin.apt:
+        name: spotify-client
+        state: present
+        update_cache: yes # Update cache BEFORE installing the package
+                          # (Alternatively, rely solely on the handler)
+      when: ansible_os_family == "Debian"
+      tags: [spotify, package, debian, install]
+
+    # --- Arch Linux Task (remains the same) ---
+    - name: Install Spotify Launcher package (Arch)
+      community.general.pacman:
+        name: spotify-launcher
+        state: present
+      when: ansible_os_family == "Archlinux"
+      tags: [spotify, package, arch]
+
+    # --- Fedora/RedHat Family Task (remains the same) ---
+    - name: Install Spotify via Snap (Fedora/RedHat)
+      ansible.builtin.snap:
+        name: spotify
+        state: present
+      when: ansible_os_family == "RedHat"
+      tags: [spotify, package, fedora, redhat, snap]
+
+  # Handlers section (can be at the end of the playbook or in handlers/main.yml)
+  handlers:
+    - name: Update apt cache
+      ansible.builtin.apt:
+        update_cache: yes
+      when: ansible_os_family == "Debian" # Ensure handler only runs on Debian/Ubuntu

@@ -1,0 +1,26 @@
+# playbooks/aldente.yml: Installs Aldente battery limiter utility (macOS only).
+- name: Install Aldente (macOS)
+  hosts: all # We filter using 'when' condition
+  become: false # Homebrew Cask MUST run as the user, not root
+  gather_facts: true
+  tags: [aldente, app, macos, gui, utility] # Specific tags for Aldente
+
+  tasks:
+    # Optional but recommended: Ensure Homebrew is installed first
+    - name: Check if Homebrew is installed (macOS)
+      ansible.builtin.stat:
+        # Check for brew executable based on architecture
+        path: "{{ '/opt/homebrew/bin/brew' if ansible_architecture == 'arm64' else '/usr/local/bin/brew' }}"
+      register: homebrew_check
+      when: ansible_os_family == "Darwin" # Only check on macOS
+      tags: [always, prerequisites, macos, homebrew] # Run this check early
+
+    - name: Install Aldente using Homebrew Cask
+      community.general.homebrew_cask:
+        name: aldente # The name of the cask on Homebrew
+        state: present # Ensures the app is installed
+        # Consider adding 'update_brew: false' if you manage brew updates separately
+      when:
+        - ansible_os_family == "Darwin" # Only run on macOS
+        - homebrew_check.stat.exists # Only run if Homebrew exists
+      tags: [aldente, package, macos, homebrew] # More specific tags for the install step
