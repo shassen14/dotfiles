@@ -40,3 +40,8 @@
 - name: Setup Aldente (macOS Only)
   import_playbook: playbooks/aldente.yml
   tags: [aldente, app, macos, gui, utility]
+
+# Security / Password Management
+- name: Setup Bitwarden
+  import_playbook: playbooks/bitwarden.yml
+  tags: [bitwarden, app, security, passwordmanager, gui]
