@@ -24,10 +24,17 @@ jobs:
     steps:
       - name: Checkout repo
         uses: actions/checkout@v3
-
-      - name: Run bootstrap.sh to install dependencies and run playbook
-        run: |
-          chmod +x bootstrap.sh
-          ./bootstrap.sh playbook.yml inventory.ini
+        # Default checkout to $GITHUB_WORKSPACE
+  
+      - name: Run bootstrap.sh
         env:
           CI: true
+          # Set the variable pointing to the checkout directory root
+          DOTFILES_REPO_PATH: ${{ github.workspace }}
+        run: |
+          set -e
+          echo "Repository Path: $DOTFILES_REPO_PATH"
+          ls -la "$DOTFILES_REPO_PATH" # Debug: Verify checkout contents
+          chmod +x "$DOTFILES_REPO_PATH/bootstrap.sh"
+          # Execute bootstrap using the workspace path
+          "$DOTFILES_REPO_PATH/bootstrap.sh" "$DOTFILES_REPO_PATH/playbook.yml" "$DOTFILES_REPO_PATH/inventory.ini"
