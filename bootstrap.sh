@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# bootstrap.sh: Installs dependencies, Chezmoi, runs initial init, then runs Ansible.
+# bootstrap.sh: Installs dependencies (Ansible, Chezmoi), then runs Ansible.
 
 set -e # Exit immediately if a command exits with a non-zero status.
 
@@ -16,7 +16,6 @@ CURL_PKG="curl" # Default curl package name
 ANSIBLE_PKG="ansible" # Default ansible package name
 
 if [[ "$OSTYPE" == "linux-gnu"* ]]; then
-    # ... (Linux OS detection logic as before) ...
     if command -v apt-get &> /dev/null; then
         OS_FAMILY="Debian"
         OS_DISTRO=$(lsb_release -is | tr '[:upper:]' '[:lower:]') || OS_DISTRO="debian"
@@ -49,7 +48,6 @@ else
 fi
 
 # --- Install Prerequisites (Git, Curl) ---
-# ... (Prerequisite install logic as before) ...
 if ! command -v git &> /dev/null; then
     echo "📦 Installing Git..."
     if [[ "$OS_FAMILY" == "Darwin" ]]; then
@@ -83,24 +81,22 @@ if [[ "$OS_FAMILY" == "Darwin" ]]; then
     else
          echo "✅ Homebrew already installed."
     fi
-    # <<< IMPORTANT: Source Brew environment variables HERE >>>
     echo "🍺 Sourcing Homebrew environment variables..."
     if [[ "$(uname -m)" == "arm64" ]]; then
       eval "$(/opt/homebrew/bin/brew shellenv)"
-      export PATH="/opt/homebrew/bin:$PATH" # Also explicitly set PATH
+      export PATH="/opt/homebrew/bin:$PATH"
     else
       eval "$(/usr/local/bin/brew shellenv)"
-      export PATH="/usr/local/bin:$PATH" # Also explicitly set PATH
+      export PATH="/usr/local/bin:$PATH"
     fi
-    echo "🍺 Homebrew environment sourced. PATH=$PATH" # Debug PATH
+    echo "🍺 Homebrew environment sourced. PATH=$PATH"
 
     echo "🍺 Updating Homebrew formulas..."
     brew update --quiet || echo "⚠️ Failed to update Homebrew formulas, continuing..."
 fi
 
 # --- Install Ansible ---
-# (Ansible install logic as before - relies on Brew being sourced on macOS)
-if ! command -v ansible &> /dev/null; then
+if ! command -v ansible &>/dev/null; then
     echo "📦 Installing Ansible..."
     case "$OS_FAMILY" in
         Debian)
@@ -117,7 +113,6 @@ if ! command -v ansible &> /dev/null; then
             $INSTALL_CMD $ANSIBLE_PKG || { echo "❌ Failed to install Ansible."; exit 1; }
             ;;
         Darwin)
-            # Brew env should already be sourced
             echo "🍺 Installing Ansible via Homebrew..."
             brew install $ANSIBLE_PKG || { echo "❌ Failed to install Ansible via Homebrew."; exit 1; }
             ;;
@@ -127,15 +122,12 @@ else
     echo "✅ Ansible already installed."
 fi
 
-
 # --- Install Chezmoi ---
-# (Chezmoi install logic as before - relies on Brew being sourced on macOS)
 if ! command -v chezmoi &> /dev/null; then
     echo "📦 Installing Chezmoi..."
     if [[ "$OS_FAMILY" == "Darwin" ]]; then
         brew install chezmoi || { echo "❌ Failed to install Chezmoi via Homebrew."; exit 1; }
     else
-        # Use the script method for Linux
         echo "Installing Chezmoi using install script..."
         sh -c "$(curl -fsLS get.chezmoi.io)" -- -b /usr/local/bin || { echo "❌ Failed to install Chezmoi using script."; exit 1; }
     fi
@@ -144,59 +136,32 @@ else
     echo "✅ Chezmoi already installed."
 fi
 
-# <<< CRITICAL: Verify chezmoi command NOW >>>
+# --- Verify chezmoi command exists before running Ansible ---
 if ! command -v chezmoi &> /dev/null; then
-    echo "❌ CRITICAL FAILURE: chezmoi command not found in PATH after installation attempt!"
+    echo "❌ CRITICAL FAILURE: chezmoi command not found in PATH before running Ansible!"
     echo "Current PATH=$PATH"
     exit 1
 fi
 echo "✅ chezmoi command found in PATH."
 
-# --- Run Initial Chezmoi Init BEFORE Ansible ---
-CHEZMOI_REPO_URL="https://github.com/shassen14/dotfiles.git"
-CHEZMOI_BRANCH="main"
-
-if [[ ! -d "$HOME/.local/share/chezmoi/.git" ]]; then
-  echo "🚀 Running initial 'chezmoi init' directly..."
-  # Remove strace for now to simplify, add back if init *still* fails silently
-  # strace -o "$HOME/chezmoi_init_bootstrap_trace.log" -f \
-  chezmoi init --verbose --branch "$CHEZMOI_BRANCH" "$CHEZMOI_REPO_URL"
-
-  INIT_EXIT_CODE=$?
-  echo "✅ 'chezmoi init' command finished with exit code: $INIT_EXIT_CODE"
-
-  if [[ $INIT_EXIT_CODE -ne 0 ]]; then
-      echo "❌ Initial 'chezmoi init' failed with non-zero exit code."
-      exit 1
-  fi
-
-  # Check if directory was created AFTER the command finished
-  if [[ ! -d "$HOME/.local/share/chezmoi/.git" ]]; then
-    echo "❌ CRITICAL FAILURE: 'chezmoi init' finished (exit code $INIT_EXIT_CODE) but cache dir '$HOME/.local/share/chezmoi/.git' was not created!"
-    exit 1
-  fi
-  echo "✅ Initial 'chezmoi init' completed and cache directory verified."
-else
-  echo "✅ Chezmoi internal repository already initialized."
-fi
-
 # --- Run Ansible Playbook ---
-# (No changes needed here, assuming Brew Env was sourced correctly earlier on macOS)
+# Assumes playbook/inventory are relative to where bootstrap.sh is run
 PLAYBOOK=${1:-playbook.yml}
 INVENTORY=${2:-inventory.ini}
 
 if [[ ! -f "$PLAYBOOK" ]]; then
-    echo "❌ Playbook file not found: $PLAYBOOK"
+    echo "❌ Playbook file not found: $PLAYBOOK (relative to $(pwd))"
     exit 1
 fi
 if [[ ! -f "$INVENTORY" ]]; then
-    echo "❌ Inventory file not found: $INVENTORY"
+    echo "❌ Inventory file not found: $INVENTORY (relative to $(pwd))"
     exit 1
 fi
 
 echo "🚀 Running Ansible Playbook: $PLAYBOOK with Inventory: $INVENTORY"
 if [[ "$CI" == "true" ]]; then
     echo "ℹ️ Running in non-interactive CI mode (passwordless sudo assumed)."
+    # Run ansible from the directory containing the playbook
     ansible-playbook -i "$INVENTORY" "$PLAYBOOK"
 else
     echo "ℹ️ Running in interactive mode. You may be prompted for your sudo password."
