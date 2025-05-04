@@ -71,33 +71,49 @@
       failed_when: starship_install_script_result.rc != 0
       tags: [shell, starship, package, linux]
 
-    # --- Install Zsh History Substring Search Plugin (Both OSes) ---
-    - name: Ensure Git is installed (prerequisite for plugin clone)
+    # --- Ensure Git is Installed (OS Specific) ---
+    - name: Ensure Git is installed via Homebrew (macOS prerequisite for plugin clone)
+      community.general.homebrew:
+        name: git
+        state: present
+      become: false # MUST run brew as user
+      when: ansible_os_family == "Darwin"
+      tags: [shell, git, plugins, prerequisites, macos, homebrew]
+
+    - name: Ensure Git is installed via Package (Linux prerequisite for plugin clone)
       ansible.builtin.package:
         name: git
         state: present
-      # become: true is inherited, covers Linux; macOS git assumed installed via brew/Xcode tools
-      tags: [shell, zsh, plugins, prerequisites]
+      when: ansible_os_family != "Darwin"
+      tags: [shell, git, plugins, prerequisites, linux]
+      # Inherits become: true correctly for apt/dnf etc.
 
-    - name: Create Zsh plugins directory (All OSes)
+    # --- Install Zsh History Substring Search Plugin (Both OSes) ---
+    - name: Create Zsh plugins directory (All OSes - Run as User Explicitly)
+      # ... (this task remains the same, with become: false, delegate_to, lookup) ...
       ansible.builtin.file:
-        path: "{{ ansible_env.HOME }}/.zsh/plugins"
+        path: "{{ lookup('env', 'HOME') }}/.zsh/plugins"
         state: directory
         mode: '0755'
-      become: false # Create in user's home directory
+      become: false
+      delegate_to: localhost
       tags: [shell, zsh, plugins, config]
 
-    - name: Clone zsh-history-substring-search plugin (All OSes)
+    - name: Clone zsh-history-substring-search plugin (All OSes - Run as User Explicitly)
       ansible.builtin.git:
         repo: 'https://github.com/zsh-users/zsh-history-substring-search.git'
-        dest: "{{ ansible_env.HOME }}/.zsh/plugins/zsh-history-substring-search"
-        depth: 1 # Shallow clone is sufficient
-        version: master # Or pin to a specific tag/commit for stability
-      become: false # Clone as the user
-      # Check if the directory already exists for idempotency
-      args:
-        creates: "{{ ansible_env.HOME }}/.zsh/plugins/zsh-history-substring-search"
+        dest: "{{ lookup('env', 'HOME') }}/.zsh/plugins/zsh-history-substring-search"
+        depth: 1 # Keep shallow clone
+        version: master # Keep desired version
+        update: yes # Default: ensures it fetches updates on subsequent runs
+      become: false # Ensure this runs as the user
+      delegate_to: localhost # Ensure execution context is user
+      # REMOVED the entire 'args:' block below this line
+      # args:
+      #   creates: "{{ lookup('env', 'HOME') }}/.zsh/plugins/zsh-history-substring-search/.git"
       tags: [shell, zsh, plugins, package]
+
+
 
     # --- Set Default Shell (Remains the same - OS specific) ---
     - name: Set default shell to zsh for user (macOS)
