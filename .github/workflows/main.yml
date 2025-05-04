@@ -14,28 +14,38 @@ jobs:
   setup:
     runs-on: ${{ matrix.os }}
     strategy:
-      fail-fast: false # Prevent other jobs from cancelling if one fails
+      fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-latest]
 
     steps:
-      - name: Checkout repo to ~/dotfiles # Action name updated
-        uses: actions/checkout@v4 # Use latest checkout action
+      - name: Checkout repo to temp location
+        uses: actions/checkout@v4
         with:
-          # Use the runner context variable for home directory
-          path: ${{ runner.home }}/dotfiles
+          # Checkout to a unique temporary name inside the workspace
+          path: temp_dotfiles_checkout
 
-      - name: Run bootstrap.sh from checkout path
+      - name: Move repo to ~/dotfiles
+        run: |
+          # Define target path using runner home
+          TARGET_PATH="${{ runner.home }}/dotfiles"
+          echo "Moving checkout from $GITHUB_WORKSPACE/temp_dotfiles_checkout to $TARGET_PATH"
+          # Ensure target parent directory exists if needed (usually ~/.config does)
+          # mkdir -p "$(dirname "$TARGET_PATH")" # Usually not needed for ~/dotfiles
+          # Move the contents
+          mv "$GITHUB_WORKSPACE/temp_dotfiles_checkout" "$TARGET_PATH"
+        shell: bash # Explicitly use bash for mv
+
+      - name: Run bootstrap.sh from ~/dotfiles
         env:
           CI: true
         run: |
-          set -e # Exit on error
-          # Define path using runner context for consistency
+          set -e
+          # Define the repo path (where we moved it)
           REPO_PATH="${{ runner.home }}/dotfiles"
-          echo "Running bootstrap from: $REPO_PATH"
-          # Make script executable
+          echo "Repository Path: $REPO_PATH"
+          ls -la "$REPO_PATH" # Debug: Verify contents after move
           chmod +x "$REPO_PATH/bootstrap.sh"
-          # Execute script using absolute paths for clarity
+          # Execute script using the moved path
           "$REPO_PATH/bootstrap.sh" "$REPO_PATH/playbook.yml" "$REPO_PATH/inventory.ini"
-        # Specify shell for potential cross-platform consistency (optional)
-        # shell: bash
+        shell: bash
