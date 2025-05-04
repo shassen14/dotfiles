@@ -1,0 +1,62 @@
+# ~/.zshrc - Managed by Chezmoi
+# Executed by zsh(1) for interactive shells.
+
+# Source shared exports and aliases if they exist
+# (Use ZDOTDIR if set, otherwise fallback to HOME)
+if [ -f "${ZDOTDIR:-$HOME}/.exports.sh" ]; then
+    . "${ZDOTDIR:-$HOME}/.exports.sh"
+fi
+if [ -f "${ZDOTDIR:-$HOME}/.aliases.sh" ]; then
+    . "${ZDOTDIR:-$HOME}/.aliases.sh"
+fi
+
+# Override reload alias
+alias reload='source "${ZDOTDIR:-$HOME}/.zshrc"'
+
+# --- History ---
+export HISTFILE="${ZDOTDIR:-$HOME}/.zsh_history"
+export HISTSIZE=10000
+export SAVEHIST=20000
+setopt APPEND_HISTORY          # Append incrementally
+setopt EXTENDED_HISTORY          # Save timestamp/duration
+setopt HIST_EXPIRE_DUPS_FIRST  # Expire older duplicate entries first
+setopt HIST_IGNORE_DUPS          # Ignore consecutive duplicates
+setopt HIST_IGNORE_ALL_DUPS      # Ignore duplicates anywhere in history
+setopt HIST_FIND_NO_DUPS       # Don't show duplicates when searching
+setopt HIST_IGNORE_SPACE         # Ignore commands starting with space
+setopt HIST_REDUCE_BLANKS      # Remove superfluous blanks
+setopt HIST_VERIFY               # Show command before running from history
+setopt INC_APPEND_HISTORY        # Append cmds to history file immediately
+setopt SHARE_HISTORY             # Share history between concurrent sessions
+
+# --- Keybindings ---
+# Enable Vi mode at the prompt
+# bindkey -v
+# Or keep default Emacs mode
+
+# --- Completion System ---
+# Initialize Zsh completion system
+autoload -Uz compinit && compinit
+# Case-insensitive completion
+zstyle ':completion:*' matcher-list 'm:{a-zA-Z}={A-Za-z}'
+# Menu selection for completion
+zstyle ':completion:*' menu select
+# Group completions by type
+zstyle ':completion:*:*:*:*:*' menu select
+zstyle ':completion:*' group-name ''
+# Enable completion caching
+zstyle ':completion::complete:*' use-cache 1
+# Add asdf completions if available (check path from .zshenv/.exports.sh)
+if command -v asdf >/dev/null; then
+  fpath=(${ASDF_DIR}/completions $fpath)
+fi
+
+# --- Starship Prompt ---
+# Initialize Starship (must be last thing that affects prompt)
+if command -v starship >/dev/null; then
+  eval "$(starship init zsh)"
+fi
+
+# Add any other Zsh-specific interactive settings here
+
+echo "Loaded ~/.zshrc" # Optional: for debugging
