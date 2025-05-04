@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 # bootstrap.sh: Installs dependencies (Ansible, Chezmoi), then runs Ansible.
+# Assumes Ansible playbook will handle chezmoi init/apply.
 
 set -e # Exit immediately if a command exits with a non-zero status.
 

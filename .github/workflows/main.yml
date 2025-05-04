@@ -14,37 +14,25 @@ jobs:
   setup:
     runs-on: ${{ matrix.os }}
     strategy:
-      fail-fast: false # Prevent other jobs from cancelling if one fails
+      fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-latest]
 
     steps:
-      - name: Checkout repo to temp location
-        uses: actions/checkout@v4 # Use latest version
-        with:
-          # Checkout to a unique temporary name inside the default workspace
-          path: temp_dotfiles_checkout
+      - name: Checkout repo to default workspace
+        uses: actions/checkout@v4
+        # No 'path' needed, checks out to $GITHUB_WORKSPACE
 
-      - name: Move repo to ~/dotfiles
-        run: |
-          # Define the CORRECT target path using the runner home context variable
-          TARGET_PATH="${{ runner.home }}/dotfiles"
-          echo "Moving checkout from $GITHUB_WORKSPACE/temp_dotfiles_checkout to $TARGET_PATH"
-          # Ensure the parent directory ($HOME) exists (it always will)
-          # Move the entire checked-out directory
-          mv "$GITHUB_WORKSPACE/temp_dotfiles_checkout" "$TARGET_PATH"
-        shell: bash # Use bash for consistency
-
-      - name: Run bootstrap.sh from ~/dotfiles
+      - name: Run bootstrap.sh from workspace
         env:
           CI: true
+          # Set environment variable pointing to the repo root in the workspace
+          DOTFILES_REPO_ROOT: ${{ github.workspace }}
         run: |
           set -e # Exit on any error in this script block
-          # Define the repo path where we moved it
-          REPO_PATH="${{ runner.home }}/dotfiles"
-          echo "Running bootstrap from: $REPO_PATH"
-          ls -la "$REPO_PATH" # Debug: List contents to verify move
-          chmod +x "$REPO_PATH/bootstrap.sh"
-          # Execute script using absolute paths now pointing to ~/dotfiles/...
-          "$REPO_PATH/bootstrap.sh" "$REPO_PATH/playbook.yml" "$REPO_PATH/inventory.ini"
+          echo "Repository Path (DOTFILES_REPO_ROOT): $DOTFILES_REPO_ROOT"
+          ls -la "$DOTFILES_REPO_ROOT" # Debug: List contents
+          chmod +x "$DOTFILES_REPO_ROOT/bootstrap.sh"
+          # Execute script using paths relative to the workspace root
+          "$DOTFILES_REPO_ROOT/bootstrap.sh" "$DOTFILES_REPO_ROOT/playbook.yml" "$DOTFILES_REPO_ROOT/inventory.ini"
         shell: bash

@@ -2,22 +2,25 @@
 # Source: {{ .chezmoi.sourceFile | quote }}
 # Target: ~/.config/chezmoi/chezmoi.toml
 
-# Set the source directory to the 'home' subdirectory within the repo clone.
-# We use .chezmoi.homeDir to make it portable across users/machines.
-sourceDir = "{{ .chezmoi.homeDir }}/dotfiles/home"
+# Set sourceDir dynamically:
+# 1. Look for DOTFILES_REPO_ROOT environment variable (set in CI).
+# 2. If not found (running locally), default to "$HOME/dotfiles".
+# 3. Append the '/home' subdirectory where source files live.
+sourceDir = "{{ env "DOTFILES_REPO_ROOT" | default (printf "%s/dotfiles" .chezmoi.homeDir) }}/home"
 
-# Use templating to add other dynamic data if needed
+# --- Data Section ---
 [data]
   name = "Samir Hassen" # Or use Ansible/env vars if preferred
   email = "your_email@example.com" # Replace with your actual email
-  # Example of OS-specific data (can also use '.chezmoi.os' directly in templates)
+  # Example of OS-specific data
 {{ if eq .chezmoi.os "darwin" }}
   # macOS specific data can go here if needed later
 {{ else if eq .chezmoi.os "linux" }}
   # Linux specific data can go here if needed later
 {{ end }}
 
-# Add other chezmoi settings as needed (e.g., encryption, scripting config)
+# --- Other Chezmoi Settings ---
+# Add settings as needed (e.g., encryption, scripting config)
 # [edit]
 #   command = "code"
 #   args = ["--wait"]
