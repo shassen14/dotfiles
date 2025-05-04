@@ -1,0 +1,139 @@
+# ~/.config/starship.toml - Managed by Chezmoi
+# Example Starship configuration. Customize as needed!
+# See https://starship.rs/config/ for all options.
+# Inserts a blank line between shell prompts
+add_newline = false
+# Set command timeout (ms)
+command_timeout = 1000
+# Format string determines the order of modules
+# format = """$directory $git_branch$git_status $character"""
+format = """
+$os\
+$username\
+$hostname\
+$directory\
+$git_branch\
+$git_status\
+$c\
+$rust\
+$golang\
+$nodejs\
+$php\
+$java\
+$kotlin\
+$python\
+$terraform\
+$docker\
+$kubernetes\
+$time \
+$character\
+"""
+
+# $line_break\
+# Requires a Nerd Font for the powerline symbols ()
+# --- Module Configurations ---
+[os]
+format = "[$symbol]($style) "
+style = "bg:#555555 fg:#DDDDDD bold"
+disabled = false # Set to true to disable
+symbols.Macos = "󰀵" # Nerd Font symbol for Apple
+symbols.Ubuntu = "󰕈" # Nerd Font symbol for Ubuntu
+symbols.Arch = "󰣇" # Nerd Font symbol for Arch
+symbols.Fedora = "󰣛" # Nerd Font symbol for Fedora
+
+# Add other OS symbols as needed
+[username]
+show_always = false
+format = "[$user]($style) "
+style_user = "bg:#555555 fg:#DDDDDD"
+style_root = "bg:#555555 fg:#FF0000 bold" # Red for root
+
+[hostname]
+ssh_only = true # Show hostname only when SSH'd in
+format = "[@](bg:#555555 fg:#AAAAAA)[$hostname]($style) "
+style = "bg:#555555 fg:#DDDDDD bold"
+disabled = false
+
+[directory]
+# Style: Just use color/attributes for text, no background
+style = "cyan bold"
+# Format: Display the path simply
+format = "[$path]($style)[$read_only]($read_only_style) "
+truncation_length = 2 # Show current dir + 1 parent (e.g., ~/dotfiles)
+truncation_symbol = "../"
+home_symbol = "~"
+read_only_style = "red"
+read_only = " 🔒" # Keep optional read-only lock
+
+[git_branch]
+# Style: Just use color/attributes for text, no background
+style = "purple bold"
+# Symbol: Keep branch symbol or use text like 'git:'
+symbol = " " # Or use "git:"
+# Format: Show the symbol and branch name
+format = "[$symbol$branch]($style)"
+
+[git_status]
+# Style: Just use color/attributes for text, no background
+style = "purple" # Maybe slightly less emphasis than branch name
+# Format: Show status indicators compactly after branch name
+# Add a space before the status section if desired: " [$all_status$ahead_behind]($style)"
+format = "[$all_status$ahead_behind]($style)"
+# Keep indicator symbols (these are characters, not powerline separators)
+conflicted = "[](bold red)" # Nerd Font symbol
+ahead = "[ $count](bold green)" # Nerd Font symbol
+behind = "[ $count](bold red)" # Nerd Font symbol
+diverged = "[ $ahead_count  $behind_count](bold yellow)"
+untracked = "[? $count](bold bright-red)"
+stashed = "[ $count](bold bright-cyan)"
+modified = "[ $count](bold yellow)" # This likely corresponds to your '!'
+staged = '[ $count](bold green)'
+renamed = "[󰑚 $count](bold purple)"
+deleted = "[󰆴 $count](bold red)" # This likely corresponds to your '✘'/'1'
+
+[time]
+disabled = true
+time_format = "%H:%M:%S" # Use '%T' for HH:MM:SS
+style = "bg:#333333 fg:#AAAAAA"
+format = '[ $time ]($style)'
+
+[line_break]
+disabled = false
+
+[character] # Prompt character
+success_symbol = "[❯](bold green)"
+error_symbol = "[❯](bold red)"
+vimcmd_symbol = "[❮](bold green)"
+
+# Disable modules you don't use for faster prompt
+[c]
+disabled = true
+
+[rust]
+disabled = false
+
+[golang]
+disabled = true
+
+[nodejs]
+disabled = true
+
+[php]
+disabled = true
+
+[java]
+disabled = true
+
+[kotlin]
+disabled = true
+
+[python]
+disabled = false
+
+[terraform]
+disabled = true # Set to false if using terraform frequently
+
+# [docker]
+# disabled = false # Keep enabled if using docker
+[kubernetes]
+disabled = true # Set to false if using k8s frequently

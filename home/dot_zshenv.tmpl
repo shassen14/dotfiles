@@ -1,0 +1,39 @@
+# ~/.zshenv - Managed by Chezmoi
+# Runs first for ALL zsh invocations (login, interactive, scripts).
+# Keep this minimal - essential PATH and ENV VARS ONLY.
+
+# Source shared exports if the file exists
+# (Use ZDOTDIR if set, otherwise fallback to HOME)
+if [ -f "${ZDOTDIR:-$HOME}/.exports.sh" ]; then
+    . "${ZDOTDIR:-$HOME}/.exports.sh"
+fi
+
+# --- PATH Setup ---
+# Define standard paths (order matters!)
+typeset -U path # Use typeset -U to keep unique paths
+path=(
+  # User local bin first
+  "$HOME/.local/bin"
+  "$HOME/bin"
+  # Homebrew paths (conditional)
+{{- if eq .chezmoi.os "darwin" }}
+  {{- if eq .chezmoi.arch "arm64" }}
+  /opt/homebrew/bin          # Apple Silicon Brew
+  /opt/homebrew/sbin
+  {{- else }}
+  /usr/local/bin             # Intel Brew
+  /usr/local/sbin
+  {{- end }}
+{{- end }}
+  # Standard system paths
+  /usr/bin
+  /bin
+  /usr/sbin
+  /sbin
+)
+export PATH
+
+# Add any crucial ENV VARS needed by non-interactive shells here
+# export SOME_VAR="value"
+
+echo "Loaded ~/.zshenv" # Optional: for debugging

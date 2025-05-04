@@ -15,16 +15,25 @@
   import_playbook: playbooks/tmux.yml
   tags: [tmux, tools, cli]
 
+- name: Setup VS Code
+  import_playbook: playbooks/vscode.yml
+  tags: [vscode, editor, tools, gui]
+
+- name: Setup Neovim
+  import_playbook: playbooks/neovim.yml
+  tags: [neovim, nvim, editor, tools, cli, dev]
+
+# Fonts for terminal output
+- name: Install Nerd Fonts
+  import_playbook: playbooks/nerdfonts.yml
+  tags: [fonts, nerdfonts, gui, prerequisites]
+
 # Containerization
 - name: Setup Docker
   import_playbook: playbooks/docker.yml
   tags: [docker, tools, dev]
 
-# Editors / Notes / Communication / Multimedia
-- name: Setup VS Code
-  import_playbook: playbooks/vscode.yml
-  tags: [vscode, editor, tools, gui]
-
+# Misc
 - name: Setup Obsidian
   import_playbook: playbooks/obsidian.yml
   tags: [obsidian, notes, tools, gui]
@@ -45,3 +54,8 @@
 - name: Setup Bitwarden
   import_playbook: playbooks/bitwarden.yml
   tags: [bitwarden, app, security, passwordmanager, gui]
+
+# Shell Setup (Install zsh/bash, starship, set defaults)
+- name: Configure Shell Environment
+  import_playbook: playbooks/shell_setup.yml
+  tags: [shell, config]

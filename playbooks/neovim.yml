@@ -1,0 +1,44 @@
+# playbooks/neovim.yml: Installs Neovim (nvim) text editor.
+- name: Install Neovim
+  hosts: all
+  become: true # Default to become=true for Linux package installs
+  gather_facts: true
+  tags: [neovim, nvim, editor, tools, cli, dev] # Add relevant tags
+
+  tasks:
+    # --- macOS ---
+    - name: Install Neovim via Homebrew (macOS)
+      community.general.homebrew:
+        name: neovim
+        state: present
+      become: false # MUST run brew as user
+      when: ansible_os_family == "Darwin"
+      tags: [neovim, package, macos, homebrew]
+
+    # --- Debian/Ubuntu ---
+    - name: Install Neovim via Apt (Debian/Ubuntu)
+      ansible.builtin.apt:
+        name: neovim
+        state: present
+        update_cache: true # Optional: update cache if needed
+      when: ansible_os_family == "Debian"
+      tags: [neovim, package, debian]
+      # Inherits become: true from play level
+
+    # --- Fedora/RedHat ---
+    - name: Install Neovim via Dnf (Fedora/RedHat)
+      ansible.builtin.dnf:
+        name: neovim
+        state: present
+      when: ansible_os_family == "RedHat"
+      tags: [neovim, package, redhat, fedora]
+      # Inherits become: true from play level
+
+    # --- Arch Linux ---
+    - name: Install Neovim via Pacman (Arch)
+      community.general.pacman:
+        name: neovim
+        state: present
+      when: ansible_os_family == "Archlinux"
+      tags: [neovim, package, arch]
+      # Inherits become: true from play level

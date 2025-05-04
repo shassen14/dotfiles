@@ -1,0 +1,92 @@
+# playbooks/shell_setup.yml: Installs BOTH zsh and bash on all systems,
+#                           plus related tools, and sets OS-specific default shells.
+- name: Install Shells (zsh, bash) and Essential Tools
+  hosts: all
+  # Set become default for Linux package installs and user module,
+  # override with become: false for macOS Homebrew tasks.
+  become: true
+  gather_facts: true
+  tags: [shell, config, prerequisites]
+
+  tasks:
+    # --- Install Zsh (Both OSes) ---
+    - name: Install zsh via Homebrew (macOS)
+      community.general.homebrew: # Use the dedicated Homebrew module
+        name: zsh
+        state: present
+      become: false # Explicitly run as user, not root
+      when: ansible_os_family == "Darwin"
+      tags: [shell, zsh, package, macos, homebrew]
+
+    - name: Install zsh via Package (Linux)
+      ansible.builtin.package: # Generic package module for apt/dnf/etc.
+        name: zsh
+        state: present
+      when: ansible_os_family != "Darwin" # Run on Linux
+      tags: [shell, zsh, package, linux]
+      # 'become: true' is inherited correctly here
+
+    # --- Install Bash (Both OSes) ---
+    # Useful on macOS for a newer version than system default; ensures present on Linux.
+    - name: Install bash via Homebrew (macOS)
+      community.general.homebrew:
+        name: bash
+        state: present
+      become: false # Explicitly run as user
+      when: ansible_os_family == "Darwin"
+      tags: [shell, bash, package, macos, homebrew]
+
+    - name: Ensure bash is present via Package (Linux)
+      ansible.builtin.package:
+        name: bash
+        state: present
+      when: ansible_os_family != "Darwin"
+      tags: [shell, bash, package, linux]
+
+    # --- Install Shell Tools ---
+    - name: Install bash-completion (Linux Only)
+      # Only install completion relevant to the default Linux shell
+      ansible.builtin.package:
+        name: bash-completion
+        state: present
+      when: ansible_os_family != "Darwin"
+      tags: [shell, bash, completion, package, linux]
+
+    - name: Install Starship prompt via Homebrew (macOS)
+      community.general.homebrew:
+        name: starship
+        state: present
+      become: false # Explicitly run as user
+      when: ansible_os_family == "Darwin"
+      tags: [shell, starship, package, macos, homebrew]
+
+    - name: Install Starship prompt via official script (Linux)
+      ansible.builtin.shell:
+        cmd: curl -fsSL https://starship.rs/install.sh | sh -s -- -y
+      args:
+        creates: /usr/local/bin/starship
+      become: true
+      when: ansible_os_family != "Darwin"
+      register: starship_install_script_result
+      # This changed_when might need adjustment later based on actual stdout
+      changed_when: "'Installed Starship' in starship_install_script_result.stdout"
+      # Add failed_when check for robustness
+      failed_when: starship_install_script_result.rc != 0
+      tags: [shell, starship, package, linux]
+
+    # --- Set Default Shell (No changes here, logic was already correct) ---
+    - name: Set default shell to zsh for user (macOS)
+      ansible.builtin.user:
+        name: "{{ target_user }}" # Define this variable (e.g., in group_vars/all.yml)
+        shell: /bin/zsh # Verify this path on macOS if needed
+      when: ansible_os_family == "Darwin"
+      tags: [shell, zsh, config, macos]
+      # 'become: true' is inherited correctly here for user module
+
+    - name: Set default shell to bash for user (Linux/Ubuntu)
+      ansible.builtin.user:
+        name: "{{ target_user }}"
+        shell: /bin/bash
+      when: ansible_os_family != "Darwin"
+      tags: [shell, bash, config, linux]
+      # 'become: true' is inherited correctly here

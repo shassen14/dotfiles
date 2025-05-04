@@ -1,0 +1,59 @@
+# ~/.bashrc - Managed by Chezmoi
+# Executed by bash(1) for non-login shells.
+
+# If not running interactively, don't do anything
+case $- in
+    *i*) ;;
+      *) return;;
+esac
+
+# Source global definitions (if any exist, e.g., /etc/bashrc)
+if [ -f /etc/bash.bashrc ]; then
+    . /etc/bash.bashrc
+fi
+
+# Source shared exports and aliases if they exist
+if [ -f "${HOME}/.exports.sh" ]; then
+    . "${HOME}/.exports.sh"
+fi
+if [ -f "${HOME}/.aliases.sh" ]; then
+    . "${HOME}/.aliases.sh"
+fi
+
+# Override reload alias
+alias reload='source ~/.bashrc'
+
+# --- History ---
+export HISTSIZE=10000
+export HISTFILESIZE=20000
+export HISTCONTROL=ignoreboth:erasedups
+export HISTTIMEFORMAT="%F %T "
+shopt -s histappend
+# Prompt before overwriting redirection
+set -o noclobber
+
+# --- Bash Completion ---
+# Source global bash completion script
+if [ -f /usr/share/bash-completion/bash_completion ]; then
+  . /usr/share/bash-completion/bash_completion
+elif [ -f /etc/bash_completion ]; then
+  . /etc/bash_completion
+fi
+# Also source asdf completions if asdf was sourced in exports
+if [ -f "$HOME/.asdf/completions/asdf.bash" ]; then
+  . "$HOME/.asdf/completions/asdf.bash"
+fi
+
+# --- Keybindings ---
+# Enable Vi mode at the prompt
+# set -o vi
+
+# --- Starship Prompt ---
+# Initialize Starship (must be last thing that affects prompt)
+if command -v starship >/dev/null; then
+  eval "$(starship init bash)"
+fi
+
+# Add any other Bash-specific interactive settings here
+
+echo "Loaded ~/.bashrc" # Optional: for debugging
