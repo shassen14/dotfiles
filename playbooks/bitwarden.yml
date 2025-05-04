@@ -1,0 +1,66 @@
+# playbooks/bitwarden.yml: Installs the Bitwarden Desktop client.
+- name: Install Bitwarden Desktop
+  hosts: all
+  become: true # Needed for Linux package installs
+  gather_facts: true
+  tags: [bitwarden, app, security, passwordmanager, gui]
+
+  vars:
+    # Official download endpoint for the latest Linux .deb
+    bitwarden_deb_url: "https://vault.bitwarden.com/download/?app=desktop&platform=linux&variant=deb"
+
+  tasks:
+    # --- macOS ---
+    - name: Install Bitwarden via Homebrew Cask (macOS)
+      become: false # Homebrew Cask runs as user
+      community.general.homebrew_cask:
+        name: bitwarden
+        state: present
+      when: ansible_os_family == "Darwin"
+      tags: [bitwarden, package, macos, homebrew]
+
+    # --- Debian/Ubuntu (using official .deb) ---
+    - name: Download Bitwarden .deb package (Debian/Ubuntu)
+      become: false # Download can happen as user to /tmp
+      ansible.builtin.get_url:
+        url: "{{ bitwarden_deb_url }}"
+        dest: "/tmp/bitwarden-latest.deb"
+        mode: '0644'
+      when: ansible_os_family == "Debian"
+      tags: [bitwarden, package, debian, download]
+
+    - name: Install Bitwarden from .deb package (Debian/Ubuntu)
+      # become: true # Inherited from play level
+      ansible.builtin.apt:
+        deb: "/tmp/bitwarden-latest.deb"
+        state: present
+      when: ansible_os_family == "Debian"
+      tags: [bitwarden, package, debian, install]
+
+    - name: Clean up Bitwarden .deb package (Debian/Ubuntu)
+      become: false # Cleanup can happen as user if permissions allow
+      ansible.builtin.file:
+        path: "/tmp/bitwarden-latest.deb"
+        state: absent
+      when: ansible_os_family == "Debian"
+      tags: [bitwarden, package, debian, cleanup]
+
+    # --- Arch Linux (using official repository 'bitwarden') ---
+    - name: Install Bitwarden package (Arch)
+      # become: true # Inherited from play level
+      community.general.pacman:
+        name: bitwarden # Official package name in community repo
+        state: present
+      when: ansible_os_family == "Archlinux"
+      tags: [bitwarden, package, arch]
+
+    # --- Fedora/RedHat Family (using Snap as fallback) ---
+    # Note: Assumes snapd service is installed and running.
+    # Consider adding tasks to ensure snapd is installed if needed.
+    - name: Install Bitwarden via Snap (Fedora/RedHat)
+      # become: true # Inherited from play level
+      ansible.builtin.snap:
+        name: bitwarden
+        state: present
+      when: ansible_os_family == "RedHat" # Covers Fedora, CentOS Stream, etc.
+      tags: [bitwarden, package, fedora, redhat, snap]
