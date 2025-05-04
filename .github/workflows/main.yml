@@ -12,29 +12,30 @@ on:
 
 jobs:
   setup:
-    runs-on: ${{ matrix.os }}  # Matrix will define the OS for each job
-
+    runs-on: ${{ matrix.os }}
     strategy:
+      fail-fast: false # Prevent other jobs from cancelling if one fails
       matrix:
-        os: [ubuntu-latest, macos-latest]  # Define the platforms to test
-        include:
-          - os: ubuntu-latest
-          - os: macos-latest
+        os: [ubuntu-latest, macos-latest]
 
     steps:
-      - name: Checkout repo
-        uses: actions/checkout@v3
-        # Default checkout to $GITHUB_WORKSPACE
-  
-      - name: Run bootstrap.sh
+      - name: Checkout repo to ~/dotfiles # Action name updated
+        uses: actions/checkout@v4 # Use latest checkout action
+        with:
+          # Use the runner context variable for home directory
+          path: ${{ runner.home }}/dotfiles
+
+      - name: Run bootstrap.sh from checkout path
         env:
           CI: true
-          # Set the variable pointing to the checkout directory root
-          DOTFILES_REPO_PATH: ${{ github.workspace }}
         run: |
-          set -e
-          echo "Repository Path: $DOTFILES_REPO_PATH"
-          ls -la "$DOTFILES_REPO_PATH" # Debug: Verify checkout contents
-          chmod +x "$DOTFILES_REPO_PATH/bootstrap.sh"
-          # Execute bootstrap using the workspace path
-          "$DOTFILES_REPO_PATH/bootstrap.sh" "$DOTFILES_REPO_PATH/playbook.yml" "$DOTFILES_REPO_PATH/inventory.ini"
+          set -e # Exit on error
+          # Define path using runner context for consistency
+          REPO_PATH="${{ runner.home }}/dotfiles"
+          echo "Running bootstrap from: $REPO_PATH"
+          # Make script executable
+          chmod +x "$REPO_PATH/bootstrap.sh"
+          # Execute script using absolute paths for clarity
+          "$REPO_PATH/bootstrap.sh" "$REPO_PATH/playbook.yml" "$REPO_PATH/inventory.ini"
+        # Specify shell for potential cross-platform consistency (optional)
+        # shell: bash
