@@ -14,38 +14,37 @@ jobs:
   setup:
     runs-on: ${{ matrix.os }}
     strategy:
-      fail-fast: false
+      fail-fast: false # Prevent other jobs from cancelling if one fails
       matrix:
         os: [ubuntu-latest, macos-latest]
 
     steps:
       - name: Checkout repo to temp location
-        uses: actions/checkout@v4
+        uses: actions/checkout@v4 # Use latest version
         with:
-          # Checkout to a unique temporary name inside the workspace
+          # Checkout to a unique temporary name inside the default workspace
           path: temp_dotfiles_checkout
 
       - name: Move repo to ~/dotfiles
         run: |
-          # Define target path using runner home
+          # Define the CORRECT target path using the runner home context variable
           TARGET_PATH="${{ runner.home }}/dotfiles"
           echo "Moving checkout from $GITHUB_WORKSPACE/temp_dotfiles_checkout to $TARGET_PATH"
-          # Ensure target parent directory exists if needed (usually ~/.config does)
-          # mkdir -p "$(dirname "$TARGET_PATH")" # Usually not needed for ~/dotfiles
-          # Move the contents
+          # Ensure the parent directory ($HOME) exists (it always will)
+          # Move the entire checked-out directory
           mv "$GITHUB_WORKSPACE/temp_dotfiles_checkout" "$TARGET_PATH"
-        shell: bash # Explicitly use bash for mv
+        shell: bash # Use bash for consistency
 
       - name: Run bootstrap.sh from ~/dotfiles
         env:
           CI: true
         run: |
-          set -e
-          # Define the repo path (where we moved it)
+          set -e # Exit on any error in this script block
+          # Define the repo path where we moved it
           REPO_PATH="${{ runner.home }}/dotfiles"
-          echo "Repository Path: $REPO_PATH"
-          ls -la "$REPO_PATH" # Debug: Verify contents after move
+          echo "Running bootstrap from: $REPO_PATH"
+          ls -la "$REPO_PATH" # Debug: List contents to verify move
           chmod +x "$REPO_PATH/bootstrap.sh"
-          # Execute script using the moved path
+          # Execute script using absolute paths now pointing to ~/dotfiles/...
           "$REPO_PATH/bootstrap.sh" "$REPO_PATH/playbook.yml" "$REPO_PATH/inventory.ini"
         shell: bash
