@@ -20,7 +20,7 @@
   import_playbook: playbooks/docker.yml
   tags: [docker, tools, dev]
 
-# Editors / Notes
+# Editors / Notes / Communication / Multimedia
 - name: Setup VS Code
   import_playbook: playbooks/vscode.yml
   tags: [vscode, editor, tools, gui]
@@ -28,3 +28,15 @@
 - name: Setup Obsidian
   import_playbook: playbooks/obsidian.yml
   tags: [obsidian, notes, tools, gui]
+
+- name: Setup Discord
+  import_playbook: playbooks/discord.yml
+  tags: [discord, app, communication, gui]
+
+- name: Setup Spotify
+  import_playbook: playbooks/spotify.yml
+  tags: [spotify, app, multimedia, gui]
+
+- name: Setup Aldente (macOS Only)
+  import_playbook: playbooks/aldente.yml
+  tags: [aldente, app, macos, gui, utility]

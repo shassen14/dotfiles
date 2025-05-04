@@ -152,13 +152,13 @@
       changed_when: false
       tags: [docker, config, service, macos]
 
-    - name: Pause for Docker Desktop to potentially initialize (macOS)
-      ansible.builtin.pause:
-        seconds: 60 # Adjust pause time if needed
-      when:
-        - ansible_os_family == "Darwin"
-        - lookup('env', 'CI') != 'true' # Only pause when not in CI (optional)
-      tags: [docker, config, service, macos]
+    # - name: Pause for Docker Desktop to potentially initialize (macOS)
+    #   ansible.builtin.pause:
+    #     seconds: 60 # Adjust pause time if needed
+    #   when:
+    #     - ansible_os_family == "Darwin"
+    #     - lookup('env', 'CI') != 'true' # Only pause when not in CI (optional)
+    #   tags: [docker, config, service, macos]
 
     # --- macOS Runtime Checks (SKIPPED IN CI) ---
     - name: Notice - Skipping Docker runtime checks in macOS CI environment

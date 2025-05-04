@@ -1,0 +1,73 @@
+# playbooks/spotify.yml: Installs Spotify music client.
+- name: Install Spotify
+  hosts: all
+  become: true # Needed for Linux package installs/repo management
+  gather_facts: true
+  tags: [spotify, app, multimedia, gui]
+
+  vars:
+    # Current Spotify GPG Key URL (Verify periodically)
+    spotify_gpg_key_url: "https://download.spotify.com/debian/pubkey_7A3A762FAFD4A51F.gpg"
+    spotify_gpg_keyring_path: "/etc/apt/trusted.gpg.d/spotify-archive-keyring.gpg" # Recommended location
+
+  tasks:
+    # --- macOS ---
+    - name: Install Spotify via Homebrew Cask (macOS)
+      become: false # Homebrew Cask runs as user
+      community.general.homebrew_cask:
+        name: spotify
+        state: present
+      when: ansible_os_family == "Darwin"
+      tags: [spotify, package, macos, homebrew]
+
+    # --- Debian/Ubuntu (using official Apt Repository) ---
+    - name: Install prerequisites for adding apt repository (Debian/Ubuntu)
+      ansible.builtin.apt:
+        name: [curl, gpg] # curl to download key, gpg to dearmor
+        state: present
+      when: ansible_os_family == "Debian"
+      tags: [spotify, package, debian, prerequisites]
+
+    - name: Download Spotify GPG key and dearmor (Debian/Ubuntu)
+      # Downloads key, converts from ascii armor to binary gpg, places in trusted dir
+      ansible.builtin.shell: >
+        curl -fsSL {{ spotify_gpg_key_url }} |
+        gpg --dearmor -o {{ spotify_gpg_keyring_path }}
+      args:
+        creates: "{{ spotify_gpg_keyring_path }}" # Makes task idempotent
+      when: ansible_os_family == "Debian"
+      tags: [spotify, package, debian, repo]
+
+    - name: Add Spotify Apt repository (Debian/Ubuntu)
+      ansible.builtin.apt_repository:
+        repo: "deb http://repository.spotify.com stable non-free"
+        state: present
+        filename: spotify # Creates /etc/apt/sources.list.d/spotify.list
+        update_cache: false # Cache updated later
+      when: ansible_os_family == "Debian"
+      tags: [spotify, package, debian, repo]
+
+    - name: Install Spotify client package (Debian/Ubuntu)
+      ansible.builtin.apt:
+        name: spotify-client
+        state: present
+        update_cache: true # Update cache now before installing
+      when: ansible_os_family == "Debian"
+      tags: [spotify, package, debian, install]
+
+    # --- Arch Linux (using official repository 'spotify-launcher') ---
+    - name: Install Spotify Launcher package (Arch)
+      community.general.pacman:
+        name: spotify-launcher # Installs launcher which pulls dependencies
+        state: present
+      when: ansible_os_family == "Archlinux"
+      tags: [spotify, package, arch]
+
+    # --- Fedora/RedHat Family (using Snap as fallback) ---
+    # Note: Assumes snapd service is installed and running.
+    - name: Install Spotify via Snap (Fedora/RedHat)
+      ansible.builtin.snap:
+        name: spotify
+        state: present
+      when: ansible_os_family == "RedHat"
+      tags: [spotify, package, fedora, redhat, snap]
