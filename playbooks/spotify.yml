@@ -1,17 +1,15 @@
-# playbooks/spotify.yml: Installs Spotify music client.
+# playbooks/spotify.yml: Installs Spotify music client following official guide.
 - name: Install Spotify
   hosts: all
-  become: true # Needed for Linux package installs/repo management
+  become: true # Most steps require sudo
   gather_facts: true
   tags: [spotify, app, multimedia, gui]
 
   vars:
-    # Try the key ID directly - often downloadable this way too
-    spotify_key_id: "C85668DF69375001" # The key ID APT is actually looking for
-    # Standard keyserver
-    keyserver: "keyserver.ubuntu.com"
-    # Store the key in the standard keyrings directory
-    spotify_keyring_path: "/usr/share/keyrings/spotify-archive-keyring.gpg"
+    # Key URL from Spotify's official instructions
+    spotify_official_gpg_key_url: "https://download.spotify.com/debian/pubkey_C85668DF69375001.gpg"
+    # Target path in the global trusted directory (as per instructions)
+    spotify_official_gpg_target_path: "/etc/apt/trusted.gpg.d/spotify.gpg"
 
   tasks:
     # --- macOS Task (remains the same) ---
@@ -23,59 +21,54 @@
       when: ansible_os_family == "Darwin"
       tags: [spotify, package, macos, homebrew]
 
-    # --- Debian/Ubuntu (using official Apt Repository with signed-by) ---
-    - name: Install prerequisites for managing apt repositories (Debian/Ubuntu)
+    # --- Debian/Ubuntu (Following Official Instructions) ---
+    - name: Install prerequisites for adding apt repository (Debian/Ubuntu)
       ansible.builtin.apt:
-        name: [curl, gpg, apt-transport-https, gnupg-utils] # Ensure gnupg-utils for gpg operations
+        # curl is needed to download the key, gpg needed for dearmor
+        name: [curl, gpg]
         state: present
         update_cache: true # Update cache before starting repo/key ops
       when: ansible_os_family == "Debian"
       tags: [spotify, package, debian, prerequisites]
 
-    - name: Add Spotify GPG key using direct key ID and dearmor
-      # Fetch key by ID from keyserver, dearmor, write to keyring path
+    - name: Download Spotify GPG key and place dearmored in trusted.gpg.d
+      # Uses shell to exactly replicate the curl | sudo gpg --dearmor command
       ansible.builtin.shell: >
-        gpg --no-default-keyring --keyring gnupg-ring:{{ spotify_keyring_path }}.gpg --keyserver {{ keyserver }} --recv-keys {{ spotify_key_id }} &&
-        gpg --no-default-keyring --keyring gnupg-ring:{{ spotify_keyring_path }}.gpg --export {{ spotify_key_id }} |
-        gpg --dearmor -o {{ spotify_keyring_path }} &&
-        rm gnupg-ring:{{ spotify_keyring_path }}.gpg # Clean up temporary keyring if needed
+        curl -fsSL {{ spotify_official_gpg_key_url }} |
+        gpg --dearmor --yes -o {{ spotify_official_gpg_target_path }}
       args:
-        creates: "{{ spotify_keyring_path }}" # Makes task idempotent
-      register: gpg_key_add_result
-      changed_when: gpg_key_add_result.rc == 0 and not ansible_check_mode # Mark changed if successful
-      failed_when: gpg_key_add_result.rc != 0
-      when: ansible_os_family == "Debian"
-      tags: [spotify, package, debian, repo]
-      # Note: This is complex. If it fails, the curl method might be simpler IF the URL is correct.
-
-    - name: Ensure correct permissions for Spotify keyring file
-      ansible.builtin.file:
-        path: "{{ spotify_keyring_path }}"
-        mode: '0644' # Ensure world-readable
+        creates: "{{ spotify_official_gpg_target_path }}" # Idempotency based on target file
+      # This command implicitly needs root to write to /etc/apt/trusted.gpg.d/
+      # become: true is already set at the play level
+      register: spotify_key_add_result
+      changed_when: spotify_key_add_result.rc == 0 and not ansible_check_mode # Mark changed if successful
+      failed_when: spotify_key_add_result.rc != 0
       when: ansible_os_family == "Debian"
       tags: [spotify, package, debian, repo]
 
-    - name: Add Spotify Apt repository with signed-by
-      ansible.builtin.apt_repository:
-        repo: "deb [signed-by={{ spotify_keyring_path }}] http://repository.spotify.com stable non-free"
-        state: present
-        filename: spotify
-        # update_cache: false # Do NOT update cache here yet
+    - name: Add Spotify Apt repository sources list file
+      # Replicates the echo "..." | sudo tee ... command
+      ansible.builtin.copy:
+        # Content to put in the file
+        content: "deb https://repository.spotify.com stable non-free\n"
+        # Target file path
+        dest: "/etc/apt/sources.list.d/spotify.list"
+        owner: root
+        group: root
+        mode: '0644'
       when: ansible_os_family == "Debian"
+      notify: Update apt cache # Notify handler to update cache AFTER file is created
       tags: [spotify, package, debian, repo]
 
-    - name: Update apt cache AFTER adding repo and key
-      # Explicitly update cache as a separate step after repo/key setup is complete
-      ansible.builtin.apt:
-        update_cache: true
-      when: ansible_os_family == "Debian"
-      tags: [spotify, package, debian, repo] # Tag as repo step
+    # Handler to update apt cache (defined later or in handlers file)
+    # This ensures cache is updated only if the repo file changed.
 
     - name: Install Spotify client package (Debian/Ubuntu)
       ansible.builtin.apt:
         name: spotify-client
         state: present
-        # update_cache: false # Cache was just updated
+        update_cache: yes # Update cache BEFORE installing the package
+                          # (Alternatively, rely solely on the handler)
       when: ansible_os_family == "Debian"
       tags: [spotify, package, debian, install]
 
@@ -94,3 +87,10 @@
         state: present
       when: ansible_os_family == "RedHat"
       tags: [spotify, package, fedora, redhat, snap]
+
+  # Handlers section (can be at the end of the playbook or in handlers/main.yml)
+  handlers:
+    - name: Update apt cache
+      ansible.builtin.apt:
+        update_cache: yes
+      when: ansible_os_family == "Debian" # Ensure handler only runs on Debian/Ubuntu
