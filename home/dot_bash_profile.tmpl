@@ -1,0 +1,15 @@
+# ~/.bash_profile - Managed by Chezmoi
+# Gets executed for login shells.
+
+# Source ~/.profile to get PATH and other exports
+if [ -f "${HOME}/.profile" ]; then
+    . "${HOME}/.profile"
+fi
+
+# Source ~/.bashrc for interactive settings if it exists
+# (Already done by sourcing .profile if standard setup is followed)
+# if [ -f "${HOME}/.bashrc" ]; then
+#   . "${HOME}/.bashrc"
+# fi
+
+echo "Loaded ~/.bash_profile" # Optional: for debugging

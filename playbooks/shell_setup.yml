@@ -1,0 +1,51 @@
+# playbooks/shell_setup.yml: Installs shells and related tools
+- name: Install Shells and Essential Tools
+  hosts: all
+  become: true
+  gather_facts: true
+  tags: [shell, config, prerequisites]
+
+  tasks:
+    # --- Install Shells ---
+    - name: Install zsh
+      ansible.builtin.package: # Generic package module
+        name: zsh
+        state: present
+      # No 'when' needed, install on both for flexibility or if needed by other tools
+      tags: [shell, zsh, package]
+
+    - name: Ensure bash is present (usually is, but confirm)
+      ansible.builtin.package:
+        name: bash
+        state: present
+      tags: [shell, bash, package]
+
+    # --- Install Shell Tools ---
+    - name: Install Starship prompt
+      ansible.builtin.package:
+        name: starship
+        state: present
+      tags: [shell, starship, package]
+
+    - name: Install bash-completion (for Bash)
+      ansible.builtin.package:
+        name: bash-completion
+        state: present
+      when: ansible_os_family != "Darwin" # Typically needed on Linux
+      tags: [shell, bash, completion, package]
+
+    # --- Set Default Shell (Optional - requires new login/session) ---
+    # Note: Define 'target_user' likely in group_vars/all.yml
+    - name: Set default shell to zsh for user (macOS)
+      ansible.builtin.user:
+        name: "{{ target_user }}"
+        shell: /bin/zsh # Common path on macOS, verify with 'which zsh'
+      when: ansible_os_family == "Darwin"
+      tags: [shell, zsh, config, macos]
+
+    - name: Set default shell to bash for user (Linux/Ubuntu)
+      ansible.builtin.user:
+        name: "{{ target_user }}"
+        shell: /bin/bash # Common path on Linux
+      when: ansible_os_family != "Darwin" # Example: Defaulting Linux to Bash
+      tags: [shell, bash, config, linux]

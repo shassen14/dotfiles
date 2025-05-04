@@ -1,0 +1,60 @@
+# ~/.exports.sh - Managed by Chezmoi
+# Shared environment variables sourced by .zshrc and .bashrc
+
+# Set preferred editor (change 'nvim' to 'vim', 'nano', 'code --wait', etc.)
+export EDITOR='nvim'
+export VISUAL="$EDITOR"
+
+# Set pager
+export PAGER='less'
+export LESS='-F -g -i -M -R -S -w -X -z-4'
+
+# Set default language/locale
+export LANG='en_US.UTF-8'
+export LC_ALL='en_US.UTF-8'
+
+# Add GPG TTY if gpg is available (useful for commit signing)
+if command -v tty >/dev/null; then
+  export GPG_TTY=$(tty)
+fi
+
+# --- OS Specific Exports ---
+{{ if eq .chezmoi.os "darwin" }}
+# Example macOS Specific Exports (if any)
+# export SOME_MAC_VAR="value"
+{{ else if eq .chezmoi.os "linux" }}
+# Example Linux Specific Exports (if any)
+# export SOME_LINUX_VAR="value"
+{{ end }}
+
+
+# --- Add ~/.local/bin to PATH if it exists ---
+# Good place for user-installed binaries/scripts managed by Chezmoi
+if [ -d "$HOME/.local/bin" ]; then
+  export PATH="$HOME/.local/bin:$PATH"
+fi
+
+# --- Add ~/bin to PATH if it exists ---
+# Traditional location for user scripts
+if [ -d "$HOME/bin" ]; then
+  export PATH="$HOME/bin:$PATH"
+fi
+
+
+# --- ASDF Version Manager Setup ---
+# Add asdf to PATH and initialize completions
+# Assumes asdf installed via git clone to ~/.asdf
+# If installed via Brew, path might be different - adjust if necessary!
+if [ -d "$HOME/.asdf" ]; then
+  . "$HOME/.asdf/asdf.sh"
+  # Append completions to fpath for zsh (handled differently in .zshrc/.bashrc below)
+  # Bash completions usually sourced via a separate file or the main asdf.sh
+fi
+
+
+# Add any other cross-shell exports here
+# export MY_VARIABLE="some_value"
+
+# Placeholder for Secrets (replace with actual calls)
+# export GITHUB_TOKEN="{{ bitwarden "GitHub API Token" | field "password" }}"
+# export AWS_ACCESS_KEY_ID="{{ bitwarden "AWS Credentials" | field "login" }}"

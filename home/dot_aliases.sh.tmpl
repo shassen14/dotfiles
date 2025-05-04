@@ -1,0 +1,77 @@
+# ~/.aliases.sh - Managed by Chezmoi
+# Shared aliases sourced by .zshrc and .bashrc
+
+# --- Navigation ---
+alias ..='cd ..'
+alias ...='cd ../..'
+alias ....='cd ../../..'
+alias ~='cd ~'
+
+# --- Listing ---
+# Use color options appropriate for each OS (lsd/exa preferred if installed)
+# Basic fallbacks:
+{{ if eq .chezmoi.os "darwin" -}}
+alias ls='ls -G' # BSD ls color flag
+{{ else -}}
+alias ls='ls --color=auto' # GNU ls color flag
+{{ end -}}
+alias l='ls -lF'
+alias la='ls -laF'
+alias ll='ls -lhF'
+alias lla='ls -lhaF'
+# Add aliases for 'exa' or 'lsd' if you install them via Ansible
+
+# --- Safety ---
+alias cp='cp -iv'        # Prompt before overwrite, verbose
+alias mv='mv -iv'        # Prompt before overwrite, verbose
+alias rm='rm -i'         # Prompt before removing
+alias mkdir='mkdir -pv'  # Create parent directories, verbose
+
+# --- Git ---
+alias g='git'
+alias ga='git add'
+alias gaa='git add --all'
+alias gap='git add --patch'
+alias gb='git branch'
+alias gba='git branch -a'
+alias gc='git commit -m'
+alias gc!='git commit --amend -m'
+alias gca='git commit --amend --no-edit' # Amend commit without changing message
+alias gco='git checkout'
+alias gcb='git checkout -b' # Create new branch
+alias gd='git diff'
+alias gdc='git diff --cached' # Diff staged changes
+alias gdw='git diff --word-diff'
+alias gf='git fetch --all --prune'
+alias gl='git log --graph --pretty=format:"%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset" --abbrev-commit'
+alias glog='git log --oneline --decorate --graph'
+alias gp='git push'
+alias gpf='git push --force-with-lease' # Safer force push
+alias gpu='git push -u origin $(git rev-parse --abbrev-ref HEAD)' # Push current branch upstream
+alias gr='git rebase'
+alias gri='git rebase -i'
+alias gs='git status -sb' # Status short branch
+alias gst='git status'
+
+# --- System Update Aliases ---
+{{ if eq .chezmoi.os "darwin" -}}
+alias update='brew update && brew upgrade && brew cleanup && brew doctor'
+{{ else if eq .chezmoi.os "linux" -}}
+  {{ if or (eq .chezmoi.osRelease.id "ubuntu") (eq .chezmoi.osRelease.id "debian") -}}
+  alias update='sudo apt update && sudo apt full-upgrade -y && sudo apt autoremove -y'
+  {{ else if eq .chezmoi.osRelease.id "fedora" -}}
+  alias update='sudo dnf upgrade -y && sudo dnf autoremove -y'
+  {{ else if eq .chezmoi.osRelease.id "arch" -}}
+  alias update='sudo pacman -Syu --noconfirm'
+  {{ end -}}
+{{ end -}}
+
+# --- Other Tools ---
+alias k='kubectl'
+alias tf='terraform'
+alias py='python3'
+alias ipy='ipython' # If installed
+
+# Reload shell config
+# (This will be overridden in zshrc/bashrc to source the correct file)
+alias reload='echo "Source ~/.zshrc or ~/.bashrc manually"'

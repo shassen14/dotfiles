@@ -45,3 +45,8 @@
 - name: Setup Bitwarden
   import_playbook: playbooks/bitwarden.yml
   tags: [bitwarden, app, security, passwordmanager, gui]
+
+# Shell Setup (Install zsh/bash, starship, set defaults)
+- name: Configure Shell Environment
+  import_playbook: playbooks/shell_setup.yml
+  tags: [shell, config]

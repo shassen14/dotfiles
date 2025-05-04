@@ -1,0 +1,26 @@
+# ~/.profile - Managed by Chezmoi
+# Executed by the command interpreter for login shells.
+
+# This file is not read by bash(1), if ~/.bash_profile or ~/.bash_login exists.
+# See /usr/share/doc/bash/examples/startup-files for examples.
+
+# Source shared exports if the file exists
+if [ -f "${HOME}/.exports.sh" ]; then
+    . "${HOME}/.exports.sh"
+fi
+
+# if running bash
+if [ -n "$BASH_VERSION" ]; then
+    # include .bashrc if it exists
+    if [ -f "$HOME/.bashrc" ]; then
+        . "$HOME/.bashrc"
+    fi
+fi
+
+# Set PATH correctly including potential additions from .exports.sh
+# Ensure user private bin directories are loaded first if they exist
+# (Order adjusted based on exports.sh content)
+
+# mesg n || true # Uncomment if needed to disable messages
+
+echo "Loaded ~/.profile" # Optional: for debugging
