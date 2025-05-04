@@ -42,7 +42,6 @@
         state: present
       when: ansible_os_family != "Darwin"
       tags: [shell, bash, package, linux]
-      # 'become: true' is inherited correctly here
 
     # --- Install Shell Tools ---
     - name: Install bash-completion (Linux Only)
@@ -52,7 +51,6 @@
         state: present
       when: ansible_os_family != "Darwin"
       tags: [shell, bash, completion, package, linux]
-      # 'become: true' is inherited correctly here
 
     - name: Install Starship prompt via Homebrew (macOS)
       community.general.homebrew:
@@ -62,13 +60,21 @@
       when: ansible_os_family == "Darwin"
       tags: [shell, starship, package, macos, homebrew]
 
-    - name: Install Starship prompt via Package (Linux)
-      ansible.builtin.package:
-        name: starship
-        state: present
-      when: ansible_os_family != "Darwin"
-      tags: [shell, starship, package, linux]
-      # 'become: true' is inherited correctly here
+    - name: Install Starship prompt via official script (Linux)
+      ansible.builtin.shell:
+        # Use 'sh -s -- -y' to pass the '-y' (assume yes) flag to the install script
+        # Fetches the script and pipes it to sh for execution
+        cmd: curl -fsSL https://starship.rs/install.sh | sh -s -- -y
+        warn: false # Suppress ansible warning about using curl | sh
+      args:
+        # Check for the expected binary location for idempotency
+        creates: /usr/local/bin/starship
+      become: true # Script installs to /usr/local/bin, requires sudo
+      when: ansible_os_family != "Darwin" # Only run on Linux
+      register: starship_install_script_result
+      # Mark as changed only if the script actually runs and succeeds
+      changed_when: "'Installed Starship' in starship_install_script_result.stdout"
+      tags: [shell, starship, package, linux] # Keep relevant tags
 
     # --- Set Default Shell (No changes here, logic was already correct) ---
     - name: Set default shell to zsh for user (macOS)
