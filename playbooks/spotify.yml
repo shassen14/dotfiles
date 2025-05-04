@@ -6,8 +6,10 @@
   tags: [spotify, app, multimedia, gui]
 
   vars:
-    # Current Spotify GPG Key URL (Verify periodically)
-    spotify_gpg_key_url: "https://download.spotify.com/debian/pubkey_7A3A762FAFD4A51F.gpg"
+    # Try the key ID directly - often downloadable this way too
+    spotify_key_id: "C85668DF69375001" # The key ID APT is actually looking for
+    # Standard keyserver
+    keyserver: "keyserver.ubuntu.com"
     # Store the key in the standard keyrings directory
     spotify_keyring_path: "/usr/share/keyrings/spotify-archive-keyring.gpg"
 
@@ -24,46 +26,56 @@
     # --- Debian/Ubuntu (using official Apt Repository with signed-by) ---
     - name: Install prerequisites for managing apt repositories (Debian/Ubuntu)
       ansible.builtin.apt:
-        # Ensure curl, gpg are present, and apt-transport-https (often default but good to ensure)
-        name: [curl, gpg, apt-transport-https]
+        name: [curl, gpg, apt-transport-https, gnupg-utils] # Ensure gnupg-utils for gpg operations
         state: present
-        update_cache: true # Update cache BEFORE adding new sources/keys
+        update_cache: true # Update cache before starting repo/key ops
       when: ansible_os_family == "Debian"
       tags: [spotify, package, debian, prerequisites]
 
-    - name: Download Spotify GPG key and store in keyrings directory (Debian/Ubuntu)
-      # Downloads key, converts from ascii armor to binary gpg, places in keyrings
+    - name: Add Spotify GPG key using direct key ID and dearmor
+      # Fetch key by ID from keyserver, dearmor, write to keyring path
       ansible.builtin.shell: >
-        curl -fsSL {{ spotify_gpg_key_url }} |
-        gpg --dearmor -o {{ spotify_keyring_path }}
+        gpg --no-default-keyring --keyring gnupg-ring:{{ spotify_keyring_path }}.gpg --keyserver {{ keyserver }} --recv-keys {{ spotify_key_id }} &&
+        gpg --no-default-keyring --keyring gnupg-ring:{{ spotify_keyring_path }}.gpg --export {{ spotify_key_id }} |
+        gpg --dearmor -o {{ spotify_keyring_path }} &&
+        rm gnupg-ring:{{ spotify_keyring_path }}.gpg # Clean up temporary keyring if needed
       args:
         creates: "{{ spotify_keyring_path }}" # Makes task idempotent
+      register: gpg_key_add_result
+      changed_when: gpg_key_add_result.rc == 0 and not ansible_check_mode # Mark changed if successful
+      failed_when: gpg_key_add_result.rc != 0
       when: ansible_os_family == "Debian"
       tags: [spotify, package, debian, repo]
+      # Note: This is complex. If it fails, the curl method might be simpler IF the URL is correct.
 
     - name: Ensure correct permissions for Spotify keyring file
-      # Keyring file should be world-readable
       ansible.builtin.file:
         path: "{{ spotify_keyring_path }}"
-        mode: '0644'
+        mode: '0644' # Ensure world-readable
       when: ansible_os_family == "Debian"
       tags: [spotify, package, debian, repo]
 
-    - name: Add Spotify Apt repository with signed-by (Debian/Ubuntu)
+    - name: Add Spotify Apt repository with signed-by
       ansible.builtin.apt_repository:
-        # Reference the specific keyring using signed-by
         repo: "deb [signed-by={{ spotify_keyring_path }}] http://repository.spotify.com stable non-free"
         state: present
-        filename: spotify # Creates /etc/apt/sources.list.d/spotify.list
-        update_cache: true # Update cache AFTER adding the repo
+        filename: spotify
+        # update_cache: false # Do NOT update cache here yet
       when: ansible_os_family == "Debian"
       tags: [spotify, package, debian, repo]
+
+    - name: Update apt cache AFTER adding repo and key
+      # Explicitly update cache as a separate step after repo/key setup is complete
+      ansible.builtin.apt:
+        update_cache: true
+      when: ansible_os_family == "Debian"
+      tags: [spotify, package, debian, repo] # Tag as repo step
 
     - name: Install Spotify client package (Debian/Ubuntu)
       ansible.builtin.apt:
         name: spotify-client
         state: present
-        # update_cache: false # Cache was updated in the previous step
+        # update_cache: false # Cache was just updated
       when: ansible_os_family == "Debian"
       tags: [spotify, package, debian, install]
 
