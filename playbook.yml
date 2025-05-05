@@ -39,7 +39,7 @@
 
 - name: Build and Install Alacritty from Source (Linux Only) # New Import
   import_playbook: playbooks/alacritty_source_build.yml
-  when: ansible_os_family != "Darwin" # <<<--- CONDITION IS HERE
+  when: ansible_os_family != "Darwin" 
   tags: [alacritty, terminal, tools, gui, sourcebuild]
 
 - name: Install Alacritty via Homebrew (macOS Only) # Keep the simpler macOS install
