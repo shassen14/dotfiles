@@ -1,8 +1,7 @@
-# ~/.zshrc - Managed by Chezmoi
+# ~/.zshrc.tmpl - Managed by Chezmoi
 # Executed by zsh(1) for interactive shells.
 
 # Source shared exports and aliases if they exist
-# (Use ZDOTDIR if set, otherwise fallback to HOME)
 if [ -f "${ZDOTDIR:-$HOME}/.exports.sh" ]; then
     . "${ZDOTDIR:-$HOME}/.exports.sh"
 fi
@@ -14,25 +13,65 @@ fi
 alias reload='source "${ZDOTDIR:-$HOME}/.zshrc"'
 
 # --- History ---
+# (Your existing HISTFILE, HISTSIZE, SAVEHIST, setopt lines)
 export HISTFILE="${ZDOTDIR:-$HOME}/.zsh_history"
 export HISTSIZE=10000
 export SAVEHIST=20000
-setopt APPEND_HISTORY          # Append incrementally
-setopt EXTENDED_HISTORY          # Save timestamp/duration
-setopt HIST_EXPIRE_DUPS_FIRST  # Expire older duplicate entries first
-setopt HIST_IGNORE_DUPS          # Ignore consecutive duplicates
-setopt HIST_IGNORE_ALL_DUPS      # Ignore duplicates anywhere in history
-setopt HIST_FIND_NO_DUPS       # Don't show duplicates when searching
-setopt HIST_IGNORE_SPACE         # Ignore commands starting with space
-setopt HIST_REDUCE_BLANKS      # Remove superfluous blanks
-setopt HIST_VERIFY               # Show command before running from history
-setopt INC_APPEND_HISTORY        # Append cmds to history file immediately
-setopt SHARE_HISTORY             # Share history between concurrent sessions
+setopt APPEND_HISTORY
+setopt EXTENDED_HISTORY
+setopt HIST_EXPIRE_DUPS_FIRST
+setopt HIST_IGNORE_DUPS
+setopt HIST_IGNORE_ALL_DUPS
+setopt HIST_FIND_NO_DUPS
+setopt HIST_IGNORE_SPACE
+setopt HIST_REDUCE_BLANKS
+setopt HIST_VERIFY
+setopt INC_APPEND_HISTORY
+setopt SHARE_HISTORY
 
 # --- Keybindings ---
-# Enable Vi mode at the prompt
+# Enable Vi mode if desired
 # bindkey -v
-# Or keep default Emacs mode
+
+# --- Load Plugins ---
+
+# zsh-history-substring-search
+# Source the plugin file if it exists
+HISTSUBSEARCH_DIR="${ZDOTDIR:-$HOME}/.zsh/plugins/zsh-history-substring-search"
+if [ -f "$HISTSUBSEARCH_DIR/zsh-history-substring-search.zsh" ]; then
+  source "$HISTSUBSEARCH_DIR/zsh-history-substring-search.zsh"
+else
+  # Optional: warning if plugin isn't found
+  # echo "WARN: zsh-history-substring-search plugin not found at $HISTSUBSEARCH_DIR"
+fi
+
+# --- Keybindings for History Beginning Search ---
+# Bind arrow keys directly to Zsh's built-in widgets
+
+# Try binding using terminfo first (most portable)
+if [[ -n "$terminfo[kcuu1]" ]] && [[ -n "$terminfo[kcud1]" ]]; then
+  # *** USE BUILT-IN WIDGET NAMES ***
+  bindkey -M main "$terminfo[kcuu1]" history-beginning-search-backward
+  bindkey -M main "$terminfo[kcud1]" history-beginning-search-forward
+  bindkey -M viins "$terminfo[kcuu1]" history-beginning-search-backward
+  bindkey -M viins "$terminfo[kcud1]" history-beginning-search-forward
+fi
+
+# Bind common VT100/ANSI escape codes as fallback/alternative
+# *** USE BUILT-IN WIDGET NAMES ***
+bindkey -M main "^[[A" history-beginning-search-backward   # Map common Up Arrow code
+bindkey -M main "^[[B" history-beginning-search-forward  # Map common Down Arrow code
+bindkey -M viins "^[[A" history-beginning-search-backward # Map common Up Arrow code
+bindkey -M viins "^[[B" history-beginning-search-forward # Map common Down Arrow code
+
+
+# Bind application cursor key codes if necessary (e.g., ^[OA, ^[OB)
+# *** USE BUILT-IN WIDGET NAMES ***
+bindkey -M main "^[OA" history-beginning-search-backward   # Map alternate Up Arrow code
+bindkey -M main "^[OB" history-beginning-search-forward  # Map alternate Down Arrow code
+bindkey -M viins "^[OA" history-beginning-search-backward  # Map alternate Up Arrow code
+bindkey -M viins "^[OB" history-beginning-search-forward # Map alternate Down Arrow code
+
 
 # --- Completion System ---
 # Initialize Zsh completion system
@@ -48,9 +87,10 @@ zstyle ':completion:*' group-name ''
 # Enable completion caching
 zstyle ':completion::complete:*' use-cache 1
 # Add asdf completions if available (check path from .zshenv/.exports.sh)
-if command -v asdf >/dev/null; then
+if command -v asdf >/dev/null && [ -f "${ASDF_DIR}/completions/asdf.bash" ]; then # Check if asdf exists
   fpath=(${ASDF_DIR}/completions $fpath)
 fi
+
 
 # --- Starship Prompt ---
 # Initialize Starship (must be last thing that affects prompt)

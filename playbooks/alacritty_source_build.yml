@@ -28,6 +28,7 @@
           - cmake
           - pkg-config
           - build-essential # Installs g++, make, etc. on Debian/Ubuntu
+          - desktop-file-utils # <<<--- ADDED THIS PACKAGE
         state: present
       # Become=true inherited
 
@@ -133,12 +134,12 @@
       when: build_result.rc == 0
 
     - name: Install Alacritty Desktop file
+      # This command should now work because desktop-file-utils provides the command
       ansible.builtin.command:
         cmd: desktop-file-install {{ alacritty_repo_dest }}/extra/linux/Alacritty.desktop
         creates: /usr/share/applications/Alacritty.desktop
-      # become: true inherited
-      when: build_result.rc == 0
-      changed_when: true # Assume change if command runs
+      when: build_result.rc == 0 # Keep condition based on build success
+      changed_when: true
 
     - name: Update Desktop database
       ansible.builtin.command:
