@@ -10,7 +10,7 @@
 # based on the text already typed on the line.
 "\e[B": history-search-forward
 
-# --- Other Useful Readline Settings (Optional) ---
+# --- Other Useful Readline Settings ---
 
 # Perform filename completion in a case-insensitive manner
 set completion-ignore-case on
@@ -19,7 +19,7 @@ set completion-ignore-case on
 set show-all-if-ambiguous on
 
 # If there are more completions than available lines, show them one screenful at a time
-set page-completions on
+# set page-completions on # Can sometimes be slightly annoying, uncomment if preferred
 
 # Display potential completions highlighted and differentiated by file type
 set visible-stats on
@@ -29,13 +29,20 @@ set input-meta on
 set output-meta on
 set convert-meta off
 
-# Use colored prompts if the terminal supports it (Bash often handles this via PS1)
-# set colored-stats On
-# set colored-completion-prefix On
+# Make Bash check filenames case insensitively
+set completion-ignore-case On
 
-# Enable horizontal scrolling of the command line
+# Make Bash completion cycling through possibilities active
+# Tab: Complete common prefix, then cycle alternatives
+# Shift-Tab: Cycle backwards
+"\t": menu-complete
+# "\e[Z": menu-complete-backward # Requires Shift-Tab to send this sequence
+
+# Enable horizontal scrolling of the command line if needed
 # set horizontal-scroll-mode On
 
 # Use vi mode instead of emacs mode for line editing
 # set editing-mode vi
 # set keymap vi
+
+# $include /etc/inputrc # Optional: Include system-wide settings if desired

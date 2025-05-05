@@ -40,6 +40,15 @@ set -g focus-events on
 # Enable mouse support (scrolling, pane/window selection)
 set -g mouse on
 
+# --- Set Default Shell for Tmux Panes/Windows ---
+# Explicitly set Bash for consistency on Linux, Zsh for macOS
+{{ if eq .chezmoi.os "darwin" -}}
+set -g default-shell /bin/zsh
+{{ else -}}
+# Assume Linux/Ubuntu defaults to Bash
+set -g default-shell /bin/bash
+{{ end -}}
+
 #--------------------------------------------------------------------------
 # Key Bindings
 #--------------------------------------------------------------------------

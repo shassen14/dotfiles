@@ -11,10 +11,14 @@
   import_playbook: playbooks/git.yml
   tags: [git, tools, dev]
 
+- name: Setup Rust Language Toolchain
+  import_playbook: playbooks/rust.yml
+  tags: [rust, rustup, dev, compiler, prerequisites]
+
 - name: Setup Tmux
   import_playbook: playbooks/tmux.yml
   tags: [tmux, tools, cli]
-
+  
 - name: Setup VS Code
   import_playbook: playbooks/vscode.yml
   tags: [vscode, editor, tools, gui]
@@ -32,6 +36,16 @@
 - name: Setup Docker
   import_playbook: playbooks/docker.yml
   tags: [docker, tools, dev]
+
+- name: Build and Install Alacritty from Source (Linux Only) # New Import
+  import_playbook: playbooks/alacritty_source_build.yml
+  when: ansible_os_family != "Darwin" # <<<--- CONDITION IS HERE
+  tags: [alacritty, terminal, tools, gui, sourcebuild]
+
+- name: Install Alacritty via Homebrew (macOS Only) # Keep the simpler macOS install
+  import_playbook: playbooks/alacritty.yml
+  when: ansible_os_family == "Darwin"
+  tags: [alacritty, terminal, tools, gui]
 
 # Misc
 - name: Setup Obsidian

@@ -1,0 +1,114 @@
+# playbooks/alacritty.yml: Installs Alacritty Terminal Emulator.
+- name: Install Alacritty Terminal Emulator
+  hosts: all
+  become: true # Default for Linux package installs
+  gather_facts: true
+  tags: [alacritty, terminal, tools, gui]
+
+  # Define path to Alacritty terminfo source (may vary slightly by install method)
+  vars:
+    # Common locations. Adjust if needed based on actual install path.
+    alacritty_terminfo_src_macos: "/Applications/Alacritty.app/Contents/Resources/alacritty.info"
+    # Linux location can vary. If installed via package manager, it might place it
+    # system-wide automatically. If via script/snap, might be harder.
+    # Try a common path derived from source builds or common packages:
+    alacritty_terminfo_src_linux: "/usr/share/alacritty/extra/alacritty.info" # Common guess for packaged versions
+    # If installed via snap, terminfo might be within the snap dir, harder to automate tic?
+    # If installed via script to /usr/local/bin, the .info file might not be present.
+
+  tasks:
+    # --- macOS ---
+    - name: Install Alacritty via Homebrew (macOS)
+      community.general.homebrew_cask: # Install GUI app via cask
+        name: alacritty
+        state: present
+      become: false # MUST run brew cask as user
+      when: ansible_os_family == "Darwin"
+      tags: [alacritty, package, macos]
+
+    # --- Debian/Ubuntu ---
+    - name: Add Alacritty PPA (Debian/Ubuntu)
+      ansible.builtin.apt_repository:
+          repo: ppa:aslatter/ppa
+          state: present
+          update_cache: true # Update cache after adding PPA
+      when: ansible_os_family == "Debian"
+      tags: [alacritty, package, repo, debian]
+      # Inherits become: true
+
+    - name: Install Alacritty via Apt using PPA (Debian/Ubuntu)
+      ansible.builtin.apt:
+        name: alacritty
+        state: present
+        # update_cache: false # Cache updated in previous step
+      when: ansible_os_family == "Debian"
+      tags: [alacritty, package, debian]
+      # Inherits become: true
+
+    # --- Fedora/RedHat ---
+    - name: Install Alacritty via Dnf (Fedora/RedHat)
+      ansible.builtin.dnf:
+        name: alacritty
+        state: present
+      when: ansible_os_family == "RedHat"
+      tags: [alacritty, package, redhat, fedora]
+      # Inherits become: true
+
+    # --- Arch Linux ---
+    - name: Install Alacritty via Pacman (Arch)
+      community.general.pacman:
+        name: alacritty
+        state: present
+      when: ansible_os_family == "Archlinux"
+      tags: [alacritty, package, arch]
+      # Inherits become: true
+
+    # --- Terminfo Installation (Run AFTER Alacritty install) ---
+    - name: Ensure tic command (terminfo compiler) is available
+      ansible.builtin.package:
+        name: "{{ 'ncurses-bin' if ansible_os_family == 'Debian' else 'ncurses' }}" # Package name varies
+        state: present
+      # become: true # Inherited from play level
+      tags: [alacritty, prerequisites, terminfo]
+
+    - name: Check if Alacritty terminfo source file exists (macOS)
+      ansible.builtin.stat:
+        path: "{{ alacritty_terminfo_src_macos }}"
+      register: terminfo_src_macos_stat
+      when: ansible_os_family == "Darwin"
+      become: false # Stat runs as user
+      tags: [alacritty, config, terminfo]
+
+    - name: Check if Alacritty terminfo source file exists (Linux - Best Guess Path)
+      ansible.builtin.stat:
+        path: "{{ alacritty_terminfo_src_linux }}"
+      register: terminfo_src_linux_stat
+      when: ansible_os_family != "Darwin"
+      become: false # Stat runs as user
+      tags: [alacritty, config, terminfo]
+
+    - name: Compile and install Alacritty terminfo definition (macOS)
+      ansible.builtin.command:
+        # Use tic to compile and install the definition system-wide
+        cmd: "tic -xe alacritty,alacritty-direct {{ alacritty_terminfo_src_macos }}"
+        # Check if terminfo already exists to make it somewhat idempotent
+        # Note: Checking terminfo database directly is complex. Check if file exists.
+        creates: "{{ ansible_env.HOME }}/.terminfo/a/alacritty" # User terminfo path
+        # Alternatives: /usr/share/terminfo/a/alacritty (system), /opt/homebrew/share/terminfo/... (brew)
+      become: true # tic often needs sudo to write to system terminfo dirs
+      when:
+        - ansible_os_family == "Darwin"
+        - terminfo_src_macos_stat.stat.exists # Only run if source file found
+      changed_when: true # Assume change if command runs
+      tags: [alacritty, config, terminfo]
+
+    - name: Compile and install Alacritty terminfo definition (Linux)
+      ansible.builtin.command:
+        cmd: "tic -xe alacritty,alacritty-direct {{ alacritty_terminfo_src_linux }}"
+        creates: "/usr/share/terminfo/a/alacritty" # Common system terminfo path
+      become: true # Needs sudo to write system-wide
+      when:
+        - ansible_os_family != "Darwin"
+        - terminfo_src_linux_stat.stat.exists # Only run if source file found
+      changed_when: true
+      tags: [alacritty, config, terminfo]

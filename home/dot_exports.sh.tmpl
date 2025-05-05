@@ -27,18 +27,49 @@ fi
 # export SOME_LINUX_VAR="value"
 {{ end }}
 
+# --- PATH Setup ---
+# Start with the existing PATH
+_NEW_PATH="$PATH"
 
-# --- Add ~/.local/bin to PATH if it exists ---
-# Good place for user-installed binaries/scripts managed by Chezmoi
-if [ -d "$HOME/.local/bin" ]; then
-  export PATH="$HOME/.local/bin:$PATH"
-fi
-
-# --- Add ~/bin to PATH if it exists ---
-# Traditional location for user scripts
+# Prepend ~/bin if it exists
 if [ -d "$HOME/bin" ]; then
-  export PATH="$HOME/bin:$PATH"
+  _NEW_PATH="$HOME/bin:$_NEW_PATH"
 fi
+
+# Prepend ~/.local/bin if it exists
+if [ -d "$HOME/.local/bin" ]; then
+  _NEW_PATH="$HOME/.local/bin:$_NEW_PATH"
+fi
+
+# Prepend ~/.cargo/bin if it exists
+if [ -d "$HOME/.cargo/bin" ]; then
+  _NEW_PATH="$HOME/.cargo/bin:$_NEW_PATH"
+fi
+
+# Prepend /usr/local/bin (Common location for manual installs/brew on Linux)
+# Add this unconditionally as tools like Starship often land here
+_NEW_PATH="/usr/local/bin:$_NEW_PATH"
+
+# Optional: Prepend /usr/local/sbin if needed for admin tools
+# _NEW_PATH="/usr/local/sbin:$_NEW_PATH"
+
+# Remove potential duplicate paths (requires awk/tr or specific shell features)
+# Simple approach: Just export the potentially duplicated path for now
+# More robust (Bash 4+):
+# Read paths into an array, remove duplicates, join back
+# declare -a path_arr
+# IFS=: read -r -a path_arr <<< "$_NEW_PATH"
+# declare -A seen
+# declare -a unique_path_arr
+# for p in "${path_arr[@]}"; do
+#   [[ -z $p || ${seen[$p]} ]] && continue
+#   unique_path_arr+=("$p")
+#   seen[$p]=1
+# done
+# export PATH=$(IFS=:; echo "${unique_path_arr[*]}")
+# --- OR --- Just export the built path (simpler, usually fine) ---
+export PATH="$_NEW_PATH"
+# --- End PATH Setup ---
 
 
 # --- ASDF Version Manager Setup ---
