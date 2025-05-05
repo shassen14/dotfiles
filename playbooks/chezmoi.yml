@@ -23,12 +23,13 @@
       tags: [always, chezmoi, prerequisites]
 
     # --- Chezmoi Installation (Optional Redundancy) ---
-    - name: Ensure chezmoi via script (Linux)
-      become: true
+    - name: Install chezmoi via script (Linux)
+      become: true # Install to /usr/local/bin needs sudo
       ansible.builtin.shell:
+        # Using original one-liner, without 'warn: false'
         cmd: sh -c "$(curl -fsLS get.chezmoi.io)" -- -b /usr/local/bin
       args:
-        creates: /usr/local/bin/chezmoi
+        creates: /usr/local/bin/chezmoi # Makes the task idempotent
       when: ansible_os_family != "Darwin"
       tags: [always, chezmoi, install]
 

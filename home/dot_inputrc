@@ -1,0 +1,48 @@
+# ~/.inputrc - Managed by Chezmoi
+# Configuration for the GNU Readline library (used by Bash)
+
+# --- History Search Bindings ---
+# Map Up arrow (usually \e[A) to search backward through history
+# based on the text already typed on the line.
+"\e[A": history-search-backward
+
+# Map Down arrow (usually \e[B) to search forward through history
+# based on the text already typed on the line.
+"\e[B": history-search-forward
+
+# --- Other Useful Readline Settings ---
+
+# Perform filename completion in a case-insensitive manner
+set completion-ignore-case on
+
+# Display all possible completions on the first Tab press
+set show-all-if-ambiguous on
+
+# If there are more completions than available lines, show them one screenful at a time
+# set page-completions on # Can sometimes be slightly annoying, uncomment if preferred
+
+# Display potential completions highlighted and differentiated by file type
+set visible-stats on
+
+# Allow inserting characters with the 8th bit set (e.g., accented characters)
+set input-meta on
+set output-meta on
+set convert-meta off
+
+# Make Bash check filenames case insensitively
+set completion-ignore-case On
+
+# Make Bash completion cycling through possibilities active
+# Tab: Complete common prefix, then cycle alternatives
+# Shift-Tab: Cycle backwards
+"\t": menu-complete
+# "\e[Z": menu-complete-backward # Requires Shift-Tab to send this sequence
+
+# Enable horizontal scrolling of the command line if needed
+# set horizontal-scroll-mode On
+
+# Use vi mode instead of emacs mode for line editing
+# set editing-mode vi
+# set keymap vi
+
+# $include /etc/inputrc # Optional: Include system-wide settings if desired
