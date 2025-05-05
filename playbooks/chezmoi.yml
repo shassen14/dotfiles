@@ -73,6 +73,35 @@
         - not internal_cache_home_dir_check.stat.exists
       tags: [always, chezmoi, config, verify]
 
+    # --- Check if already logged in --- #
+    - name: Check if already logged in to Bitwarden CLI
+      ansible.builtin.command:
+        cmd: bw status
+      register: bw_status_check
+      changed_when: false
+      failed_when: false # Don't fail if not logged in
+      become: false
+      tags: [always, chezmoi, config, secrets]
+
+    - name: Log in to Bitwarden CLI using API Key (if needed and in CI)
+      # Uses env vars BW_CLIENTID and BW_CLIENTSECRET passed from GitHub Actions
+      ansible.builtin.command:
+        cmd: bw login --apikey --raw # --raw might suppress extra output
+        # Note: stdin piping is often needed if BW_CLIENTID/SECRET aren't picked up automatically
+        # stdin: "{{ lookup('env', 'BW_CLIENTID') }}\n{{ lookup('env', 'BW_CLIENTSECRET') }}" # Check if needed
+      become: false
+      when:
+        # Only run if CI variable is set AND not already logged in
+        - lookup('env', 'CI') == 'true'
+        - lookup('env', 'BW_CLIENTID') is defined
+        - lookup('env', 'BW_CLIENTSECRET') is defined
+        - bw_status_check.stdout is defined
+        - '"status": "unauthenticated"' in bw_status_check.stdout
+      no_log: true # Prevent sensitive info from appearing in logs if using stdin
+      tags: [always, chezmoi, config, secrets]
+      changed_when: true # Assume login is a change
+
+
     # --- Pause for Secrets (Only if initial apply is needed) ---
     - name: Prompt user to unlock Bitwarden before initial apply
       ansible.builtin.pause:
@@ -84,6 +113,7 @@
       when:
         # CORRECTED: Use the check result from *before* the apply attempt
         - not chezmoi_target_config_check_before_run.stat.exists
+        - lookup('env', 'CI') != 'true'
       tags: [always, chezmoi, config, apply, secrets]
 
     # --- Chezmoi Application Steps ---

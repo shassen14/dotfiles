@@ -28,6 +28,8 @@ jobs:
           CI: true
           # Set environment variable pointing to the repo root in the workspace
           DOTFILES_REPO_ROOT: ${{ github.workspace }}
+          BW_CLIENTID: ${{ secrets.BW_CLIENTID }}  
+          BW_CLIENTSECRET: ${{ secrets.BW_CLIENTSECRET }} 
         run: |
           set -e # Exit on any error in this script block
           echo "Repository Path (DOTFILES_REPO_ROOT): $DOTFILES_REPO_ROOT"
