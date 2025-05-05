@@ -64,6 +64,11 @@
   import_playbook: playbooks/aldente.yml
   tags: [aldente, app, macos, gui, utility]
 
+# Streaming / Recording <-- Add OBS Here
+- name: Setup OBS Studio
+  import_playbook: playbooks/obs.yml
+  tags: [obs, app, streaming, recording, multimedia, gui]
+
 # Security / Password Management
 - name: Setup Bitwarden
   import_playbook: playbooks/bitwarden.yml

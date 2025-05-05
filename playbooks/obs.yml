@@ -1,0 +1,70 @@
+# playbooks/obs.yml: Installs OBS Studio streaming software.
+- name: Install OBS Studio
+  hosts: all
+  become: true # Needed for PPA/Apt tasks on Linux
+  gather_facts: true
+  tags: [obs, app, streaming, recording, multimedia, gui]
+
+  tasks:
+    # --- macOS ---
+    - name: Install OBS Studio via Homebrew Cask (macOS)
+      become: false # Homebrew Cask MUST run as the user
+      community.general.homebrew_cask:
+        name: obs # Cask name is 'obs'
+        state: present
+      when: ansible_os_family == "Darwin"
+      tags: [obs, package, macos, homebrew]
+
+    # --- Debian/Ubuntu (using official OBS PPA) ---
+    - name: Install prerequisites for adding Apt repositories (Debian/Ubuntu)
+      # software-properties-common provides add-apt-repository
+      ansible.builtin.apt:
+        name: software-properties-common
+        state: present
+        update_cache: true # Update cache before adding PPA
+      when: ansible_os_family == "Debian"
+      tags: [obs, package, debian, prerequisites, repo]
+      # Inherits become: true
+
+    - name: Add official OBS Studio PPA (Debian/Ubuntu)
+      ansible.builtin.apt_repository:
+         repo: ppa:obsproject/obs-studio
+         state: present
+         update_cache: true # Update cache AFTER adding the PPA
+      when: ansible_os_family == "Debian"
+      tags: [obs, package, debian, repo]
+      # Inherits become: true
+
+    - name: Install OBS Studio package from PPA (Debian/Ubuntu)
+      ansible.builtin.apt:
+        name: obs-studio
+        state: present
+        # update_cache: false # Cache should have been updated by apt_repository task
+      when: ansible_os_family == "Debian"
+      tags: [obs, package, debian, install]
+      # Inherits become: true
+
+    # --- Fallbacks for other Linux (Optional - Add if needed) ---
+    # Example for Arch:
+    # - name: Install OBS Studio via Pacman (Arch)
+    #   community.general.pacman:
+    #     name: obs-studio
+    #     state: present
+    #   when: ansible_os_family == "Archlinux"
+    #   tags: [obs, package, arch]
+
+    # Example for Fedora (Often requires RPM Fusion repo setup first):
+    # - name: Install OBS Studio via DNF (Fedora)
+    #   ansible.builtin.dnf:
+    #     name: obs-studio
+    #     state: present
+    #   when: ansible_os_family == "RedHat" # Ensure RPM Fusion is enabled
+    #   tags: [obs, package, fedora, redhat]
+
+    # Example using Snap (If preferred or other methods fail)
+    # - name: Install OBS Studio via Snap (Linux)
+    #   ansible.builtin.snap:
+    #     name: obs-studio
+    #     state: present
+    #   when: ansible_os_family != "Darwin"
+    #   tags: [obs, package, linux, snap]
