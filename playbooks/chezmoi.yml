@@ -1,16 +1,18 @@
-# playbooks/chezmoi.yml: Installs Chezmoi, initializes repo, and applies changes.
-# Assumes essential prerequisites (git, curl) are installed (e.g., by bootstrap or another play).
+# playbooks/chezmoi.yml: Installs Chezmoi, handles non-interactive login via BW API Key, initializes repo, and applies changes.
+# Assumes essential prerequisites (git, curl) & Bitwarden CLI (bw) are installed by prior playbooks/bootstrap.
+# Assumes BW_CLIENTID & BW_CLIENTSECRET are available via GitHub Secrets (in CI) OR
+# Ansible Vault variables bw_client_id & bw_client_secret are defined (for local runs).
 - hosts: all
-  gather_facts: true # Need ansible_env.HOME and ansible_os_family
+  gather_facts: true # Need ansible_env.HOME, ansible_os_family etc.
 
   tasks:
     # --- Ensure Chezmoi Binary Exists ---
     - name: Ensure chezmoi via script (Linux)
-      become: true # Install to /usr/local/bin needs sudo
+      become: true
       ansible.builtin.shell:
         cmd: sh -c "$(curl -fsLS get.chezmoi.io)" -- -b /usr/local/bin
       args:
-        creates: /usr/local/bin/chezmoi # Makes the task idempotent
+        creates: /usr/local/bin/chezmoi
       when: ansible_os_family != "Darwin"
       tags: [always, chezmoi, install]
 
@@ -34,7 +36,7 @@
       become: false
       ansible.builtin.stat:
         path: "{{ ansible_env.HOME }}/.config/chezmoi/chezmoi.toml"
-      register: chezmoi_target_config_check_before_run # <<< Variable for state BEFORE apply
+      register: chezmoi_target_config_check_before_run
       tags: [always, chezmoi, config]
 
     # --- Chezmoi Initialization ---
@@ -73,53 +75,67 @@
         - not internal_cache_home_dir_check.stat.exists
       tags: [always, chezmoi, config, verify]
 
-    # --- Check if already logged in --- #
-    - name: Check if already logged in to Bitwarden CLI
+    # --- Bitwarden Login (Non-Interactive using API Key) ---
+    - name: Check Bitwarden CLI login status
       ansible.builtin.command:
-        cmd: bw status
+        cmd: bw status # Assumes bw is in PATH (added by previous playbook/exports)
       register: bw_status_check
       changed_when: false
-      failed_when: false # Don't fail if not logged in
-      become: false
-      tags: [always, chezmoi, config, secrets]
+      failed_when: false # Allow failure if not logged in or bw not found
+      become: false # Run as user
+      environment: # Pass PATH explicitly in case .exports isn't sourced yet for this task
+        PATH: "{{ lookup('env', 'HOME') }}/.cargo/bin:{{ ansible_env.PATH }}" # Add other paths if needed
+      tags: [always, chezmoi, config, secrets, bw]
 
-    - name: Log in to Bitwarden CLI using API Key (if needed and in CI)
-      # Uses env vars BW_CLIENTID and BW_CLIENTSECRET passed from GitHub Actions
+    - name: Display BW Status Before Login Attempt (Debug)
+      ansible.builtin.debug:
+        var: bw_status_check.stdout
+      when: bw_status_check is defined and bw_status_check.stdout is defined
+      tags: [debug, secrets, bw]
+
+    - name: Log in to Bitwarden CLI using API Key (when needed)
       ansible.builtin.command:
-        cmd: bw login --apikey --raw # --raw might suppress extra output
-        # Note: stdin piping is often needed if BW_CLIENTID/SECRET aren't picked up automatically
-        # stdin: "{{ lookup('env', 'BW_CLIENTID') }}\n{{ lookup('env', 'BW_CLIENTSECRET') }}" # Check if needed
+        cmd: bw login --apikey --raw
       become: false
       when:
-        # Only run if CI variable is set AND not already logged in
-        - lookup('env', 'CI') == 'true'
-        - lookup('env', 'BW_CLIENTID') is defined
-        - lookup('env', 'BW_CLIENTSECRET') is defined
+        # Ensure status check succeeded before evaluating its output
+        - bw_status_check is defined
+        - bw_status_check.rc == 0
         - bw_status_check.stdout is defined
-        - '"status": "unauthenticated"' in bw_status_check.stdout
-      no_log: true # Prevent sensitive info from appearing in logs if using stdin
-      tags: [always, chezmoi, config, secrets]
-      changed_when: true # Assume login is a change
+        - not bw_status_check.stdout | regex_search('"unlocked"')
+        # AND ensure API keys are defined (for safety)
+        - (lookup('env', 'BW_CLIENTID', default='') != "" or bw_client_id is defined)
+        - (lookup('env', 'BW_CLIENTSECRET', default='') != "" or bw_client_secret is defined)
+      environment:
+        BW_CLIENTID: "{{ lookup('env', 'BW_CLIENTID') | default(bw_client_id | default(''), true) }}"
+        BW_CLIENTSECRET: "{{ lookup('env', 'BW_CLIENTSECRET') | default(bw_client_secret | default(''), true) }}"
+      register: bw_login_result
+      # Changed_when: check stderr for message confirming login OR already logged in with API key
+      changed_when: >
+        bw_login_result.rc == 0 and
+        bw_login_result.stderr is defined and
+        ("logged in" in bw_login_result.stderr | lower or
+         "already logged in" in bw_login_result.stderr | lower)
+      # Failed_when: Fail if rc is non-zero AND it wasn't just because already logged in
+      failed_when: >
+        bw_login_result.rc != 0 and
+        (bw_login_result.stderr is not defined or
+         "already logged in" not in bw_login_result.stderr | lower)
+      no_log: true
+      tags: [always, chezmoi, config, secrets, bw]
 
+    - name: Synchronize Bitwarden CLI vault after login (if login occurred)
+      ansible.builtin.command:
+        cmd: bw sync
+      become: false
+      when: bw_login_result is defined and bw_login_result.changed | default(false)
+      changed_when: false # Sync isn't a config change
+      tags: [always, chezmoi, config, secrets, bw]
 
-    # --- Pause for Secrets (Only if initial apply is needed) ---
-    - name: Prompt user to unlock Bitwarden before initial apply
-      ansible.builtin.pause:
-        prompt: |
-          SETUP PAUSED: The next step will apply Chezmoi configuration, potentially fetching secrets.
-          Please ensure Bitwarden CLI is logged in and unlocked.
-          In another terminal, run 'bw login' (if needed) and then 'bw unlock'.
-          Press Enter here ONLY after the vault is unlocked to proceed.
-      when:
-        # CORRECTED: Use the check result from *before* the apply attempt
-        - not chezmoi_target_config_check_before_run.stat.exists
-        - lookup('env', 'CI') != 'true'
-      tags: [always, chezmoi, config, apply, secrets]
-
-    # --- Chezmoi Application Steps ---
+    # --- Chezmoi Application Steps (Requires Unlocked Vault) ---
     - name: Perform initial chezmoi apply (creates target config using -S)
       # Applies state for first time using source dir within internal cache.
-      become: false
+      become: false # MUST run as user to inherit BW session/env
       ansible.builtin.command:
         cmd: >
           chezmoi
@@ -127,16 +143,14 @@
           apply -vvv
       args:
         chdir: "{{ ansible_env.HOME }}"
-        # 'creates:' handles idempotency, task only runs if target is missing
         creates: "{{ ansible_env.HOME }}/.config/chezmoi/chezmoi.toml"
-      # CORRECTED: Run only if the internal cache home structure is OK AND target config is missing (using the check from before)
       when:
         - internal_cache_home_dir_check.stat.exists
-        - not chezmoi_target_config_check_before_run.stat.exists # <<< CORRECTED CHECK
+        - not chezmoi_target_config_check_before_run.stat.exists
       register: initial_apply_result
       tags: [always, chezmoi, config, apply]
 
-    - name: Display Initial Apply Result (CRITICAL DEBUG)
+    - name: Display Initial Apply Result (Debug)
       ansible.builtin.debug:
         msg: |
           Initial Apply STDOUT:
@@ -146,13 +160,11 @@
       when: initial_apply_result is defined and not initial_apply_result.skipped | default(false)
       tags: [always, chezmoi, config, apply, debug]
 
-    # --- Check State AFTER Initial Apply Attempt ---
     - name: Check if chezmoi target configuration file exists (AFTER initial apply attempt)
-      # This check determines if the initial apply actually succeeded
       become: false
       ansible.builtin.stat:
         path: "{{ ansible_env.HOME }}/.config/chezmoi/chezmoi.toml"
-      register: chezmoi_target_config_check_after_apply # Variable for state AFTER apply attempt
+      register: chezmoi_target_config_check_after_apply
       tags: [always, chezmoi, config]
 
     - name: Display Target Config Check Result AFTER apply (Debug)
@@ -160,15 +172,13 @@
         var: chezmoi_target_config_check_after_apply.stat
       tags: [always, chezmoi, config, debug]
 
-    # --- Subsequent Chezmoi Apply ---
     - name: Apply chezmoi changes on subsequent runs
       # Runs if the target config file now exists. Reads that config file.
-      become: false
+      become: false # MUST run as user to inherit BW session/env
       ansible.builtin.command:
         cmd: "chezmoi apply -v" # Normal verbosity
       args:
         chdir: "{{ ansible_env.HOME }}"
-      # Condition based on check AFTER initial apply attempt
       when: chezmoi_target_config_check_after_apply.stat.exists
       register: subsequent_apply_result
       changed_when: subsequent_apply_result.stdout is defined and subsequent_apply_result.stdout != ""
