@@ -36,6 +36,7 @@ setopt SHARE_HISTORY             # Share history between concurrent sessions
 
 # --- Completion System ---
 # Initialize Zsh completion system
+fpath=("$HOME/.zsh_functions" $fpath) # Add user functions dir to fpath
 autoload -Uz compinit && compinit
 # Case-insensitive completion
 zstyle ':completion:*' matcher-list 'm:{a-zA-Z}={A-Za-z}'

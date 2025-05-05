@@ -1,0 +1,47 @@
+# playbooks/rust.yml: Installs Rust toolchain using rustup.
+- name: Install Rust via rustup
+  hosts: all
+  # Installs into user's home dir, so run as user.
+  become: false
+  gather_facts: true
+  tags: [rust, rustup, dev, compiler, prerequisites] # Add relevant tags
+
+  tasks:
+    - name: Check if rustup is already installed
+      # Check for the rustup binary in the default cargo bin location
+      ansible.builtin.stat:
+        path: "{{ lookup('env', 'HOME') }}/.cargo/bin/rustup"
+      register: rustup_check
+      tags: [always] # Ensure check always runs if tag is specified
+
+    - name: Install rustup (if not already installed)
+      # Runs the official rustup-init script non-interactively
+      ansible.builtin.shell:
+        # -y: Assume yes, proceed without confirmation
+        # --no-modify-path: IMPORTANT - prevents script from trying to change shell rc files
+        # We manage PATH explicitly via Chezmoi templates later.
+        cmd: curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --no-modify-path
+        # warn: false # <-- This line was removed to fix compatibility error
+      args:
+        # 'creates:' makes the task skip if rustup exists, preventing 'changed' state falsely
+        # If rustup binary exists, this task will not run the 'cmd'.
+        creates: "{{ lookup('env', 'HOME') }}/.cargo/bin/rustup"
+      # Run only if the stat check showed rustup doesn't exist
+      when: not rustup_check.stat.exists
+      register: rustup_install_result
+      # If the command runs (because 'creates:' condition was false),
+      # and it succeeds (rc=0), then consider state changed.
+      changed_when: rustup_install_result.rc == 0
+      failed_when: rustup_install_result.rc != 0
+      # No become needed here as it's set at the play level
+
+    - name: Display Rustup Install Result (Debug)
+      ansible.builtin.debug:
+        msg: |
+          Rustup Install STDOUT:
+          {{ rustup_install_result.stdout | default('N/A - Task Skipped or No Output') }}
+          Rustup Install STDERR:
+          {{ rustup_install_result.stderr | default('N/A - Task Skipped or No Output') }}
+      # Run this debug task only if the install task actually ran
+      when: rustup_install_result is defined and not rustup_install_result.skipped | default(false)
+      tags: [debug] # Optional debug tag

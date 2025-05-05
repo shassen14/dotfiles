@@ -41,6 +41,11 @@ if [ -d "$HOME/.local/bin" ]; then
   _NEW_PATH="$HOME/.local/bin:$_NEW_PATH"
 fi
 
+# Prepend ~/.cargo/bin if it exists
+if [ -d "$HOME/.cargo/bin" ]; then
+  _NEW_PATH="$HOME/.cargo/bin:$_NEW_PATH"
+fi
+
 # Prepend /usr/local/bin (Common location for manual installs/brew on Linux)
 # Add this unconditionally as tools like Starship often land here
 _NEW_PATH="/usr/local/bin:$_NEW_PATH"
