@@ -1,0 +1,8 @@
+[user]
+  name = {{ .name | quote }}
+  # Access the 'Username' field of the "GitHub Email" item
+  email = {{ (bitwarden "item" "Github Email").login.username | trim | quote }}
+[github]
+  user = {{ (bitwarden "item" "Github Login").login.username | trim | quote }}
+  # Access the 'Notes' field of the "GitHub" item
+  token = {{ (bitwarden "item" "Github Login").notes | trim | quote }}

@@ -1,32 +1,13 @@
 # playbooks/chezmoi.yml: Installs Chezmoi, initializes repo, and applies changes.
-# Assumes bootstrap.sh installed prerequisites and chezmoi binary.
+# Assumes essential prerequisites (git, curl) are installed (e.g., by bootstrap or another play).
 - hosts: all
-  gather_facts: true
+  gather_facts: true # Need ansible_env.HOME and ansible_os_family
 
   tasks:
-    # Optional Redundancy - Can be removed if bootstrap is always run first
-    # --- Prerequisites ---
-    - name: Ensure prerequisites (git, curl) - Distribution Package Managers
-      become: true
-      ansible.builtin.package:
-        name: [git, curl]
-        state: present
-      when: ansible_os_family != "Darwin"
-      tags: [always, chezmoi, prerequisites]
-
-    - name: Ensure prerequisites (git) - Homebrew (macOS)
-      become: false
-      community.general.homebrew:
-        name: git
-        state: present
-      when: ansible_os_family == "Darwin"
-      tags: [always, chezmoi, prerequisites]
-
-    # --- Chezmoi Installation (Optional Redundancy) ---
-    - name: Install chezmoi via script (Linux)
+    # --- Ensure Chezmoi Binary Exists ---
+    - name: Ensure chezmoi via script (Linux)
       become: true # Install to /usr/local/bin needs sudo
       ansible.builtin.shell:
-        # Using original one-liner, without 'warn: false'
         cmd: sh -c "$(curl -fsLS get.chezmoi.io)" -- -b /usr/local/bin
       args:
         creates: /usr/local/bin/chezmoi # Makes the task idempotent
@@ -41,27 +22,29 @@
       when: ansible_os_family == "Darwin"
       tags: [always, chezmoi, install]
 
-    # --- Chezmoi Initialization and Application (Split Steps) ---
+    # --- Check Initial State ---
     - name: Check if chezmoi internal repository cache exists (.git dir)
-      # Checks the default location where 'chezmoi init' clones the repo
       become: false
       ansible.builtin.stat:
         path: "{{ ansible_env.HOME }}/.local/share/chezmoi/.git"
       register: chezmoi_internal_repo_git_check
       tags: [always, chezmoi, config]
 
-    - name: Initialize chezmoi (clone repository only)
-      # Clones the repo to internal cache if it doesn't exist. Does NOT apply yet.
+    - name: Check if chezmoi target configuration file exists (before any init/apply)
+      become: false
+      ansible.builtin.stat:
+        path: "{{ ansible_env.HOME }}/.config/chezmoi/chezmoi.toml"
+      register: chezmoi_target_config_check_before_run # <<< Variable for state BEFORE apply
+      tags: [always, chezmoi, config]
+
+    # --- Chezmoi Initialization ---
+    - name: Initialize chezmoi (clone repository only, if needed)
       become: false
       ansible.builtin.command:
-        # Run ONLY 'chezmoi init', NO '--apply'
-        # Add verbose flag for better debugging if needed
         cmd: "chezmoi init --verbose --branch {{ chezmoi_branch }} {{ chezmoi_repo }}"
       args:
         chdir: "{{ ansible_env.HOME }}"
-        # This task creates the internal repo cache
         creates: "{{ ansible_env.HOME }}/.local/share/chezmoi/.git"
-      # Run only if the internal repo cache check shows it doesn't exist
       when: not chezmoi_internal_repo_git_check.stat.exists
       register: chezmoi_init_result
       tags: [always, chezmoi, config, init]
@@ -72,67 +55,54 @@
       when: chezmoi_init_result is defined and chezmoi_init_result.changed
       tags: [always, chezmoi, config, init, debug]
 
-    # --- Explicit Verification AFTER Init ---
-    # Check if the internal cache structure required for the next step exists
-    - name: Verify internal cache directory exists after init
+    # --- Explicit Verification AFTER Init Attempt ---
+    - name: Verify 'home' subdirectory exists in cache after init attempt
       become: false
       ansible.builtin.stat:
-        # Check the main cache directory
-        path: "{{ ansible_env.HOME }}/.local/share/chezmoi"
-      register: internal_cache_dir_check
-      tags: [always, chezmoi, config, verify]
-
-    - name: Verify 'home' subdirectory exists in cache after init
-      become: false
-      ansible.builtin.stat:
-        # Check for the 'home' dir inside the cache
         path: "{{ ansible_env.HOME }}/.local/share/chezmoi/home"
       register: internal_cache_home_dir_check
       tags: [always, chezmoi, config, verify]
 
-    - name: Fail if internal cache structure is missing after init
-      # Fails explicitly if init seemed to succeed but didn't create needed dirs
+    - name: Fail if internal cache 'home' structure is missing
       ansible.builtin.fail:
         msg: |
-          Chezmoi init command reported success (rc={{ chezmoi_init_result.rc | default('N/A') }})
-          but the internal cache structure is missing or incomplete.
-          Cache dir exists: {{ internal_cache_dir_check.stat.exists | default('N/A') }}
-          Cache home dir exists: {{ internal_cache_home_dir_check.stat.exists | default('N/A') }}
-          Check permissions on ~/.local/share/ and network connectivity.
-          Init stderr: {{ chezmoi_init_result.stderr | default('N/A') }}
+          Chezmoi 'home' subdirectory not found in internal cache ({{ ansible_env.HOME }}/.local/share/chezmoi/home)
+          after initialization attempt. Check Git repo structure.
+          Init command rc: {{ chezmoi_init_result.rc | default('N/A - Init Skipped') }} Init stderr: {{ chezmoi_init_result.stderr | default('N/A - Init Skipped') }}
       when:
-        # Fail if init ran (wasn't skipped) AND either cache dir OR home subdir is missing
-        - chezmoi_init_result is defined
-        - not chezmoi_init_result.skipped | default(false)
-        - not internal_cache_dir_check.stat.exists or not internal_cache_home_dir_check.stat.exists
+        - not internal_cache_home_dir_check.stat.exists
       tags: [always, chezmoi, config, verify]
 
-    # --- Chezmoi Application Steps (Only run if verification passed) ---
-    - name: Check if chezmoi target configuration file exists (before initial apply)
-      become: false
-      ansible.builtin.stat:
-        path: "{{ ansible_env.HOME }}/.config/chezmoi/chezmoi.toml"
-      register: chezmoi_target_config_check_before_apply
-      tags: [always, chezmoi, config]
+    # --- Pause for Secrets (Only if initial apply is needed) ---
+    - name: Prompt user to unlock Bitwarden before initial apply
+      ansible.builtin.pause:
+        prompt: |
+          SETUP PAUSED: The next step will apply Chezmoi configuration, potentially fetching secrets.
+          Please ensure Bitwarden CLI is logged in and unlocked.
+          In another terminal, run 'bw login' (if needed) and then 'bw unlock'.
+          Press Enter here ONLY after the vault is unlocked to proceed.
+      when:
+        # CORRECTED: Use the check result from *before* the apply attempt
+        - not chezmoi_target_config_check_before_run.stat.exists
+      tags: [always, chezmoi, config, apply, secrets]
 
+    # --- Chezmoi Application Steps ---
     - name: Perform initial chezmoi apply (creates target config using -S)
       # Applies state for first time using source dir within internal cache.
       become: false
       ansible.builtin.command:
-        # Use '-S' pointing to the verified internal cache home subdir
         cmd: >
           chezmoi
           -S {{ ansible_env.HOME }}/.local/share/chezmoi/home
           apply -vvv
       args:
         chdir: "{{ ansible_env.HOME }}"
-        # 'creates:' ensures this task only runs effectively once until the target file exists
+        # 'creates:' handles idempotency, task only runs if target is missing
         creates: "{{ ansible_env.HOME }}/.config/chezmoi/chezmoi.toml"
-      # Run only if the internal cache structure looks OK AND target config is missing
+      # CORRECTED: Run only if the internal cache home structure is OK AND target config is missing (using the check from before)
       when:
-        - internal_cache_dir_check.stat.exists # From verification task
-        - internal_cache_home_dir_check.stat.exists # From verification task
-        - not chezmoi_target_config_check_before_apply.stat.exists # Target doesn't exist yet
+        - internal_cache_home_dir_check.stat.exists
+        - not chezmoi_target_config_check_before_run.stat.exists # <<< CORRECTED CHECK
       register: initial_apply_result
       tags: [always, chezmoi, config, apply]
 
@@ -146,11 +116,13 @@
       when: initial_apply_result is defined and not initial_apply_result.skipped | default(false)
       tags: [always, chezmoi, config, apply, debug]
 
-    - name: Check if chezmoi target configuration file exists (NOW check AFTER apply attempt)
+    # --- Check State AFTER Initial Apply Attempt ---
+    - name: Check if chezmoi target configuration file exists (AFTER initial apply attempt)
+      # This check determines if the initial apply actually succeeded
       become: false
       ansible.builtin.stat:
         path: "{{ ansible_env.HOME }}/.config/chezmoi/chezmoi.toml"
-      register: chezmoi_target_config_check_after_apply
+      register: chezmoi_target_config_check_after_apply # Variable for state AFTER apply attempt
       tags: [always, chezmoi, config]
 
     - name: Display Target Config Check Result AFTER apply (Debug)
@@ -158,9 +130,9 @@
         var: chezmoi_target_config_check_after_apply.stat
       tags: [always, chezmoi, config, debug]
 
+    # --- Subsequent Chezmoi Apply ---
     - name: Apply chezmoi changes on subsequent runs
       # Runs if the target config file now exists. Reads that config file.
-      # That config file MUST point sourceDir to the final checkout location.
       become: false
       ansible.builtin.command:
         cmd: "chezmoi apply -v" # Normal verbosity
@@ -169,7 +141,7 @@
       # Condition based on check AFTER initial apply attempt
       when: chezmoi_target_config_check_after_apply.stat.exists
       register: subsequent_apply_result
-      changed_when: "'Applied' in subsequent_apply_result.stdout"
+      changed_when: subsequent_apply_result.stdout is defined and subsequent_apply_result.stdout != ""
       tags: [always, chezmoi, config, apply]
 
     - name: Display Subsequent Apply Result (Debug)
