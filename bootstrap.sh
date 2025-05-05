@@ -123,27 +123,27 @@ else
     echo "✅ Ansible already installed."
 fi
 
-# --- Install Chezmoi ---
-if ! command -v chezmoi &> /dev/null; then
-    echo "📦 Installing Chezmoi..."
-    if [[ "$OS_FAMILY" == "Darwin" ]]; then
-        brew install chezmoi || { echo "❌ Failed to install Chezmoi via Homebrew."; exit 1; }
-    else
-        echo "Installing Chezmoi using install script..."
-        sh -c "$(curl -fsLS get.chezmoi.io)" -- -b /usr/local/bin || { echo "❌ Failed to install Chezmoi using script."; exit 1; }
-    fi
-    echo "✅ Chezmoi installed successfully."
-else
-    echo "✅ Chezmoi already installed."
-fi
+# # --- Install Chezmoi ---
+# if ! command -v chezmoi &> /dev/null; then
+#     echo "📦 Installing Chezmoi..."
+#     if [[ "$OS_FAMILY" == "Darwin" ]]; then
+#         brew install chezmoi || { echo "❌ Failed to install Chezmoi via Homebrew."; exit 1; }
+#     else
+#         echo "Installing Chezmoi using install script..."
+#         sh -c "$(curl -fsLS get.chezmoi.io)" -- -b /usr/local/bin || { echo "❌ Failed to install Chezmoi using script."; exit 1; }
+#     fi
+#     echo "✅ Chezmoi installed successfully."
+# else
+#     echo "✅ Chezmoi already installed."
+# fi
 
-# --- Verify chezmoi command exists before running Ansible ---
-if ! command -v chezmoi &> /dev/null; then
-    echo "❌ CRITICAL FAILURE: chezmoi command not found in PATH before running Ansible!"
-    echo "Current PATH=$PATH"
-    exit 1
-fi
-echo "✅ chezmoi command found in PATH."
+# # --- Verify chezmoi command exists before running Ansible ---
+# if ! command -v chezmoi &> /dev/null; then
+#     echo "❌ CRITICAL FAILURE: chezmoi command not found in PATH before running Ansible!"
+#     echo "Current PATH=$PATH"
+#     exit 1
+# fi
+# echo "✅ chezmoi command found in PATH."
 
 # --- Run Ansible Playbook ---
 # Assumes playbook/inventory are relative to where bootstrap.sh is run
