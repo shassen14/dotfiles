@@ -1,7 +1,11 @@
 # playbook.yml: Main playbook orchestrating the setup.
 # Imports other playbooks for modularity.
 
-# Initial setup: Chezmoi first to get core dotfiles
+# Initial setup
+- name: Install Bitwarden CLI (for Secrets Management)
+  import_playbook: playbooks/bitwarden_cli.yml
+  tags: [always, bitwarden, bitwarden-cli, prerequisites, security]
+
 - name: Setup Chezmoi and core dotfiles
   import_playbook: playbooks/chezmoi.yml
   tags: [always, chezmoi, config] # Run chezmoi setup always

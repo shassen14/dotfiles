@@ -1,0 +1,28 @@
+# playbooks/bitwarden_cli.yml: Installs the Bitwarden CLI (bw).
+- name: Install Bitwarden CLI (bw)
+  hosts: all
+  # Installation methods vary, some need sudo, some run as user
+  become: true # Default to true for package managers, override for brew/user installs
+  gather_facts: true
+  tags: [bitwarden, bitwarden-cli, bw, security, cli, prerequisites]
+
+  tasks:
+    # --- macOS ---
+    - name: Install Bitwarden CLI via Homebrew (macOS)
+      community.general.homebrew:
+        name: bitwarden-cli
+        state: present
+      become: false # MUST run brew as user
+      when: ansible_os_family == "Darwin"
+      tags: [bitwarden-cli, package, macos, homebrew]
+
+    # --- Linux ---
+    # Check if snapd is preferred/enabled on your Linux systems
+    - name: Install Bitwarden CLI via Snap (Linux - Recommended)
+      ansible.builtin.snap:
+        name: bw
+        state: present
+      # become: true # snap install often needs sudo (inherited)
+      when: ansible_os_family != "Darwin" # Example: Use Snap for all Linux
+      tags: [bitwarden-cli, package, linux, snap]
+      # Add ignore_errors: true if you want to try Apt/Dnf as fallback
