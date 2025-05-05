@@ -3,8 +3,8 @@
 # Target: ~/.config/alacritty/alacritty.toml
 
 # Basic environment setup
-[env]
-  TERM = "alacritty"
+# [env]
+#   TERM = "alacritty"
 
 # Window configuration
 [window]
@@ -19,7 +19,8 @@
 # Font configuration (Ensure your Nerd Font name is correct)
 [font]
   size = 12.0
-  normal.family = "FiraCode Nerd Font" # <<< VERIFY THIS NAME
+  [font.normal] # Define sub-table for normal font
+    family = "FiraCode Nerd Font"
 
 # Colors (Using Dracula example)
 [colors.primary]
