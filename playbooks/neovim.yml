@@ -25,13 +25,30 @@
       tags: [neovim, prerequisites, build, tools]
       # Needs become: false for brew on macOS - handle below
 
-    - name: Ensure common dependencies via Homebrew (macOS)
-      community.general.homebrew:
-        name: ['git', 'cmake', 'pkg-config', 'unzip']
+    # --- Ensure Common Dependencies (cmake, unzip, pkg-config, git) ---
+    - name: Ensure common dependencies via Package (Linux)
+      ansible.builtin.package:
+        name:
+          - git
+          - cmake
+          - pkg-config
+          - unzip
         state: present
-      become: false
-      when: ansible_os_family == "Darwin"
-      tags: [neovim, prerequisites, build, tools, macos]
+      when: ansible_os_family != "Darwin" # Only run on Linux
+      tags: [neovim, prerequisites, build, tools, linux]
+      # Inherits become: true correctly
+
+    - name: Ensure common dependencies via Homebrew (macOS)
+      community.general.homebrew: # Use the specific homebrew module
+        name:
+          - git       # Ensure git is installed via brew
+          - cmake
+          - pkg-config
+          - unzip
+        state: present
+      become: false # MUST run brew as user
+      when: ansible_os_family == "Darwin" # Only run on macOS
+      tags: [neovim, prerequisites, build, tools, macos, homebrew]
 
     # --- Install Neovim ---
     - name: Install Neovim via Homebrew (macOS)
