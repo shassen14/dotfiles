@@ -5,7 +5,7 @@ VisualStudioExptTeam.vscodeintellicode # AI-assisted IntelliSense
 
 # --- Rust ---
 rust-lang.rust-analyzer  # Official Rust language server, provides excellent autocompletion, diagnostics, etc.
-serayuzgur.crates        # Helps manage dependencies in Cargo.toml (versions, features)
+# serayuzgur.crates        # Helps manage dependencies in Cargo.toml (versions, features)
 # tamasfe.even-better-toml # Improved TOML language support, useful for Cargo.toml
 
 

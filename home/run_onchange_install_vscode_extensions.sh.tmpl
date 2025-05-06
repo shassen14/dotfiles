@@ -1,0 +1,88 @@
+#!/bin/bash
+# {{/* This is a Chezmoi template.
+#      It installs VS Code extensions listed in vscode_extensions.txt
+# */}}
+
+set -eufo pipefail # Secure script execution
+
+# Path to your list of extensions within the Chezmoi source directory
+EXTENSIONS_FILE="{{ .chezmoi.sourceDir }}/vscode_extensions.txt"
+
+# Ensure the extensions file exists
+if [ ! -f "$EXTENSIONS_FILE" ]; then
+    echo "Error: Extensions file not found at $EXTENSIONS_FILE"
+    exit 1
+fi
+
+# Check if VS Code 'code' command is available
+if ! command -v code &>/dev/null; then
+    echo "VS Code 'code' command not found in PATH. Trying common paths..."
+    if [ -f "/usr/share/code/bin/code" ]; then # Common on Linux installed via deb/rpm
+        CODE_CMD="/usr/share/code/bin/code"
+    elif [ -f "/snap/bin/code" ]; then # Common for Snap installs
+        CODE_CMD="/snap/bin/code"
+    elif [ -f "/Applications/Visual Studio Code.app/Contents/Resources/app/bin/code" ]; then # macOS
+        CODE_CMD="/Applications/Visual Studio Code.app/Contents/Resources/app/bin/code"
+    elif [ -f "$HOME/.local/bin/code" ]; then # User local install
+        CODE_CMD="$HOME/.local/bin/code"
+    else
+        echo "Could not find VS Code executable automatically. Please ensure 'code' is in your PATH."
+        exit 0 # Exit gracefully if VS Code isn't installed, don't fail the whole playbook
+    fi
+else
+    CODE_CMD="code"
+fi
+
+echo "Managing VS Code extensions using: $CODE_CMD"
+
+# Get currently installed extensions (robustly handling potential CR characters)
+INSTALLED_EXTENSIONS=$($CODE_CMD --list-extensions | sed 's/\r$//')
+
+# Install extensions from file
+while IFS= read -r line_from_file || [[ -n "$line_from_file" ]]; do
+    # 1. Remove comments (anything after #)
+    extension_id_commentless=$(echo "$line_from_file" | sed 's/#.*//')
+
+    # 2. Trim leading/trailing whitespace
+    # Using parameter expansion for trimming (Bash 4+)
+    # For older Bash or other shells, `echo "$extension_id_commentless" | xargs` could work but has edge cases.
+    # A more portable way is often sed or awk, but parameter expansion is cleanest if Bash 4+ is assumed.
+    extension_id_trimmed="${extension_id_commentless#"${extension_id_commentless%%[![:space:]]*}"}" # Remove leading
+    extension_id_trimmed="${extension_id_trimmed%"${extension_id_trimmed##*[![:space:]]}"}"         # Remove trailing
+
+    # Skip empty lines or lines that became empty after stripping comments/whitespace
+    if [[ -z "$extension_id_trimmed" ]]; then
+        continue
+    fi
+
+    # Check if extension is already installed (case-insensitive check)
+    is_installed=false
+    # Convert to lowercase for comparison
+    target_ext_lower=$(echo "$extension_id_trimmed" | tr '[:upper:]' '[:lower:]')
+
+    echo "$INSTALLED_EXTENSIONS" | while IFS= read -r installed_ext_line; do
+        installed_ext_line_lower=$(echo "$installed_ext_line" | tr '[:upper:]' '[:lower:]')
+        if [[ "$installed_ext_line_lower" == "$target_ext_lower" ]]; then
+            is_installed=true
+            break
+        fi
+    done
+
+    if ! $is_installed; then
+        echo "Attempting to install extension: '${extension_id_trimmed}'" # Quoted for clarity in logs
+        if ! $CODE_CMD --install-extension "${extension_id_trimmed}" --force; then
+            echo "WARNING: Failed to install extension '${extension_id_trimmed}'. It might be a typo, deprecated, or a network issue."
+        else
+            echo "Successfully installed '${extension_id_trimmed}'."
+        fi
+    else
+        echo "Extension already installed: '${extension_id_trimmed}'"
+    fi
+done <"$EXTENSIONS_FILE"
+
+# Optional: Uninstall extensions not in the list (Ensure this logic also trims comments/whitespace from desired list)
+# ... (your existing uninstall logic, but ensure it processes the desired list correctly) ...
+# Example for desired list processing in uninstall block:
+# DESIRED_EXTENSIONS_LOWERCASE=$(awk '{sub(/#.*/,""); $1=$1; if (NF) print tolower($0)}' "$EXTENSIONS_FILE" | sort -u)
+
+echo "VS Code extension management complete."
