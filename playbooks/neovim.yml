@@ -14,17 +14,6 @@
       when: ansible_os_family != "Darwin"
       tags: [neovim, prerequisites, build, linux]
 
-    - name: Ensure other common dependencies (cmake, unzip, pkg-config, git)
-      ansible.builtin.package:
-        name:
-          - git # Needed for lazy.nvim, LSP server installs via Mason
-          - cmake # Often needed for LSP/TreeSitter C builds
-          - pkg-config # Often needed for native extensions
-          - unzip # Needed by some Mason installers
-        state: present
-      tags: [neovim, prerequisites, build, tools]
-      # Needs become: false for brew on macOS - handle below
-
     # --- Ensure Common Dependencies (cmake, unzip, pkg-config, git) ---
     - name: Ensure common dependencies via Package (Linux)
       ansible.builtin.package:
