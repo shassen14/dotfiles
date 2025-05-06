@@ -48,16 +48,24 @@
       when: ansible_os_family == "Darwin"
       tags: [neovim, package, macos]
 
-    - name: Install Neovim via Apt (Debian/Ubuntu)
-      # Consider using Neovim's PPA for newer versions if needed:
-      # https://github.com/neovim/neovim/wiki/Installing-Neovim#ubuntu
+    # --- Debian/Ubuntu ---
+    - name: Add Neovim PPA (Debian/Ubuntu - for up-to-date versions)
+      ansible.builtin.apt_repository:
+        repo: ppa:neovim-ppa/unstable # Or 'unstable' for development builds
+        state: present
+        update_cache: true # Update cache after adding PPA
+      become: true
+      when: ansible_os_family == "Debian"
+      tags: [neovim, package, repo, debian]
+
+    - name: Install Neovim via Apt from PPA (Debian/Ubuntu)
       ansible.builtin.apt:
         name: neovim
-        state: present
-        update_cache: true
+        state: present # Installs latest available from configured sources (PPA)
+        # update_cache: false # Cache was updated in previous step
+      become: true
       when: ansible_os_family == "Debian"
       tags: [neovim, package, debian]
-      # Inherits become: true
 
     - name: Install Neovim via Dnf (Fedora/RedHat)
       ansible.builtin.dnf:

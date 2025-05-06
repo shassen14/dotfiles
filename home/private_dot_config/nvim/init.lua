@@ -1,5 +1,11 @@
--- ~/.config/nvim/init.lua
--- Entry point for Neovim configuration
+-- ~/.config/nvim/init.lua (Managed by Chezmoi from source: private_dot_config/nvim/init.lua)
+print("Loading init.lua...")
+
+-- Apply core config: options and keymaps EARLY
+print("Applying core config: options and keymaps...")
+require("user.options") -- Load your options file BEFORE lazy setup
+require("user.keymaps") -- Load your keymaps file BEFORE lazy setup
+print("Core config applied.")
 
 -- Bootstrap lazy.nvim plugin manager
 local lazypath = vim.fn.stdpath("data") .. "/lazy/lazy.nvim"
@@ -13,13 +19,18 @@ if not vim.loop.fs_stat(lazypath) then
   })
   print("lazy.nvim bootstrap complete.")
 end
-vim.opt.rtp:prepend(lazypath) -- Add lazy to runtime path
+vim.opt.rtp:prepend(lazypath)
 
--- Load configurations AFTER bootstrap and rtp update
-require("user.options")   -- Load basic editor options
-require("user.keymaps")   -- Load custom key mappings
-require("user.lazy")      -- Load plugin specifications for lazy.nvim
+-- Setup lazy.nvim and tell it to load plugin specs from the 'lua/plugins' directory
+print("Running lazy.setup...")
+require("lazy").setup( "plugins", { -- Passing "plugins" loads specs from lua/plugins/*.lua
+  -- Optional lazy.nvim config options here if needed
+   checker = { enabled = true }, -- Example: check for updates
+  -- performance = { rtp = { disabled = true } } -- Example: Faster startup
+})
 
-vim.cmd.colorscheme("dracula")
+-- Set colorscheme (ensure the theme plugin spec in lua/plugins/ui.lua has lazy=false or high priority)
+print("Setting colorscheme...")
+vim.cmd.colorscheme("dracula") -- Make sure 'dracula' is the name specified in its plugin spec
 
-print("init.lua loaded successfully") -- For debugging
+print("init.lua finished.")
