@@ -21,6 +21,5 @@ require("user.keymaps")   -- Load custom key mappings
 require("user.lazy")      -- Load plugin specifications for lazy.nvim
 
 vim.cmd.colorscheme("dracula")
-print("Set colorscheme to dracula") 
 
 print("init.lua loaded successfully") -- For debugging

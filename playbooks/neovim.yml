@@ -6,21 +6,32 @@
   tags: [neovim, nvim, editor, tools, cli, dev]
 
   tasks:
-    # --- Ensure Git is installed (often needed for plugin managers) ---
-    - name: Ensure Git is installed via Homebrew (macOS)
+    # --- Ensure Common Dependencies are installed (often needed for plugin managers) ---
+    - name: Ensure base build dependencies (Linux)
+      ansible.builtin.package:
+        name: "{{ 'build-essential' if ansible_os_family == 'Debian' else ('gcc-c++' if ansible_os_family == 'RedHat' else 'base-devel') }}" # Adjust package group names
+        state: present
+      when: ansible_os_family != "Darwin"
+      tags: [neovim, prerequisites, build, linux]
+
+    - name: Ensure other common dependencies (cmake, unzip, pkg-config, git)
+      ansible.builtin.package:
+        name:
+          - git # Needed for lazy.nvim, LSP server installs via Mason
+          - cmake # Often needed for LSP/TreeSitter C builds
+          - pkg-config # Often needed for native extensions
+          - unzip # Needed by some Mason installers
+        state: present
+      tags: [neovim, prerequisites, build, tools]
+      # Needs become: false for brew on macOS - handle below
+
+    - name: Ensure common dependencies via Homebrew (macOS)
       community.general.homebrew:
-        name: git
+        name: ['git', 'cmake', 'pkg-config', 'unzip']
         state: present
       become: false
       when: ansible_os_family == "Darwin"
-      tags: [git, prerequisites, macos]
-
-    - name: Ensure Git is installed via Package (Linux)
-      ansible.builtin.package:
-        name: git
-        state: present
-      when: ansible_os_family != "Darwin"
-      tags: [git, prerequisites, linux]
+      tags: [neovim, prerequisites, build, tools, macos]
 
     # --- Install Neovim ---
     - name: Install Neovim via Homebrew (macOS)
