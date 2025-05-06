@@ -1,44 +1,111 @@
-# playbooks/neovim.yml: Installs Neovim (nvim) text editor.
-- name: Install Neovim
+# playbooks/neovim.yml: Installs Neovim (nvim) and common dependencies.
+- name: Install Neovim and Dependencies
   hosts: all
-  become: true # Default to become=true for Linux package installs
+  become: true # Default for Linux package installs
   gather_facts: true
-  tags: [neovim, nvim, editor, tools, cli, dev] # Add relevant tags
+  tags: [neovim, nvim, editor, tools, cli, dev]
 
   tasks:
-    # --- macOS ---
+    # --- Ensure Common Dependencies are installed (often needed for plugin managers) ---
+    - name: Ensure base build dependencies (Linux)
+      ansible.builtin.package:
+        name: "{{ 'build-essential' if ansible_os_family == 'Debian' else ('gcc-c++' if ansible_os_family == 'RedHat' else 'base-devel') }}" # Adjust package group names
+        state: present
+      when: ansible_os_family != "Darwin"
+      tags: [neovim, prerequisites, build, linux]
+
+    # --- Ensure Common Dependencies (cmake, unzip, pkg-config, git) ---
+    - name: Ensure common dependencies via Package (Linux)
+      ansible.builtin.package:
+        name:
+          - git
+          - cmake
+          - pkg-config
+          - unzip
+        state: present
+      when: ansible_os_family != "Darwin" # Only run on Linux
+      tags: [neovim, prerequisites, build, tools, linux]
+      # Inherits become: true correctly
+
+    - name: Ensure common dependencies via Homebrew (macOS)
+      community.general.homebrew: # Use the specific homebrew module
+        name:
+          - git       # Ensure git is installed via brew
+          - cmake
+          - pkg-config
+          - unzip
+        state: present
+      become: false # MUST run brew as user
+      when: ansible_os_family == "Darwin" # Only run on macOS
+      tags: [neovim, prerequisites, build, tools, macos, homebrew]
+
+    # --- Install Neovim ---
     - name: Install Neovim via Homebrew (macOS)
       community.general.homebrew:
         name: neovim
         state: present
-      become: false # MUST run brew as user
+      become: false # Run brew as user
       when: ansible_os_family == "Darwin"
-      tags: [neovim, package, macos, homebrew]
+      tags: [neovim, package, macos]
 
-    # --- Debian/Ubuntu ---
     - name: Install Neovim via Apt (Debian/Ubuntu)
+      # Consider using Neovim's PPA for newer versions if needed:
+      # https://github.com/neovim/neovim/wiki/Installing-Neovim#ubuntu
       ansible.builtin.apt:
         name: neovim
         state: present
-        update_cache: true # Optional: update cache if needed
+        update_cache: true
       when: ansible_os_family == "Debian"
       tags: [neovim, package, debian]
-      # Inherits become: true from play level
+      # Inherits become: true
 
-    # --- Fedora/RedHat ---
     - name: Install Neovim via Dnf (Fedora/RedHat)
       ansible.builtin.dnf:
         name: neovim
         state: present
       when: ansible_os_family == "RedHat"
       tags: [neovim, package, redhat, fedora]
-      # Inherits become: true from play level
+      # Inherits become: true
 
-    # --- Arch Linux ---
     - name: Install Neovim via Pacman (Arch)
       community.general.pacman:
         name: neovim
         state: present
       when: ansible_os_family == "Archlinux"
       tags: [neovim, package, arch]
-      # Inherits become: true from play level
+      # Inherits become: true
+
+    # --- Install Common Plugin Dependencies (Optional but Recommended) ---
+    # ripgrep (rg) for searching (e.g., Telescope)
+    - name: Install ripgrep via Homebrew (macOS)
+      community.general.homebrew: { name: ripgrep, state: present }
+      become: false
+      when: ansible_os_family == "Darwin"
+      tags: [neovim, prerequisites, rg, macos]
+
+    - name: Install ripgrep via Package (Linux)
+      ansible.builtin.package: { name: ripgrep, state: present }
+      when: ansible_os_family != "Darwin"
+      tags: [neovim, prerequisites, rg, linux]
+
+    # fd (for file finding, e.g., Telescope)
+    - name: Install fd via Homebrew (macOS)
+      community.general.homebrew: { name: fd, state: present }
+      become: false
+      when: ansible_os_family == "Darwin"
+      tags: [neovim, prerequisites, fd, macos]
+
+    - name: Install fd via Package (Linux)
+      # Package name might be fd-find on Debian/Ubuntu
+      ansible.builtin.package: { name: "{{ 'fd-find' if ansible_distribution in ['Debian', 'Ubuntu'] else 'fd' }}", state: present }
+      when: ansible_os_family != "Darwin"
+      tags: [neovim, prerequisites, fd, linux]
+
+    # Build tools often needed for LSP/Tree-sitter compilation
+    - name: Ensure base build dependencies (Linux)
+      ansible.builtin.package:
+        name: build-essential # Debian/Ubuntu group
+        state: present
+      when: ansible_os_family == "Debian"
+      tags: [neovim, prerequisites, build, linux]
+      # Add similar for Fedora (dnf groupinstall "Development Tools") / Arch (base-devel) if needed
