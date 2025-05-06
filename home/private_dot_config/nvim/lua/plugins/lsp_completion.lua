@@ -76,59 +76,61 @@ return { -- Start with 'return {'
       -- local lspkind = require('lspkind')
 
       cmp.setup({
-         snippet = {
-           expand = function(args)
-             luasnip.lsp_expand(args.body)
-           end,
-         },
-         sources = cmp.config.sources({
-             { name = 'nvim_lsp' },
-             { name = 'luasnip' },
-             { name = 'buffer' },
-             { name = 'path' },
-         }),
-         -- Configure formatting (optional: add icons with lspkind)
-         formatting = {
-             -- If using lspkind (uncomment require('lspkind') above):
-             -- format = lspkind.cmp_format({
-             --    mode = 'symbol_text', -- Show symbol and text
-             --    maxwidth = 50,
-             --    ellipsis_char = '...',
-             -- })
-             -- If not using lspkind (simpler):
-             format = require('lsp-zero').cmp_format()
-         },
-         mapping = cmp.mapping.preset.insert({
-             ['<C-p>'] = cmp.mapping.select_prev_item(cmp_select),
-             ['<C-n>'] = cmp.mapping.select_next_item(cmp_select),
-             ['<C-y>'] = cmp.mapping.confirm({ select = true }), -- Confirm selection
-             ['<C-Space>'] = cmp.mapping.complete(), -- Trigger completion
-             ['<CR>'] = cmp.mapping.confirm({ select = true }), -- Confirm selection with Enter
-             ['<Tab>'] = cmp.mapping(function(fallback) -- Tab completion / snippet navigation
-                 if cmp.visible() then
-                     cmp.select_next_item()
-                 elseif luasnip.expand_or_jumpable() then
-                     luasnip.expand_or_jump()
-                 else
-                     fallback()
-                 end
-             end, { "i", "s" }), -- i=insert mode, s=select mode
-             ['<S-Tab>'] = cmp.mapping(function(fallback) -- Shift+Tab navigation
-                 if cmp.visible() then
-                     cmp.select_prev_item()
-                 elseif luasnip.jumpable(-1) then
-                     luasnip.jump(-1)
-                 else
-                     fallback()
-                 end
-             end, { "i", "s" }),
-         }),
-         -- Optional: Add window/border appearance if desired
-         -- window = {
-         --   completion = cmp.config.window.bordered(),
-         --   documentation = cmp.config.window.bordered(),
-         -- },
-      })
+             snippet = {
+               expand = function(args)
+                 luasnip.lsp_expand(args.body)
+               end,
+             },
+             sources = cmp.config.sources({
+                 { name = 'nvim_lsp' },
+                 { name = 'luasnip' },
+                 { name = 'buffer' },
+                 { name = 'path' },
+             }),
+
+            -- V V V TEMPORARY SIMPLIFICATION V V V
+            formatting = {
+              -- Use a very basic default format function for testing
+              format = function(entry, vim_item)
+                -- You can add icons or basic formatting here if needed later
+                vim_item.kind = string.format('%s', vim_item.kind) -- Basic kind display
+                return vim_item
+              end
+            },
+            -- ^ ^ ^ TEMPORARY SIMPLIFICATION ^ ^ ^
+            --  -- v v v CORRECTED STRUCTURE v v v
+            --  formatting = {
+            --    format = require('lsp-zero').cmp_format() -- Assign the function to the 'format' sub-key
+            --  },
+            --  -- ^ ^ ^ CORRECTED STRUCTURE ^ ^ ^
+             mapping = cmp.mapping.preset.insert({
+                 ['<C-p>'] = cmp.mapping.select_prev_item(cmp_select),
+                 ['<C-n>'] = cmp.mapping.select_next_item(cmp_select),
+                 ['<C-y>'] = cmp.mapping.confirm({ select = true }), -- Confirm selection
+                 ['<C-Space>'] = cmp.mapping.complete(), -- Trigger completion
+                 ['<CR>'] = cmp.mapping.confirm({ select = true }), -- Confirm selection with Enter
+                 ['<Tab>'] = cmp.mapping(function(fallback) -- Tab completion / snippet navigation
+                     if cmp.visible() then
+                         cmp.select_next_item()
+                     elseif luasnip.expand_or_jumpable() then
+                         luasnip.expand_or_jump()
+                     else
+                         fallback()
+                     end
+                 end, { "i", "s" }), -- i=insert mode, s=select mode
+                 ['<S-Tab>'] = cmp.mapping(function(fallback) -- Shift+Tab navigation
+                     if cmp.visible() then
+                         cmp.select_prev_item()
+                     elseif luasnip.jumpable(-1) then
+                         luasnip.jump(-1)
+                     else
+                         fallback()
+                     end
+                 end, { "i", "s" }),
+             }),
+             -- Ensure cmp_select is defined if you use it in mappings (it was defined earlier in the file)
+             -- local cmp_select = {behavior = cmp.SelectBehavior.Select} -- Make sure this is defined before cmp.setup if used
+          })
 
       print("LSP/CMP config function finished.")
     end
