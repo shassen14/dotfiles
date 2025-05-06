@@ -1,0 +1,28 @@
+{
+	"Console Log": {
+		"prefix": "clog",
+		"body": [
+			"console.log('$1:', $1);"
+		],
+		"description": "Log output to console"
+	},
+	"Arrow Function": {
+		"prefix": "afn",
+		"body": [
+			"const ${1:functionName} = (${2:params}) => {",
+			"\t$0",
+			"};"
+		],
+		"description": "Arrow function"
+	},
+	"For Loop": {
+		"prefix": "for",
+		"body": [
+			"for (let ${1:i} = 0; ${1:i} < ${2:array}.length; ${1:i}++) {",
+			"\tconst ${3:element} = ${2:array}[${1:i}];",
+			"\t$0",
+			"}"
+		],
+		"description": "For loop"
+	}
+}

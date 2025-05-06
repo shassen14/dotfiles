@@ -1,0 +1,63 @@
+# --- Core & UI ---
+dracula-theme.theme-dracula
+PKief.material-icon-theme
+VisualStudioExptTeam.vscodeintellicode # AI-assisted IntelliSense
+
+# --- Rust ---
+rust-lang.rust-analyzer  # Official Rust language server, provides excellent autocompletion, diagnostics, etc.
+serayuzgur.crates        # Helps manage dependencies in Cargo.toml (versions, features)
+# tamasfe.even-better-toml # Improved TOML language support, useful for Cargo.toml
+
+
+# --- C++ ---
+ms-vscode.cpptools             # Official Microsoft C/C++ extension (IntelliSense, debugging, code browsing)
+# ms-vscode.cmake-tools        # If you use CMake for your C++ projects (highly recommended)
+# cheshirekow.cmake-format     # For formatting CMakeLists.txt files (if using CMake)
+# twxs.cmake                   # Alternative/additional CMake language support
+# cschlosser.doxdocgen         # Doxygen comment generation for C++
+
+# --- Debugging (General, but very useful for C++/Rust) ---
+# webfreak.debug               # Native Debug extension (GDB/LLDB support, often better than cpptools' default for some scenarios)
+                               # Note: rust-analyzer and cpptools provide their own debugging integration.
+                               # webfreak.debug is more for when you want direct GDB/LLDB control without the LSP.
+
+# --- Python ---
+ms-python.python
+ms-python.vscode-pylance
+ms-python.black-formatter
+# ms-python.autopep8 # Alternative to Black
+# ms-python.flake8 # Linter
+# ms-python.pylint # Linter
+# littlefoxteam.vscode-python-test-adapter # If you run tests in VS Code
+
+# --- JavaScript / TypeScript / Web ---
+esbenp.prettier-vscode
+dbaeumer.vscode-eslint
+formulahendry.auto-rename-tag
+# christian-kohler.path-intellisense
+# xabikos.JavaScriptSnippets
+# dsznajder.es7-react-js-snippets # If you use React
+
+# --- Version Control ---
+eamodio.gitlens
+# donjayamanne.githistory # Alternative or complementary to GitLens
+
+# --- Markdown ---
+yzhang.markdown-all-in-one
+# davidanson.vscode-markdownlint # Markdown linter
+
+# --- YAML ---
+redhat.vscode-yaml
+
+# --- Docker ---
+ms-azuretools.vscode-docker
+
+# --- Other Utilities ---
+# formulahendry.code-runner # To run snippets of code quickly
+# TabNine.tabnine-vscode # AI code completion (can be resource-intensive)
+# EditorConfig.EditorConfig # To respect .editorconfig files
+
+# --- Remote Development (Uncomment if you use these) ---
+# ms-vscode-remote.remote-containers
+# ms-vscode-remote.remote-ssh
+# ms-vscode-remote.remote-wsl

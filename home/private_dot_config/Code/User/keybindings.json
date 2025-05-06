@@ -1,0 +1,29 @@
+// Place your key bindings in this file to override the defaults
+// This is an example. Add your own custom keybindings.
+[
+  // Example: Remap "Save All" to Ctrl+Shift+S
+  {
+      "key": "ctrl+shift+s", // On Windows/Linux. Use "cmd+shift+s" for macOS
+      "command": "workbench.action.saveAll"
+  },
+  // Example: Toggle Terminal
+  {
+      "key": "ctrl+`", // Default, but ensure it's here if you want it synced
+      "command": "workbench.action.terminal.toggleTerminal"
+  },
+  // Example: Open User Settings JSON
+  {
+      "key": "ctrl+,", // Default for opening settings UI, this could be for JSON specifically
+      "command": "workbench.action.openSettingsJson"
+  },
+  // Example: A custom keybinding for a specific extension command
+  // {
+  //     "key": "alt+g l",
+  //     "command": "gitlens.toggleFileBlame"
+  // },
+  {
+      "key": "ctrl+shift+p", // Default command palette
+      "command": "workbench.action.showCommands"
+  }
+  // Add more of your custom keybindings here
+]
