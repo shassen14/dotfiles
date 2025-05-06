@@ -29,6 +29,10 @@
   import_playbook: playbooks/vscode.yml
   tags: [vscode, editor, tools, gui]
 
+- name: Install Brave Browser
+  import_playbook: playbooks/brave.yml
+  tags: [brave, browser, app, gui]
+
 - name: Setup Neovim
   import_playbook: playbooks/neovim.yml
   tags: [neovim, nvim, editor, tools, cli, dev]
