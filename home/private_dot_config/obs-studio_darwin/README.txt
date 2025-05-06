@@ -1,0 +1,1 @@
+need to copy this directory to ~/Library/Application\ Support/obs-studio
