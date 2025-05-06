@@ -163,7 +163,7 @@
       # That config file MUST point sourceDir to the final checkout location.
       become: false
       ansible.builtin.command:
-        cmd: "chezmoi apply -v" # Normal verbosity
+        cmd: "chezmoi apply --force -v" # Normal verbosity
       args:
         chdir: "{{ ansible_env.HOME }}"
       # Condition based on check AFTER initial apply attempt

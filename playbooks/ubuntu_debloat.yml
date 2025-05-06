@@ -1,0 +1,124 @@
+---
+# playbooks/ubuntu_debloat.yml
+# Uninstalls unwanted pre-installed packages on Debian/Ubuntu systems.
+
+- name: Debloat Debian/Ubuntu Systems
+  hosts: all # This playbook will be conditionally imported, so 'all' is fine here
+  become: true # Package removal requires sudo
+  gather_facts: true # We need ansible_os_family
+
+  # Define the list of packages to remove here or in a separate vars file if it gets very long
+  # For maintainability, a separate vars file is often better for long lists.
+  # Example: vars_files: - ../vars/ubuntu_packages_to_remove.yml
+  vars:
+    # Packages to remove from a standard Ubuntu Desktop installation
+    # Review this list carefully and comment out/remove anything you might actually use.
+    ubuntu_packages_to_remove:
+      # Default Games
+      - aisleriot
+      - gnome-mahjongg
+      - gnome-mines
+      - gnome-sudoku
+      - quadrapassel
+
+      # Default Office Suite (if you use alternatives or don't need it)
+      # - libreoffice-base-core
+      # - libreoffice-calc
+      # - libreoffice-common # Be careful, other things might depend on this
+      # - libreoffice-core   # Be careful
+      # - libreoffice-draw
+      # - libreoffice-gnome
+      # - libreoffice-gtk3
+      # - libreoffice-help-common # Can be large
+      # - libreoffice-help-en-us  # Or your language; can be large
+      # - libreoffice-impress
+      # - libreoffice-math
+      # - libreoffice-ogltrans
+      # - libreoffice-pdfimport
+      # - libreoffice-style-colibre
+      # - libreoffice-style-elementary # if installed
+      # - libreoffice-style-yaru # if installed
+      # - libreoffice-writer
+      # - mythes-en-us # Thesaurus for LibreOffice
+
+      # Email Client (if you use webmail or another client)
+      - thunderbird
+      # - evolution # Another email client sometimes present
+
+      # Media Players (if you use alternatives like VLC, mpv, or web-based)
+      - rhythmbox
+      - totem # GNOME Videos
+
+      # Photo Management (if you use alternatives or cloud services)
+      # - shotwell
+      # - gnome-photos # Another photo app
+
+      # Webcam Application (if not needed)
+      # - cheese
+
+      # Amazon Web Launcher
+      - ubuntu-web-launchers
+
+      # To-Do Application (if you use another system)
+      - gnome-todo
+
+      # Simple Scan (if you don't have/use a scanner)
+      # - simple-scan # Be cautious if you have a multi-function printer
+
+      # Remote Desktop Client (if not needed)
+      # - remmina
+
+      # Disk Usage Analyzer (baobab - can be useful, but optional)
+      # - baobab
+
+      # Ubuntu Reporting / Telemetry (for privacy/minimalism)
+      - ubuntu-report
+      - popularity-contest
+      - whoopsie # Ubuntu error reporting service
+      # - apport # Crash reporting, can be useful for debugging system issues, consider keeping
+
+      # Snap Daemon (ADVANCED: Only if you want to completely remove snap support)
+      # WARNING: Removing snapd will break any snap packages (like Firefox on newer Ubuntu).
+      # This is a significant change. Make sure you have alternatives for any snapped apps.
+      # - snapd
+
+      # Other potentially unwanted items (use with caution, check dependencies)
+      # - modemmanager # If you don't use a 3G/LTE modem
+      # - printer-driver-gutenprint
+      # - cups # Common Unix Printing System - removing this will disable ALL printing
+      # - rhythmbox-plugins
+      # - speech-dispatcher # Text-to-speech, for accessibility or some apps
+      # - transmission-common # BitTorrent client parts
+      # - transmission-gtk    # BitTorrent client GUI
+      # - yelp # GNOME Help browser
+
+  tasks:
+    - name: Ensure package list variable is defined for debloating
+      ansible.builtin.assert:
+        that:
+          - ubuntu_packages_to_remove is defined
+          - ubuntu_packages_to_remove is iterable
+        quiet: yes
+      when: ubuntu_packages_to_remove is defined
+
+    - name: Remove unwanted pre-installed Ubuntu/Debian packages
+      ansible.builtin.apt:
+        name: "{{ ubuntu_packages_to_remove }}"
+        state: absent
+        autoremove: yes # Remove dependencies that are no longer needed
+        purge: yes      # Also remove configuration files (use with caution for system-critical items)
+      register: apt_remove_status
+      ignore_errors: true # Some packages might not be installed, which is fine and expected
+
+    - name: Report packages that could not be removed (if any unexpected errors)
+      ansible.builtin.debug:
+        msg: "Warning: Failed to remove some packages during debloat. Stderr: {{ apt_remove_status.stderr }}"
+      when: apt_remove_status.failed is defined and apt_remove_status.failed
+
+    - name: Display information about attempted package removals
+      ansible.builtin.debug:
+        msg: "Attempted to remove/ensure absent (Debian/Ubuntu): {{ item }}. Check APT logs for actual removal status if needed."
+      loop: "{{ ubuntu_packages_to_remove }}"
+      # This loop simply informs what was attempted.
+      # The idempotency of `state: absent` means it won't show "changed" if already absent.
+      when: ubuntu_packages_to_remove is defined and ubuntu_packages_to_remove | length > 0
