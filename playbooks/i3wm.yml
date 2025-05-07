@@ -1,0 +1,64 @@
+---
+# playbooks/i3wm.yml
+# Installs i3 Window Manager and common companion utilities on Debian/Ubuntu.
+
+- name: Install i3 Window Manager and Utilities
+  hosts: all # This playbook will be conditionally imported
+  become: true # Package installation requires sudo
+  gather_facts: true # For ansible_os_family
+  tags: [i3, i3wm, wm, desktop, gui] # Add relevant tags
+
+  vars:
+    i3_companion_packages:
+      - i3lock          # Screen locker
+      - i3status        # Status bar generator
+      - suckless-tools  # Provides dmenu (default application launcher for i3)
+      - feh             # Lightweight image viewer, often used for setting wallpapers
+      - rofi            # A more versatile application launcher (alternative to dmenu)
+      - arandr          # GUI for XRandR (managing screen layouts)
+      - lxappearance    # To set GTK themes, icons, fonts
+      - pavucontrol     # PulseAudio volume control GUI
+      - network-manager-gnome # Network management applet (if not using a more minimal network setup)
+      # Compositor for transparency, shadows, fading (choose one or none)
+      # - compton       # Older, well-known compositor
+      - picom           # A popular compton fork, often preferred now
+      # Add any other tools you commonly use with i3:
+      # - scrot         # Screenshot utility
+      # - flameshot     # More advanced screenshot utility
+      - dunst         # Notification daemon
+      - libnotify-bin # For sending notifications (used by dunst or other notifiers)
+      - playerctl           # For media key control in status bar
+      - fonts-font-awesome  # For icons (or nerd-fonts handled elsewhere)
+      # - xautolock     # For automatically locking the screen
+
+  tasks:
+    # This playbook is intended for Debian/Ubuntu. Other OSes would need different tasks.
+    - name: Fail if not on Debian/Ubuntu (as this playbook is specific)
+      ansible.builtin.fail:
+        msg: "This i3wm installation playbook is designed for Debian/Ubuntu (ansible_os_family == 'Debian'). Current OS family: {{ ansible_os_family }}"
+      when: ansible_os_family != "Debian"
+      # If you intend to add Arch/Fedora support later, you'd remove/adjust this.
+
+    - name: Install i3 Window Manager package (Debian/Ubuntu)
+      ansible.builtin.apt:
+        name: i3 # This meta-package usually pulls in i3-wm, i3lock, i3status
+        state: present
+        update_cache: yes # Good to update cache before installing
+      tags: [i3, package]
+
+    - name: Install i3 companion packages (Debian/Ubuntu)
+      ansible.builtin.apt:
+        name: "{{ i3_companion_packages }}"
+        state: present
+        install_recommends: yes # Install recommended packages for these utilities
+      tags: [i3, package, utilities]
+
+    - name: Inform user about selecting i3 at login
+      ansible.builtin.debug:
+        msg: |
+          i3 Window Manager and companion utilities have been installed.
+          To use i3, you will need to select it from your display manager
+          (login screen, e.g., GDM, LightDM) when you log in next.
+          Default i3 config is at ~/.config/i3/config.
+          Use Chezmoi to manage your custom i3 configuration.
+      tags: [i3, info]

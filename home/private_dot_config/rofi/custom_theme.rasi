@@ -1,0 +1,166 @@
+/* ~/.config/rofi/custom_theme.rasi */
+/* Managed by Chezmoi: {{ .chezmoi.sourceFile }} */
+/* Dracula inspired theme for Rofi */
+
+* {
+    background:                  #282a36; /* Background */
+    background-alt:              #44475a; /* Background alternate / Active */
+    foreground:                  #f8f8f2; /* Foreground / Text */
+    selected:                    #6272a4; /* Selected background */
+    selected-foreground:         #f8f8f2; /* Selected text */
+    active:                      #bd93f9; /* Active element (e.g., border) / Purple */
+    urgent:                      #ff5555; /* Urgent element (e.g., border) / Red */
+    bordercolor:                 #44475a;
+
+    transparent:                 rgba(40, 42, 54, 0.85); /* Slightly transparent background */
+
+    spacing:                     2;
+    font: "Fira Code 12";
+}
+
+window {
+    background-color: @transparent;
+    border:           2px;
+    border-color:     @active;
+    border-radius:    5px;
+    padding:          15;
+    width:            50%; /* Or a fixed pixel width like 600px */
+    height:           40%;
+    location:         center;
+    anchor:           center;
+}
+
+mainbox {
+    border:  0;
+    padding: 0;
+}
+
+message {
+    border:       2px 0px 0px;
+    border-color: @bordercolor;
+    padding:      1px;
+}
+
+textbox {
+    text-color: @foreground;
+}
+
+listview {
+    fixed-height: 0;
+    border:       2px solid 0px 0px;
+    border-color: @bordercolor;
+    spacing:      2px;
+    scrollbar:    false;
+    padding:      2px 0px 0px;
+}
+
+element {
+    border:  0;
+    padding: 8px;
+    border-radius: 3px;
+}
+
+element-text {
+    background-color: inherit;
+    text-color:       inherit;
+    vertical-align: 0.5;
+}
+
+element-icon {
+    background-color: inherit;
+    text-color:       inherit;
+    size:             1.5em; /* Adjust icon size */
+    padding:          0px 10px 0px 0px;
+    vertical-align: 0.5;
+}
+
+element.normal.normal {
+    background-color: @background;
+    text-color:       @foreground;
+}
+element.normal.urgent {
+    background-color: @urgent;
+    text-color:       @foreground;
+}
+element.normal.active {
+    background-color: @active;
+    text-color:       @foreground;
+}
+element.selected.normal {
+    background-color: @selected;
+    text-color:       @selected-foreground;
+    border:           1px solid; //@active;
+}
+element.selected.urgent {
+    background-color: @urgent;
+    text-color:       @foreground;
+}
+element.selected.active {
+    background-color: @active;
+    text-color:       @foreground;
+}
+element.alternate.normal {
+    background-color: @background; /* Or @background-alt for striping */
+    text-color:       @foreground;
+}
+element.alternate.urgent {
+    background-color: @urgent;
+    text-color:       @foreground;
+}
+element.alternate.active {
+    background-color: @active;
+    text-color:       @foreground;
+}
+
+scrollbar {
+    width:        4px;
+    border:       0;
+    handle-width: 8px;
+    padding:      0;
+    handle-color: @selected;
+}
+
+sidebar {
+    border:       2px solid 0px 0px;
+    border-color: @bordercolor;
+}
+
+button {
+    spacing:    0;
+    text-color: @foreground;
+    padding: 5px;
+    border-radius: 3px;
+    border: 2px solid @bordercolor;
+}
+button.selected {
+    background-color: @selected;
+    text-color:       @selected-foreground;
+    border: 2px solid @active;
+}
+
+inputbar {
+    spacing:    0;
+    text-color: @foreground;
+    padding:    8px;
+    children:   [ prompt,textbox-prompt-colon,entry,case-indicator ];
+    border-radius: 3px;
+    border: 1px solid @active;
+}
+case-indicator {
+    spacing:    0;
+    text-color: @foreground;
+}
+entry {
+    spacing:    0;
+    text-color: @foreground;
+}
+prompt {
+    spacing:    0;
+    text-color: @active; /* Purple prompt */
+}
+textbox-prompt-colon {
+    expand:     false;
+    str:        ":";
+    margin:     0px 0.3em 0em 0em;
+    text-color: @foreground;
+}

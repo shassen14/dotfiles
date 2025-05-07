@@ -263,6 +263,19 @@
       when: rustup_install_result is defined and not rustup_install_result.skipped | default(false)
       tags: [debug] # Optional debug tag
 
+
+    - name: Install i3status-rust using cargo for user '{{ target_user }}'
+      become: false
+      become_user: "{{ target_user }}" # Assuming target_user is defined
+      ansible.builtin.command:
+        cmd: "{{ '/home/' + target_user + '/.cargo/bin/' }}cargo install i3status-rust"
+      args:
+        creates: "{{ '/home/' + target_user + '/.cargo/bin/' }}i3status-rust"
+      environment:
+        PATH: "{{ '/home/' + target_user + '/.cargo/bin:' + ansible_env.PATH }}"
+      when: ansible_os_family == "Debian" # Or wherever you need it
+      tags: [i3, i3status_rust, package]
+
     # -------------------------------------------------------------------------
     # X. (Optional) OTHER LANGUAGES - Example: Go
     # -------------------------------------------------------------------------

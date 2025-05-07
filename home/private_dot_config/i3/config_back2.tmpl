@@ -1,0 +1,354 @@
+# ~/.config/i3/config - i3 config file
+# Managed by Chezmoi: {{ .chezmoi.sourceFile }}
+# Based on i3 User's Guide: https://i3wm.org/docs/userguide.html
+
+# -----------------------------------------------------------------------------
+# --- Variables & Font ---
+# -----------------------------------------------------------------------------
+# Set the modifier key ($mod). Mod4 is the "Super" key (Windows key)
+set $mod Mod4
+# Set Alt key
+set $alt Mod1
+
+# Define terminal emulator - Uses 'terminal' value from your chezmoi.toml data section
+# Ensure 'terminal = "your-terminal"' is set in the [data] section of chezmoi.toml
+set $term {{ .terminal | default "x-terminal-emulator" }}
+
+# Define application launcher - Using rofi with a custom theme
+set $menu rofi -show drun -theme {{ .chezmoi.homeDir }}/.config/rofi/custom_theme.rasi
+# Alternative: dmenu (requires suckless-tools)
+# set $menu dmenu_run -fn 'Fira Code-10' -nb '#282a36' -nf '#f8f8f2' -sb '#6272a4' -sf '#f8f8f2'
+
+# Font for window titles, bar, etc.
+# Uses Pango markup for icon font support.
+# Ensure 'Fira Code' and 'Font Awesome 6 Free Solid' (or equivalent) are installed.
+# Your Ansible playbook installs 'fonts-font-awesome', this should work.
+# Adjust size as needed.
+font pango:Fira Code Regular 10, Font Awesome 6 Free Solid 10
+
+# -----------------------------------------------------------------------------
+# --- Colors & Appearance (Dracula Inspired Theme) ---
+# -----------------------------------------------------------------------------
+# Dracula Color Palette
+set $background #282a36
+set $current_line #44475a
+set $foreground #f8f8f2
+set $comment #6272a4
+set $cyan #8be9fd
+set $green #50fa7b
+set $orange #ffb86c
+set $pink #ff79c6
+set $purple #bd93f9
+set $red #ff5555
+set $yellow #f1fa8c
+
+# Window Colors                  Border      Background Text      Indicator Child Border
+client.focused                   $purple     $background $foreground $purple     $purple
+client.focused_inactive          $current_line $background $comment    $current_line $current_line
+client.unfocused                 $background $background $comment    $current_line $background
+client.urgent                    $red        $red        $foreground $red        $red
+client.placeholder               $background $background $foreground $background $background
+
+# Background for i3bar
+client.background $background
+
+# -----------------------------------------------------------------------------
+# --- Window Behavior & Appearance ---
+# -----------------------------------------------------------------------------
+# Use Mod+<Mouse button> to drag floating windows
+floating_modifier $mod
+
+# Default layout for new containers (splitv or splith)
+# default_orientation horizontal
+
+# How new windows should be opened initially
+# default_border pixel 2
+# default_floating_border pixel 2
+# Or 'normal' style borders
+default_border normal 2
+default_floating_border normal 2
+
+# Hide borders on edges of screen when adjacent to another window or screen edge
+# Options: none, vertical, horizontal, both, smart
+hide_edge_borders smart
+
+# Gaps between windows
+gaps inner 8
+gaps outer 5
+
+# Enable gaps only when more than one window is present?
+smart_gaps on
+
+# If titlebars should be shown for windows, requires a font.
+# new_window default_border
+# new_float default_border
+
+# Popups during fullscreen mode
+# smart: Show on same workspace; all: Show on all workspaces; leave_fullscreen: Exit fullscreen
+popup_during_fullscreen smart
+
+# -----------------------------------------------------------------------------
+# --- Keybindings ---
+# -----------------------------------------------------------------------------
+
+# Start a terminal ($term is defined above)
+bindsym $mod+Return exec $term
+
+# Kill focused window
+bindsym $mod+Shift+q kill
+
+# Start application launcher ($menu is defined above)
+bindsym $mod+d exec $menu
+
+# Change focus (Vim style)
+bindsym $mod+h focus left
+bindsym $mod+j focus down
+bindsym $mod+k focus up
+bindsym $mod+l focus right
+# Arrow keys for focus
+bindsym $mod+Left focus left
+bindsym $mod+Down focus down
+bindsym $mod+Up focus up
+bindsym $mod+Right focus right
+
+# Move focused window (Vim style)
+bindsym $mod+Shift+h move left
+bindsym $mod+Shift+j move down
+bindsym $mod+Shift+k move up
+bindsym $mod+Shift+l move right
+# Arrow keys for moving
+bindsym $mod+Shift+Left move left
+bindsym $mod+Shift+Down move down
+bindsym $mod+Shift+Up move up
+bindsym $mod+Shift+Right move right
+
+# Split orientation
+bindsym $mod+b split h # horizontal split
+bindsym $mod+v split v # vertical split
+
+# Toggle fullscreen mode for the focused window
+bindsym $mod+f fullscreen toggle
+
+# Change container layout
+bindsym $mod+s layout stacking # Stack windows vertically
+bindsym $mod+w layout tabbed   # Tabbed layout
+bindsym $mod+e layout toggle split # Toggle between horizontal/vertical split
+
+# Toggle tiling / floating mode for a window
+bindsym $mod+Shift+space floating toggle
+
+# Change focus between tiling / floating windows
+bindsym $mod+space focus mode_toggle
+
+# Focus the parent container
+bindsym $mod+a focus parent
+# Focus the child container
+# bindsym $mod+d focus child # Note: $mod+d is already used for $menu
+
+# --- Workspaces ---
+# Define names for workspaces (using Font Awesome icons)
+set $ws1 "1 <span font_desc='Font Awesome 6 Free Solid 10'></span>" # Web Browser
+set $ws2 "2 <span font_desc='Font Awesome 6 Free Solid 10'></span>" # Terminal
+set $ws3 "3 <span font_desc='Font Awesome 6 Free Solid 10'></span>" # File Manager / Editor
+set $ws4 "4 <span font_desc='Font Awesome 6 Free Solid 10'></span>" # Communication
+set $ws5 "5 <span font_desc='Font Awesome 6 Free Solid 10'></span>" # Music / Media
+set $ws6 "6"
+set $ws7 "7"
+set $ws8 "8"
+set $ws9 "9"
+set $ws10 "10 <span font_desc='Font Awesome 6 Free Solid 10'></span>" # Settings
+
+# Switch to workspace
+bindsym $mod+1 workspace number $ws1
+bindsym $mod+2 workspace number $ws2
+bindsym $mod+3 workspace number $ws3
+bindsym $mod+4 workspace number $ws4
+bindsym $mod+5 workspace number $ws5
+bindsym $mod+6 workspace number $ws6
+bindsym $mod+7 workspace number $ws7
+bindsym $mod+8 workspace number $ws8
+bindsym $mod+9 workspace number $ws9
+bindsym $mod+0 workspace number $ws10
+
+# Move focused container to workspace
+bindsym $mod+Shift+1 move container to workspace number $ws1
+bindsym $mod+Shift+2 move container to workspace number $ws2
+bindsym $mod+Shift+3 move container to workspace number $ws3
+bindsym $mod+Shift+4 move container to workspace number $ws4
+bindsym $mod+Shift+5 move container to workspace number $ws5
+bindsym $mod+Shift+6 move container to workspace number $ws6
+bindsym $mod+Shift+7 move container to workspace number $ws7
+bindsym $mod+Shift+8 move container to workspace number $ws8
+bindsym $mod+Shift+9 move container to workspace number $ws9
+bindsym $mod+Shift+0 move container to workspace number $ws10
+
+# --- i3 Session Control ---
+# Reload the configuration file
+bindsym $mod+Shift+c reload
+# Restart i3 inplace (preserves layout/session)
+bindsym $mod+Shift+r restart
+# Exit i3 (logs you out) - uses i3-nagbar for confirmation
+bindsym $mod+Shift+e exec "i3-nagbar -t warning -m 'You pressed the exit shortcut. Do you really want to exit i3? This will end your X session.' -B 'Yes, exit i3' 'i3-msg exit'"
+
+# --- Resize Mode ---
+mode "resize" {
+    # Resize windows (Vim style)
+    bindsym h resize shrink width 10 px or 5 ppt
+    bindsym j resize grow height 10 px or 5 ppt
+    bindsym k resize shrink height 10 px or 5 ppt
+    bindsym l resize grow width 10 px or 5 ppt
+    # Arrow keys
+    bindsym Left resize shrink width 10 px or 5 ppt
+    bindsym Down resize grow height 10 px or 5 ppt
+    bindsym Up resize shrink height 10 px or 5 ppt
+    bindsym Right resize grow width 10 px or 5 ppt
+
+    # Exit resize mode
+    bindsym Return mode "default"
+    bindsym Escape mode "default"
+    bindsym $mod+r mode "default"
+}
+bindsym $mod+r mode "resize"
+
+# --- Utility Keybindings ---
+
+# Lock screen (using the script managed by Chezmoi)
+# Ensure lock.sh is executable (chmod +x)
+bindsym $mod+Control+l exec {{ .chezmoi.homeDir }}/.config/i3/scripts/lock.sh
+
+# Screenshot (using flameshot, installed via Ansible)
+# Full screen GUI selection
+bindsym Print exec --no-startup-id flameshot gui -p {{ .chezmoi.homeDir }}/Pictures/Screenshots
+# Full screen, copy to clipboard directly
+bindsym Shift+Print exec --no-startup-id flameshot full -c
+
+# Volume control (uses pactl, assumes PulseAudio/PipeWire default sink)
+# Sends notification via notify-send (requires libnotify-bin)
+bindsym XF86AudioRaiseVolume exec --no-startup-id pactl set-sink-volume @DEFAULT_SINK@ +5% && {{ .chezmoi.homeDir }}/.config/i3/scripts/notify_volume.sh
+bindsym XF86AudioLowerVolume exec --no-startup-id pactl set-sink-volume @DEFAULT_SINK@ -5% && {{ .chezmoi.homeDir }}/.config/i3/scripts/notify_volume.sh
+bindsym XF86AudioMute exec --no-startup-id pactl set-sink-mute @DEFAULT_SINK@ toggle && {{ .chezmoi.homeDir }}/.config/i3/scripts/notify_volume.sh mute
+
+# Media player control (uses playerctl, installed via Ansible)
+bindsym XF86AudioPlay exec --no-startup-id playerctl play-pause
+bindsym XF86AudioNext exec --no-startup-id playerctl next
+bindsym XF86AudioPrev exec --no-startup-id playerctl previous
+bindsym XF86AudioStop exec --no-startup-id playerctl stop
+
+# Brightness control (uses light, ensure installed via Ansible)
+# Sends notification via notify-send
+bindsym XF86MonBrightnessUp exec --no-startup-id light -A 5 && {{ .chezmoi.homeDir }}/.config/i3/scripts/notify_brightness.sh
+bindsym XF86MonBrightnessDown exec --no-startup-id light -U 5 && {{ .chezmoi.homeDir }}/.config/i3/scripts/notify_brightness.sh
+
+# Open pavucontrol (PulseAudio Volume Control GUI)
+bindsym $mod+Shift+v exec pavucontrol
+
+# Open arandr (Screen layout editor)
+bindsym $mod+Shift+m exec arandr
+
+# Open lxappearance (GTK Theme/Icon/Font Settings)
+bindsym $mod+Shift+a exec lxappearance
+
+# -----------------------------------------------------------------------------
+# --- Status Bar (i3bar with i3status) ---
+# -----------------------------------------------------------------------------
+bar {
+    # Use default i3status with a custom config file location
+    status_command i3status -c {{ .chezmoi.homeDir }}/.config/i3status/config
+    # --- OR --- Use i3status-rust if installed via cargo ---
+    # Ensure i3status-rust is in PATH (typically ~/.cargo/bin)
+    # status_command i3status-rust -c {{ .chezmoi.homeDir }}/.config/i3status-rust/config.toml
+
+    position top  # top or bottom
+    # output primary # Show bar only on primary monitor
+    tray_output primary # Show system tray icons on primary monitor
+    tray_padding 2 px # Pixels of padding around tray icons
+
+    # Font for the bar (overrides global font if set here)
+    font pango:Fira Code Regular 10, Font Awesome 6 Free Solid 10
+
+    # Colors for the bar (using defined variables)
+    colors {
+        background $background
+        statusline $foreground
+        separator  $comment
+
+        #                   border       background   text
+        focused_workspace   $purple      $purple      $foreground
+        active_workspace    $current_line $current_line $foreground
+        inactive_workspace  $background  $background  $comment
+        urgent_workspace    $red         $red         $foreground
+        binding_mode        $yellow      $background  $foreground
+    }
+}
+
+# -----------------------------------------------------------------------------
+# --- Startup Applications ---
+# -----------------------------------------------------------------------------
+# exec --no-startup-id <command> runs command only once after startup/restart
+
+# Set wallpaper using feh (ensure image path is correct and managed by Chezmoi)
+# Use sourceDir if linking from assets, homeDir if placed directly in ~/.config/i3
+exec --no-startup-id feh --bg-fill {{ .chezmoi.homeDir }}/.config/i3/wallpaper.png
+
+# Start compositor (picom recommended, ensure config path is correct)
+exec --no-startup-id picom --config {{ .chezmoi.homeDir }}/.config/picom/picom.conf --daemon
+
+# Network manager applet (if using NetworkManager)
+exec --no-startup-id nm-applet
+
+# Notification daemon (dunst, ensure config path is correct)
+exec --no-startup-id dunst -conf {{ .chezmoi.homeDir }}/.config/dunst/dunstrc
+
+# Authentication Agent (essential for graphical password prompts like sudo in GUI apps)
+# Check the actual path on your system if this doesn't work
+exec --no-startup-id /usr/lib/polkit-gnome/polkit-gnome-authentication-agent-1
+# Alternative paths might be needed on different distros/desktop installs
+
+# Setup monitor layout using custom script (ensure executable)
+exec --no-startup-id {{ .chezmoi.homeDir }}/.config/i3/scripts/monitor_setup.sh
+
+# Start applications on specific workspaces (optional examples)
+# assign [class="(?i)firefox"] $ws1
+# assign [class="(?i)spotify"] $ws5
+# exec --no-startup-id sleep 2 && firefox # Sleep delays startup slightly
+# exec --no-startup-id sleep 3 && spotify-launcher # Or however spotify is launched
+
+# Keyboard layout settings (if needed)
+# exec --no-startup-id setxkbmap -layout us,ru -option grp:alt_shift_toggle
+
+# Screen locker idle timer (using xautolock, if installed)
+# exec --no-startup-id xautolock -time 10 -locker "{{ .chezmoi.homeDir }}/.config/i3/scripts/lock.sh" -notify 30 -notifier "notify-send -u critical -t 10000 -- 'Locking screen in 30 seconds'"
+
+# -----------------------------------------------------------------------------
+# --- Window Rules ---
+# -----------------------------------------------------------------------------
+# Assign applications to specific workspaces
+assign [class="(?i)firefox"] $ws1
+assign [class="(?i)brave-browser"] $ws1
+assign [class="Alacritty"] $ws2 # Match your terminal class
+# assign [class="(?i)thunar"] $ws3
+# assign [class="discord"] $ws4
+# assign [class="Spotify"] $ws5
+
+# Make certain windows floating
+for_window [class="Pavucontrol"] floating enable
+for_window [class="Lxappearance"] floating enable
+for_window [class="Arandr"] floating enable
+for_window [title="alsamixer"] floating enable border pixel 1
+for_window [window_role="pop-up"] floating enable
+for_window [window_role="bubble"] floating enable
+for_window [window_role="task_dialog"] floating enable
+for_window [window_role="Preferences"] floating enable
+for_window [window_type="dialog"] floating enable
+for_window [window_type="menu"] floating enable
+for_window [class="(?i)pinentry"] floating enable # GPG/SSH Passphrase prompts
+
+# -----------------------------------------------------------------------------
+# --- XDG Autostart ---
+# -----------------------------------------------------------------------------
+# Option 1: Run 'dex' to execute .desktop files (requires 'dex' package)
+# exec --no-startup-id dex -a -s /etc/xdg/autostart/:~/.config/autostart/
+# Option 2: Let your desktop environment's session manager handle it (if applicable)
+# If running i3 via GDM/LightDM, some autostart items might run automatically.
+
+# --- End of i3 Configuration ---

@@ -1,0 +1,191 @@
+# ~/.config/i3/config - Simplistic i3 Config
+# Managed by Chezmoi: {{ .chezmoi.sourceFile }}
+
+# -----------------------------------------------------------------------------
+# --- Variables ---
+# -----------------------------------------------------------------------------
+# Set the modifier key. Mod4 is the "Super" key (Windows key).
+set $mod Mod4
+
+# Define your preferred terminal emulator.
+# This uses the 'terminal' variable from your chezmoi.toml's [data] section.
+# If not set there, it defaults to 'x-terminal-emulator', which should
+# point to a system-installed terminal (like gnome-terminal, xfce4-terminal, etc.).
+# Ensure your Ansible playbook installs a terminal (e.g., alacritty, kitty, xfce4-terminal).
+set $term {{ .terminal | default "x-terminal-emulator" }}
+
+# Define your application launcher.
+# dmenu is very lightweight and traditional with i3.
+# Ensure 'suckless-tools' (provides dmenu) is installed by Ansible.
+# set $menu dmenu_run -fn 'monospace-10' -nb '#222222' -nf '#bbbbbb' -sb '#005577' -sf '#eeeeee'
+# Alternative: Rofi (more features, requires 'rofi' package from Ansible)
+set $menu rofi -show drun -theme {{ .chezmoi.homeDir }}/.config/rofi/simple_theme.rasi # (You'd need to create this theme file)
+
+# Font for window titles.
+font pango:monospace 10
+
+# -----------------------------------------------------------------------------
+# --- Basic Window Appearance ---
+# -----------------------------------------------------------------------------
+# Use Mouse+$mod to drag floating windows.
+floating_modifier $mod
+
+# Border style for new windows
+default_border pixel 1
+# default_floating_border pixel 1
+
+# Hide borders on edges of the screen if only one window or against screen edge
+hide_edge_borders smart
+
+# Gaps (optional, uncomment if you like them)
+# gaps inner 5
+# gaps outer 0
+# smart_gaps on
+
+# -----------------------------------------------------------------------------
+# --- CORE KEYBINDINGS ---
+# -----------------------------------------------------------------------------
+
+# Launch a terminal
+# $mod + Enter
+bindsym $mod+Return exec $term
+
+# Kill focused window
+# $mod + Shift + q
+bindsym $mod+Shift+q kill
+
+# Launch application launcher (dmenu or rofi)
+# $mod + d
+bindsym $mod+d exec $menu
+
+# --- Basic i3 Navigation & Manipulation (Vim-like an Arrows) ---
+
+# Change focus
+bindsym $mod+h focus left
+bindsym $mod+j focus down
+bindsym $mod+k focus up
+bindsym $mod+l focus right
+# Or use arrow keys
+bindsym $mod+Left focus left
+bindsym $mod+Down focus down
+bindsym $mod+Up focus up
+bindsym $mod+Right focus right
+
+# Move focused window
+bindsym $mod+Shift+h move left
+bindsym $mod+Shift+j move down
+bindsym $mod+Shift+k move up
+bindsym $mod+Shift+l move right
+# Or use arrow keys
+bindsym $mod+Shift+Left move left
+bindsym $mod+Shift+Down move down
+bindsym $mod+Shift+Up move up
+bindsym $mod+Shift+Right move right
+
+# Split orientation (how new windows will open relative to current)
+bindsym $mod+b split h  # horizontal split (new window to the right)
+bindsym $mod+v split v  # vertical split (new window below)
+
+# Toggle fullscreen mode for the focused window
+bindsym $mod+f fullscreen toggle
+
+# Change container layout (try these out to see what they do)
+bindsym $mod+s layout stacking # Windows stack on top of each other
+bindsym $mod+w layout tabbed   # Windows become tabs
+bindsym $mod+e layout toggle split # Toggle between splith/splitv for the container
+
+# Toggle tiling / floating for the focused window
+bindsym $mod+Shift+space floating toggle
+
+# Change focus between tiling and floating windows
+bindsym $mod+space focus mode_toggle
+
+# --- Workspaces ---
+# Define simple workspace names
+set $ws1 "1"
+set $ws2 "2"
+set $ws3 "3"
+set $ws4 "4"
+set $ws5 "5"
+set $ws6 "6"
+set $ws7 "7"
+set $ws8 "8"
+set $ws9 "9"
+set $ws10 "10"
+
+# Switch to workspace
+bindsym $mod+1 workspace number $ws1
+bindsym $mod+2 workspace number $ws2
+bindsym $mod+3 workspace number $ws3
+bindsym $mod+4 workspace number $ws4
+bindsym $mod+5 workspace number $ws5
+bindsym $mod+6 workspace number $ws6
+bindsym $mod+7 workspace number $ws7
+bindsym $mod+8 workspace number $ws8
+bindsym $mod+9 workspace number $ws9
+bindsym $mod+0 workspace number $ws10
+
+# Move focused container to workspace
+bindsym $mod+Shift+1 move container to workspace number $ws1
+bindsym $mod+Shift+2 move container to workspace number $ws2
+bindsym $mod+Shift+3 move container to workspace number $ws3
+bindsym $mod+Shift+4 move container to workspace number $ws4
+bindsym $mod+Shift+5 move container to workspace number $ws5
+bindsym $mod+Shift+6 move container to workspace number $ws6
+bindsym $mod+Shift+7 move container to workspace number $ws7
+bindsym $mod+Shift+8 move container to workspace number $ws8
+bindsym $mod+Shift+9 move container to workspace number $ws9
+bindsym $mod+Shift+0 move container to workspace number $ws10
+
+# --- i3 Session Control ---
+# Reload the configuration file (after making changes)
+bindsym $mod+Shift+c reload
+
+# Restart i3 inplace (preserves layout/session, useful after upgrades)
+bindsym $mod+Shift+r restart
+
+# Exit i3 (logs you out of your X session) - uses i3-nagbar for confirmation
+bindsym $mod+Shift+e exec "i3-nagbar -t warning -m 'You pressed the exit shortcut. Do you really want to exit i3? This will end your X session.' -B 'Yes, exit i3' 'i3-msg exit'"
+
+# -----------------------------------------------------------------------------
+# --- Status Bar (i3bar with basic i3status) ---
+# -----------------------------------------------------------------------------
+# Ensure 'i3status' package is installed by Ansible.
+bar {
+    status_command i3status -c {{ .chezmoi.homeDir }}/.config/i3status/config_simple
+    position top
+    font pango:monospace 10 # Can be different from window font
+
+    colors {
+        background #222222
+        statusline #bbbbbb
+        separator  #666666
+
+        #                   border    background text
+        focused_workspace   #4c7899   #285577    #ffffff
+        active_workspace    #333333   #5f676a    #ffffff
+        inactive_workspace  #333333   #222222    #888888
+        urgent_workspace    #2f343a   #900000    #ffffff
+        binding_mode        #2f343a   #900000    #ffffff
+    }
+}
+
+# -----------------------------------------------------------------------------
+# --- Startup Applications (Optional) ---
+# -----------------------------------------------------------------------------
+# exec --no-startup-id <command>
+
+# Example: Set a simple background color (requires xsetroot, usually installed)
+# exec --no-startup-id xsetroot -solid "#333333"
+# Example: Set wallpaper using feh (requires 'feh' package from Ansible)
+# Ensure you have a wallpaper at this path or change it.
+# exec --no-startup-id feh --bg-scale {{ .chezmoi.homeDir }}/.config/i3/wallpaper_simple.png
+
+# Example: Start a compositor for basic transparency/shadows (requires 'picom' from Ansible)
+# Create a simple picom.conf or use its defaults.
+# exec --no-startup-id picom --daemon
+
+# Example: Start a notification daemon (requires 'dunst' from Ansible)
+# exec --no-startup-id dunst
+
+# --- End of i3 Configuration ---

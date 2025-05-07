@@ -1,0 +1,78 @@
+/* ~/.config/rofi/simple_theme.rasi */
+/* Managed by Chezmoi: {{ .chezmoi.sourceFile }} */
+
+* {
+    background-color: #222222;
+    text-color:       #bbbbbb;
+    border-color:     #005577;
+    font:             "monospace 10";
+}
+
+window {
+    width:            30%;
+    padding:          10px;
+    border:           1px;
+    border-radius:    0px;
+    background-color: @background-color;
+}
+
+inbox {
+    border:  0;
+    padding: 5px;
+}
+
+inputbar {
+    children:   [ prompt, textbox-prompt-colon, entry, case-indicator ];
+    spacing:    5px;
+    text-color: @text-color;
+    padding:    5px;
+    border: 1px solid; // @border-color;
+}
+
+prompt {
+    enabled:    true;
+    text-color: @text-color;
+}
+textbox-prompt-colon {
+    enabled:    true;
+    expand:     false;
+    str:        ">";
+    text-color: inherit;
+}
+entry {
+    text-color: @text-color;
+}
+case-indicator {
+    text-color: @text-color;
+}
+
+listview {
+    padding:      5px;
+    border:       1px solid; //@border-color;
+    columns:      1;
+    lines:        8;
+    spacing:      5px;
+    fixed-height: false;
+    scrollbar:    true;
+}
+
+element {
+    padding: 5px;
+    spacing: 5px;
+}
+
+element-text {
+    text-color:       inherit;
+}
+
+element.selected {
+    background-color: #005577;
+    text-color:       #eeeeee;
+}
+
+scrollbar {
+    handle-width: 5px ;
+    handle-color: @border-color ;
+    border-radius: 0px;
+    background-color: @background-color;
+}

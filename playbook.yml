@@ -78,6 +78,12 @@
   import_playbook: playbooks/aldente.yml
   tags: [aldente, app, macos, gui, utility]
 
+# Desktop Environments / Window Managers
+- name: Install i3 Window Manager (Debian/Ubuntu Only)
+  import_playbook: playbooks/i3wm.yml
+  when: ansible_os_family == "Debian" # <--- Crucial condition
+  tags: [i3, i3wm, wm, desktop, gui, ubuntu, debian]
+
 # Streaming / Recording <-- Add OBS Here
 - name: Setup OBS Studio
   import_playbook: playbooks/obs.yml

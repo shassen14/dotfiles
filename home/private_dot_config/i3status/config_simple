@@ -1,0 +1,51 @@
+# ~/.config/i3status/config_simple
+# Managed by Chezmoi: {{ .chezmoi.sourceFile }}
+# Simplistic i3status configuration
+
+general {
+    colors = true
+    interval = 5
+    output_format = "i3bar"
+}
+
+# Order of modules in the bar
+order += "tztime local"
+order += "load"
+order += "disk /"
+# order += "wireless _first_" # Uncomment if you have Wi-Fi
+# order += "ethernet _first_" # Uncomment if you have Ethernet
+# order += "battery all"      # Uncomment if you have a battery
+
+tztime local {
+    format = "%Y-%m-%d %H:%M:%S"
+}
+
+load {
+    format = "L: %1min" # Only 1-minute load average
+}
+
+disk "/" {
+    format = "/: %avail"
+}
+
+# --- Optional Modules (uncomment and configure if needed) ---
+
+# wireless _first_ {
+#         format_up = "W: %essid %quality"
+#         format_down = "W: down"
+# }
+
+# ethernet _first_ {
+#         format_up = "E: %ip"
+#         format_down = "E: down"
+# }
+
+# battery all {
+#         format = "%status %percentage"
+#         format_down = "No Bat"
+#         status_chr = "⚡"
+#         status_bat = "🔋"
+#         status_unk = "?"
+#         status_full = "☻"
+#         low_threshold = 15
+# }
