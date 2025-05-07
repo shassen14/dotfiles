@@ -48,8 +48,6 @@
       register: docker_repo_added
       tags: [docker, install, repo, debian]
 
-    # REMOVED the old 'apt_key' task which is deprecated
-
     - name: Update apt cache after adding repo if changed (Debian)
       ansible.builtin.apt:
         update_cache: true
@@ -218,7 +216,7 @@
 
     # --- Linux Wait Task (Always runs on Linux) ---
     - name: Wait for Docker daemon to be ready (Linux)
-      become: false
+      become: true
       ansible.builtin.command:
         cmd: docker info
       register: docker_check_linux

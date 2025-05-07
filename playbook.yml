@@ -6,6 +6,10 @@
   import_playbook: playbooks/chezmoi.yml
   tags: [always, chezmoi, config] # Run chezmoi setup always
 
+- name: Install Foundational Development Prerequisites and Language Toolchains
+  import_playbook: playbooks/dev_prerequisites.yml
+  tags: [always, prerequisites, dev]
+
 # OS-Specific Cleanup (Run this early, after core setup but before installing too much)
 - name: Debloat Ubuntu/Debian Systems
   import_playbook: playbooks/ubuntu_debloat.yml
@@ -17,9 +21,9 @@
   import_playbook: playbooks/git.yml
   tags: [git, tools, dev]
 
-- name: Setup Rust Language Toolchain
-  import_playbook: playbooks/rust.yml
-  tags: [rust, rustup, dev, compiler, prerequisites]
+# - name: Setup Rust Language Toolchain
+#   import_playbook: playbooks/rust.yml
+#   tags: [rust, rustup, dev, compiler, prerequisites]
 
 - name: Setup Tmux
   import_playbook: playbooks/tmux.yml
