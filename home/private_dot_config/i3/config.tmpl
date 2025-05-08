@@ -30,25 +30,63 @@ set $term {{ .terminal | default "x-terminal-emulator" }}
 # Alternative: Rofi (more features, requires 'rofi' package from Ansible)
 set $menu rofi -show drun -theme {{ .chezmoi.homeDir }}/.config/rofi/simple_theme.rasi # (You'd need to create this theme file)
 
-# Font for window titles.
-font pango:monospace 10
+# Font for window titles. Will also be used by the bar unless a different font
+# is used in the bar {} block below. Ensure the icon font is included here.
+font pango:Fira Code Regular 10, Font Awesome 6 Free Solid 10
+# --- OR --- if using Nerd Fonts (replace FiraCodeNerdFont with your actual font name)
+# font pango:FiraCode Nerd Font Mono 10
 
 # -----------------------------------------------------------------------------
-# --- Basic Window Appearance ---
+# --- Colors & Appearance (Dracula Inspired Theme) ---
 # -----------------------------------------------------------------------------
-# Use Mouse+$mod to drag floating windows.
+# Dracula Color Palette
+set $background #282a36
+set $current_line #44475a
+set $foreground #f8f8f2
+set $comment #6272a4
+set $cyan #8be9fd
+set $green #50fa7b
+set $orange #ffb86c
+set $pink #ff79c6
+set $purple #bd93f9
+set $red #ff5555
+set $yellow #f1fa8c
+
+# Window Colors (Your existing ones are good)
+client.focused                   $purple     $background $foreground $purple     $purple
+client.focused_inactive          $current_line $background $comment    $current_line $current_line
+client.unfocused                 $background $background $comment    $current_line $background
+client.urgent                    $red        $red        $foreground $red        $red
+client.placeholder               $background $background $foreground $background $background
+client.background $background
+
+# -----------------------------------------------------------------------------
+# --- Window Behavior & Appearance ---
+# -----------------------------------------------------------------------------
 floating_modifier $mod
-# Border style for new windows
-default_border pixel 1
-# default_floating_border pixel 1
 
-# Hide borders on edges of the screen if only one window or against screen edge
+# --- Borders ---
+# Use normal borders with a width of 2 pixels for better visibility
+default_border normal 2
+default_floating_border normal 2
+# Or if you prefer pixel borders:
+# default_border pixel 2
+# default_floating_border pixel 2
+
+# Hide borders smartly
 hide_edge_borders smart
+# Consider enabling smart borders (show border only when needed)
+smart_borders on
 
-# Gaps (optional, uncomment if you like them)
-# gaps inner 5
-# gaps outer 0
-# smart_gaps on
+# --- Gaps ---
+# Enable gaps for spacing between windows and screen edges
+gaps inner 8
+gaps outer 5
+# Only show gaps when more than one window is present
+smart_gaps on
+
+# Popups during fullscreen mode (keep as is)
+popup_during_fullscreen smart
 
 # -----------------------------------------------------------------------------
 # --- CORE KEYBINDINGS ---
@@ -175,21 +213,31 @@ bindsym $mod+Shift+e exec "i3-nagbar -t warning -m 'You pressed the exit shortcu
 # --- Utility Keybindings ---
 # -----------------------------------------------------------------------------
 
-# Lock screen (using the script managed by Chezmoi)
-# Ensure lock.sh is executable (chmod +x) and exists at the specified path
+# --- Suspend / Lock ---
+# Lock screen (already defined)
 bindsym $mod+Control+l exec {{ .chezmoi.homeDir }}/.config/i3/scripts/lock.sh
+
+# Lock screen AND Suspend system
+bindsym $mod+Shift+s exec {{ .chezmoi.homeDir }}/.config/i3/scripts/lock_and_suspend.sh
 
 # Screenshot (using flameshot, installed via Ansible)
 # Launch GUI for region selection, save to Screenshots folder
-bindsym Print exec --no-startup-id flameshot gui -p {{ .chezmoi.homeDir }}/Pictures/Screenshots
+bindsym $mod+p exec --no-startup-id flameshot gui -p {{ .chezmoi.homeDir }}/Pictures/Screenshots
 # Capture full screen and copy directly to clipboard
-bindsym Shift+Print exec --no-startup-id flameshot full -c
+bindsym $mod+Shift+p exec --no-startup-id flameshot full -c
+
+# --- Launch Web Browser ---
+# Uses the '.browser' variable defined in chezmoi.toml data section
+bindsym $mod+Shift+b exec {{ .browser | default "xdg-open http://localhost" }}
+
+# --- File Manager ---
+bindsym $mod+Shift+f exec thunar
 
 # --- Volume control ---
 # Uses pactl (assuming PulseAudio/PipeWire default sink) and helper script for notifications.
 # Adjust volume and trigger notification script
-bindsym XF86AudioRaiseVolume exec --no-startup-id pactl set-sink-volume @DEFAULT_SINK@ +5% && {{ .chezmoi.homeDir }}/.config/i3/scripts/notify_volume.sh
-bindsym XF86AudioLowerVolume exec --no-startup-id pactl set-sink-volume @DEFAULT_SINK@ -5% && {{ .chezmoi.homeDir }}/.config/i3/scripts/notify_volume.sh
+bindsym XF86AudioRaiseVolume exec --no-startup-id pactl set-sink-volume @DEFAULT_SINK@ +2% && {{ .chezmoi.homeDir }}/.config/i3/scripts/notify_volume.sh
+bindsym XF86AudioLowerVolume exec --no-startup-id pactl set-sink-volume @DEFAULT_SINK@ -2% && {{ .chezmoi.homeDir }}/.config/i3/scripts/notify_volume.sh
 # Toggle mute and trigger notification script
 bindsym XF86AudioMute exec --no-startup-id pactl set-sink-mute @DEFAULT_SINK@ toggle && {{ .chezmoi.homeDir }}/.config/i3/scripts/notify_volume.sh
 
@@ -203,8 +251,9 @@ bindsym XF86AudioStop exec --no-startup-id playerctl stop # Optional: some playe
 # --- Brightness control ---
 # Uses 'light' command and helper script for notifications.
 # Ensure 'light' package is installed and user has permission (often requires adding user to 'video' group).
-bindsym XF86MonBrightnessUp exec --no-startup-id light -A 5 && {{ .chezmoi.homeDir }}/.config/i3/scripts/notify_brightness.sh
-bindsym XF86MonBrightnessDown exec --no-startup-id light -U 5 && {{ .chezmoi.homeDir }}/.config/i3/scripts/notify_brightness.sh
+# TODO: Not needed right now. My setup doesn't have this option
+# bindsym XF86MonBrightnessUp exec --no-startup-id light -A 5 && {{ .chezmoi.homeDir }}/.config/i3/scripts/notify_brightness.sh
+# bindsym XF86MonBrightnessDown exec --no-startup-id light -U 5 && {{ .chezmoi.homeDir }}/.config/i3/scripts/notify_brightness.sh
 
 # --- Optional: Launch GUI Helpers ---
 # Open pavucontrol (PulseAudio Volume Control GUI)
@@ -217,25 +266,34 @@ bindsym XF86MonBrightnessDown exec --no-startup-id light -U 5 && {{ .chezmoi.hom
 # bindsym $mod+Shift+a exec lxappearance
 
 # -----------------------------------------------------------------------------
-# --- Status Bar (i3bar with basic i3status) ---
+# --- Status Bar (using i3status-rust) ---
 # -----------------------------------------------------------------------------
-# Ensure 'i3status' package is installed by Ansible.
 bar {
-    status_command i3status -c {{ .chezmoi.homeDir }}/.config/i3status/config_simple
+    # NEW: Point to i3status-rust and its config file
+    # status_command i3status-rs {{ .chezmoi.homeDir }}/.config/i3status-rust/config.toml
+    status_command i3status-rs 
+
     position top
-    font pango:monospace 10 # Can be different from window font
+    tray_output primary # Show tray on primary monitor
+    tray_padding 2 px 
+    # Pixels padding for tray
 
+    # Font for the bar - MUST include the icon font used in config.toml
+    font pango:Fira Code Regular 10, Font Awesome 6 Free Solid 10
+    # Or: font pango:FiraCode Nerd Font Mono 10
+
+    # Colors for workspace buttons (using your Dracula variables)
     colors {
-        background #222222
-        statusline #bbbbbb
-        separator  #666666
+        background $background
+        statusline $foreground # Default text color for i3status-rust output
+        separator  $comment    # Separator line color
 
-        #                   border    background text
-        focused_workspace   #4c7899   #285577    #ffffff
-        active_workspace    #333333   #5f676a    #ffffff
-        inactive_workspace  #333333   #222222    #888888
-        urgent_workspace    #2f343a   #900000    #ffffff
-        binding_mode        #2f343a   #900000    #ffffff
+        #                   border       background   text
+        focused_workspace   $purple      $purple      $foreground # Currently focused workspace button
+        active_workspace    $current_line $current_line $foreground # Visible but inactive workspace button (on same monitor)
+        inactive_workspace  $background  $background  $comment    # Workspace button on another monitor or inactive
+        urgent_workspace    $red         $red         $foreground # Workspace button with urgent hint
+        binding_mode        $yellow      $background  $foreground # Color when in a binding mode (like resize)
     }
 }
 
@@ -261,7 +319,6 @@ exec --no-startup-id dunst
 # Use 'i3-msg' to execute commands after i3 has started, including switching
 # workspaces and then executing the application. Use 'sleep' to stagger them.
 
-
 # Workspace 1 (Left Monitor): Terminal
 # Switch to ws 1, then execute terminal. Delay slightly.
 exec --no-startup-id sleep 1 && i3-msg 'workspace number 1; exec $term' # Use number 1
@@ -282,6 +339,11 @@ exec --no-startup-id sleep 4 && i3-msg 'workspace number 5; exec obs' # Use numb
 # Switch to ws 6, then execute Brave.
 exec --no-startup-id sleep 5 && i3-msg 'workspace number 6; exec brave-browser' # Use number 6
 
+# Workspace 7 (Right Monitor): Spotify
+# Switch to ws 7, then execute Spotify.
+exec --no-startup-id sleep 6 && i3-msg 'workspace number 7; exec spotify' # Use number 6
+
 # Optional: Switch back to workspace 1 after launching everything
-exec --no-startup-id sleep 6 && i3-msg 'workspace number 1' # Use number 1
+exec --no-startup-id sleep 7 && i3-msg 'workspace number 1' # Use number 1
+
 # --- End of i3 Configuration ---

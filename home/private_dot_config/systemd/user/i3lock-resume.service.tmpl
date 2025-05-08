@@ -1,0 +1,28 @@
+# ~/.config/systemd/user/i3lock-resume.service
+# Managed by Chezmoi: {{ .chezmoi.sourceFile }}
+# Locks the screen using i3lock upon resuming from suspend.
+
+[Unit]
+Description=Lock screen on resume using i3lock
+# Documentation=man:systemd.special(7)
+# Start after suspend target is reached (meaning, we are resuming)
+After=suspend.target hibernate.target hybrid-sleep.target suspend-then-hibernate.target
+
+[Service]
+Type=simple
+# Environment=DISPLAY=:0 # May be needed
+# Environment=XAUTHORITY={{ .chezmoi.homeDir }}/.Xauthority # May be needed
+
+# Use i3lock-color directly here for robustness on resume
+# Copy the relevant flags from your lock.sh
+ExecStart=/usr/bin/i3lock-color --insidevercolor=50fa7bff --insidewrongcolor=ff5555ff --insidecolor=44475acc --ringvercolor=50fa7bff --ringwrongcolor=ff5555ff --ringcolor=6272a4ff --keyhlcolor=8be9fdff --bshlcolor=ff79c6ff --verifcolor=f8f8f2ff --wrongcolor=f8f8f2ff --indicator --radius 120 --ring-width 10 --ignore-empty-password --pass-media-keys --pass-screen-keys --pass-power-keys
+
+# Or, if lock.sh is reliable and doesn't fork:
+# ExecStart={{ .chezmoi.homeDir }}/.config/i3/scripts/lock.sh
+
+[Install]
+WantedBy=suspend.target hibernate.target hybrid-sleep.target suspend-then-hibernate.target
+
+[Install]
+# Enable this service for the suspend target
+WantedBy=suspend.target hibernate.target hybrid-sleep.target suspend-then-hibernate.target

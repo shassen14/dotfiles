@@ -74,3 +74,42 @@
       when: ansible_os_family != "Darwin"
       register: user_group_change
       tags: [i3, prerequisites, permissions, brightness]
+
+    - name: Install i3lock-color (Debian/Ubuntu)
+      ansible.builtin.apt:
+        name: i3lock-color
+        state: present
+      become: true
+      when: ansible_os_family == "Debian"
+      tags: [i3, i3lock, package, debian, ubuntu]
+
+    - name: Ensure user systemd directory exists for user '{{ lookup('env', 'USER') }}'
+      # This task MUST run as the user themselves OR as root.
+      # If running as user (play become: false, task become: false), it's fine.
+      # If running as root (play become: true, task become: true), it's fine.
+      # If running as root but trying to 'become: false', path resolution can fail.
+      # Let's assume play has become: true and make this task run as root to *create* the dir,
+      # but ensure ownership is correct.
+      ansible.builtin.file:
+        path: "/home/{{ lookup('env', 'USER') }}/.config/systemd/user" # Explicit absolute path
+        state: directory
+        mode: '0750' # User read/write/execute, group read/execute
+        owner: "{{ lookup('env', 'USER') }}" # Ensure correct owner
+        group: "{{ lookup('env', 'USER') }}" # Ensure correct group (or lookup primary group if needed)
+      become: true # Run this task as root to ensure directory creation works robustly
+      tags: [i3, systemd, user_service, prerequisites]
+
+    - name: Enable the i3lock-resume user systemd service for user '{{ lookup('env', 'USER') }}'
+      # This task MUST run as the target user to interact with their systemd --user instance.
+      ansible.builtin.systemd:
+        name: i3lock-resume.service
+        enabled: yes
+        scope: user   # IMPORTANT: Specifies this is a user service
+      become: true # Elevate to root...
+      become_user: "{{ lookup('env', 'USER') }}" # ...then run systemctl --user as the target user
+      tags: [i3, systemd, user_service]
+      environment: # Pass necessary environment for systemctl --user connection
+        XDG_RUNTIME_DIR: "/run/user/{{ lookup('pipe', 'id -u ' + lookup('env', 'USER')) }}"
+        DBUS_SESSION_BUS_ADDRESS: "unix:path=/run/user/{{ lookup('pipe', 'id -u ' + lookup('env', 'USER')) }}/bus"
+      # Note: Passing XDG_RUNTIME_DIR and DBUS_SESSION_BUS_ADDRESS is often required
+      # when using become_user to interact with the user's systemd instance/session bus.
