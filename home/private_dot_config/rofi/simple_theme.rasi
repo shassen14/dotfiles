@@ -1,22 +1,31 @@
-/* ~/.config/rofi/simple_theme.rasi */
+ /* ~/.config/rofi/simple_theme.rasi */
 /* Managed by Chezmoi: {{ .chezmoi.sourceFile }} */
 
 * {
     background-color: #222222;
     text-color:       #bbbbbb;
-    border-color:     #005577;
+    bordercolor:      #005577; /* Renamed from border-color to avoid potential keyword clash, though unlikely */
+                               /* Or keep as border-color if you prefer, just be consistent */
+    main-bg:          @background-color; /* Example of an alias, not strictly needed here */
+    main-fg:          @text-color;
+    selected-bg:      #005577;
+    selected-fg:      #eeeeee;
+
     font:             "monospace 10";
 }
 
 window {
     width:            30%;
     padding:          10px;
-    border:           1px;
+    /* Explicit border properties */
+    border:           1px;      /* This often just sets the width */
+    border-style:     "solid";    /* Explicitly set style */
+    border-color:     @bordercolor; /* Explicitly set color */
     border-radius:    0px;
     background-color: @background-color;
 }
 
-inbox {
+mainbox {
     border:  0;
     padding: 5px;
 }
@@ -26,7 +35,10 @@ inputbar {
     spacing:    5px;
     text-color: @text-color;
     padding:    5px;
-    border: 1px solid; // @border-color;
+    /* Explicit border properties */
+    border:           1px;
+    border-style:     "solid";
+    border-color:     @bordercolor;
 }
 
 prompt {
@@ -48,7 +60,10 @@ case-indicator {
 
 listview {
     padding:      5px;
-    border:       1px solid; //@border-color;
+    /* Explicit border properties */
+    border:       1px;
+    border-style: "solid";
+    border-color: @bordercolor;
     columns:      1;
     lines:        8;
     spacing:      5px;
@@ -59,6 +74,7 @@ listview {
 element {
     padding: 5px;
     spacing: 5px;
+    border: 0px; /* Explicitly no border for elements themselves unless selected */
 }
 
 element-text {
@@ -66,13 +82,21 @@ element-text {
 }
 
 element.selected {
-    background-color: #005577;
-    text-color:       #eeeeee;
+    background-color: @selected-bg;
+    text-color:       @selected-fg;
+    /* Optional: border for selected element */
+    border:           1px;
+    border-style:     "solid";
+    border-color:     @selected-bg; /* Or a different highlight color */
 }
 
 scrollbar {
-    handle-width: 5px ;
-    handle-color: @border-color ;
-    border-radius: 0px;
+    handle-width:     5px ;
+    handle-color:     @bordercolor ; /* Using our variable for scrollbar handle */
+    border-radius:    0px;
     background-color: @background-color;
+    /* Explicit border properties if needed for scrollbar itself */
+    border:           0px; 
+    /* border-style:  none; */
+    /* border-color:  transparent; */
 }

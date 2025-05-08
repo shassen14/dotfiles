@@ -1,51 +1,115 @@
-# ~/.config/i3status/config_simple
+# ~/.config/i3status/config
 # Managed by Chezmoi: {{ .chezmoi.sourceFile }}
-# Simplistic i3status configuration
+# More detailed i3status configuration
 
 general {
-    colors = true
-    interval = 5
     output_format = "i3bar"
+    colors = true
+    interval = 2 # Update more frequently for network/cpu speed
+
+    # Dracula theme colors (approximate for i3status)
+    color_good = "#50fa7b"      # Green
+    color_degraded = "#f1fa8c"  # Yellow
+    color_bad = "#ff5555"       # Red
 }
 
-# Order of modules in the bar
-order += "tztime local"
-order += "load"
-order += "disk /"
-# order += "wireless _first_" # Uncomment if you have Wi-Fi
-# order += "ethernet _first_" # Uncomment if you have Ethernet
-# order += "battery all"      # Uncomment if you have a battery
+# --- Module Order ---
+# Adjust the order to your preference
+# order += "run_watch MEDIA"    # Media Player Status (requires script)
+order += "cpu_usage"          # CPU Usage Percentage
+order += "load"               # System Load Average
+order += "memory"             # Memory Usage
+order += "disk /"             # Root disk space
+order += "wireless _first_"    # WiFi info (if available)
+# order += "ethernet _first_"   # Ethernet info (if available)
+# order += "run_watch VOLUME"   # Volume Status (requires script)
+# order += "battery all"        # Battery status (if available)
+order += "cpu_temperature 0" # CPU Temperature (adjust zone if needed)
+order += "tztime local"        # Date and Time
 
-tztime local {
-    format = "%Y-%m-%d %H:%M:%S"
+# --- Module Definitions ---
+
+# **Media Player Status (Requires playerctl and custom script)**
+run_watch MEDIA {
+    # This calls a script that outputs player status
+    # Create the script below at ~/.config/i3status/scripts/media_status.sh
+    pidfile = "/tmp/.i3status_media.pid" # Dummy pidfile
+    format = "  %output" # Music note icon (ensure Font Awesome)
+    # command = "{{ .chezmoi.homeDir }}/.config/i3status/scripts/media_status.sh"
 }
 
+# **CPU Usage**
+cpu_usage {
+    format = "  %usage" # CPU icon
+    max_threshold = 90 # Turn red if > 90%
+    degraded_threshold = 75 # Turn yellow if > 75%
+}
+
+# **System Load Average**
 load {
-    format = "L: %1min" # Only 1-minute load average
+    format = "   %1min" # Cog icon for load
+    max_threshold = 5 # Example threshold
 }
 
+# **Memory Usage**
+memory {
+    format = " %used / %total" # Memory icon
+    # threshold_degraded = "10%" # Less than 10% available = yellow
+    # threshold_critical = "5%" # Less than 5% available = red
+    format_degraded = "MEM < %available"
+}
+
+# **Disk Usage**
 disk "/" {
-    format = "/: %avail"
+    format = "  %avail" # Disk icon
+    # prefix_type = "decimal" # Or binary
 }
 
-# --- Optional Modules (uncomment and configure if needed) ---
+# **Wireless Network**
+# Use `ip link` or `iw dev` to find your interface name (e.g., wlan0, wlp3s0)
+wireless _first_ {
+    format_up = "   %essid %quality" # Wifi icon
+    # format_down = " down"
+}
 
-# wireless _first_ {
-#         format_up = "W: %essid %quality"
-#         format_down = "W: down"
-# }
+# **Ethernet Network**
+# Use `ip link` to find your interface name (e.g., eth0, enp2s0)
+ethernet _first_ {
+    format_up = " %ip (%speed)" # Link icon
+    format_down = " down"
+}
 
-# ethernet _first_ {
-#         format_up = "E: %ip"
-#         format_down = "E: down"
-# }
+# **Volume Status (Requires pactl and custom script)**
+run_watch VOLUME {
+    # Calls a script to get volume % and mute status
+    # Create script below at ~/.config/i3status/scripts/volume_status.sh
+    pidfile = "/tmp/.i3status_volume.pid" # Dummy pidfile
+    format = "%output" # Let script handle formatting with icons
+    # command = "{{ .chezmoi.homeDir }}/.config/i3status/scripts/volume_status.sh"
+}
 
+# **Battery Status** (Uncomment and configure if needed)
 # battery all {
-#         format = "%status %percentage"
-#         format_down = "No Bat"
-#         status_chr = "⚡"
-#         status_bat = "🔋"
-#         status_unk = "?"
-#         status_full = "☻"
-#         low_threshold = 15
+#     format = "%status %percentage %remaining"
+#     format_down = "No Bat"
+#     status_chr = " CHR"  # Charging icon
+#     status_bat = " BAT"  # Battery discharging icon (levels:     )
+#     status_unk = "? UNK"
+#     status_full = " FULL" # Battery full icon
+#     path = "/sys/class/power_supply/BAT%d/uevent" # Check path on your system
+#     low_threshold = 15
+#     threshold_type = "percentage"
 # }
+
+# **CPU Temperature**
+# Check path: ls /sys/class/thermal/thermal_zone*
+cpu_temperature 0 {
+    format = " %degrees°C" # Temperature icon
+    path = "/sys/class/thermal/thermal_zone0/temp" # Adjust zone number if needed
+    # max_threshold = 85
+}
+
+# **Date and Time**
+tztime local {
+    format = "  %Y-%m-%d   %H:%M:%S" # Calendar and Clock icons
+}

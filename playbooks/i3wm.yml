@@ -24,10 +24,12 @@
       - picom           # A popular compton fork, often preferred now
       # Add any other tools you commonly use with i3:
       # - scrot         # Screenshot utility
-      # - flameshot     # More advanced screenshot utility
+      - flameshot     # More advanced screenshot utility
       - dunst         # Notification daemon
       - libnotify-bin # For sending notifications (used by dunst or other notifiers)
+      - pulseaudio-utils
       - playerctl           # For media key control in status bar
+      - light
       - fonts-font-awesome  # For icons (or nerd-fonts handled elsewhere)
       # - xautolock     # For automatically locking the screen
 
@@ -62,3 +64,13 @@
           Default i3 config is at ~/.config/i3/config.
           Use Chezmoi to manage your custom i3 configuration.
       tags: [i3, info]
+
+    - name: Add user to video group (for 'light' brightness control)
+      ansible.builtin.user:
+        name: "{{ lookup('env', 'USER') }}" # Use the user running the playbook
+        groups: video
+        append: yes # Important: Add to existing groups
+      become: true
+      when: ansible_os_family != "Darwin"
+      register: user_group_change
+      tags: [i3, prerequisites, permissions, brightness]

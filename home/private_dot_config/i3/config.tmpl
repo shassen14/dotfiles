@@ -1,6 +1,15 @@
 # ~/.config/i3/config - Simplistic i3 Config
 # Managed by Chezmoi: {{ .chezmoi.sourceFile }}
 
+# --- Monitor Outputs ---
+# Set these based on the output of `xrandr --query`
+# Use names like DP-0, DP-2, HDMI-0, eDP-1 etc.
+# Wrap in quotes if names contain special characters (unlikely for xrandr output)
+set $monitor_left DP-2   # Your identified left monitor
+set $monitor_right DP-0  # Your identified right monitor
+# Optional: Define primary monitor if needed by other rules/scripts
+set $monitor_primary $monitor_left # Or $monitor_right
+
 # -----------------------------------------------------------------------------
 # --- Variables ---
 # -----------------------------------------------------------------------------
@@ -29,7 +38,6 @@ font pango:monospace 10
 # -----------------------------------------------------------------------------
 # Use Mouse+$mod to drag floating windows.
 floating_modifier $mod
-
 # Border style for new windows
 default_border pixel 1
 # default_floating_border pixel 1
@@ -100,6 +108,22 @@ bindsym $mod+Shift+space floating toggle
 # Change focus between tiling and floating windows
 bindsym $mod+space focus mode_toggle
 
+# --- Workspace -> Monitor Assignment ---
+# Assign workspaces 1-4 to the left monitor
+workspace $ws1 output $monitor_left
+workspace $ws2 output $monitor_left
+workspace $ws3 output $monitor_left
+workspace $ws4 output $monitor_left
+
+# Assign workspaces 5-7 (and maybe more) to the right monitor
+workspace $ws5 output $monitor_right
+workspace $ws6 output $monitor_right
+workspace $ws7 output $monitor_right
+# Assign others if you use them frequently on the right
+# workspace $ws8 output $monitor_right
+# workspace $ws9 output $monitor_right
+# workspace $ws10 output $monitor_right # Example: Settings on right
+
 # --- Workspaces ---
 # Define simple workspace names
 set $ws1 "1"
@@ -148,6 +172,51 @@ bindsym $mod+Shift+r restart
 bindsym $mod+Shift+e exec "i3-nagbar -t warning -m 'You pressed the exit shortcut. Do you really want to exit i3? This will end your X session.' -B 'Yes, exit i3' 'i3-msg exit'"
 
 # -----------------------------------------------------------------------------
+# --- Utility Keybindings ---
+# -----------------------------------------------------------------------------
+
+# Lock screen (using the script managed by Chezmoi)
+# Ensure lock.sh is executable (chmod +x) and exists at the specified path
+bindsym $mod+Control+l exec {{ .chezmoi.homeDir }}/.config/i3/scripts/lock.sh
+
+# Screenshot (using flameshot, installed via Ansible)
+# Launch GUI for region selection, save to Screenshots folder
+bindsym Print exec --no-startup-id flameshot gui -p {{ .chezmoi.homeDir }}/Pictures/Screenshots
+# Capture full screen and copy directly to clipboard
+bindsym Shift+Print exec --no-startup-id flameshot full -c
+
+# --- Volume control ---
+# Uses pactl (assuming PulseAudio/PipeWire default sink) and helper script for notifications.
+# Adjust volume and trigger notification script
+bindsym XF86AudioRaiseVolume exec --no-startup-id pactl set-sink-volume @DEFAULT_SINK@ +5% && {{ .chezmoi.homeDir }}/.config/i3/scripts/notify_volume.sh
+bindsym XF86AudioLowerVolume exec --no-startup-id pactl set-sink-volume @DEFAULT_SINK@ -5% && {{ .chezmoi.homeDir }}/.config/i3/scripts/notify_volume.sh
+# Toggle mute and trigger notification script
+bindsym XF86AudioMute exec --no-startup-id pactl set-sink-mute @DEFAULT_SINK@ toggle && {{ .chezmoi.homeDir }}/.config/i3/scripts/notify_volume.sh
+
+# --- Media player control ---
+# Uses playerctl (works with Spotify, VLC, web browsers with MPRIS support, etc.)
+bindsym XF86AudioPlay exec --no-startup-id playerctl play-pause
+bindsym XF86AudioNext exec --no-startup-id playerctl next
+bindsym XF86AudioPrev exec --no-startup-id playerctl previous
+bindsym XF86AudioStop exec --no-startup-id playerctl stop # Optional: some players don't support stop well
+
+# --- Brightness control ---
+# Uses 'light' command and helper script for notifications.
+# Ensure 'light' package is installed and user has permission (often requires adding user to 'video' group).
+bindsym XF86MonBrightnessUp exec --no-startup-id light -A 5 && {{ .chezmoi.homeDir }}/.config/i3/scripts/notify_brightness.sh
+bindsym XF86MonBrightnessDown exec --no-startup-id light -U 5 && {{ .chezmoi.homeDir }}/.config/i3/scripts/notify_brightness.sh
+
+# --- Optional: Launch GUI Helpers ---
+# Open pavucontrol (PulseAudio Volume Control GUI)
+# bindsym $mod+Shift+v exec pavucontrol
+
+# Open arandr (Screen layout editor)
+# bindsym $mod+Shift+m exec arandr
+
+# Open lxappearance (GTK Theme/Icon/Font Settings)
+# bindsym $mod+Shift+a exec lxappearance
+
+# -----------------------------------------------------------------------------
 # --- Status Bar (i3bar with basic i3status) ---
 # -----------------------------------------------------------------------------
 # Ensure 'i3status' package is installed by Ansible.
@@ -179,13 +248,40 @@ bar {
 # exec --no-startup-id xsetroot -solid "#333333"
 # Example: Set wallpaper using feh (requires 'feh' package from Ansible)
 # Ensure you have a wallpaper at this path or change it.
-# exec --no-startup-id feh --bg-scale {{ .chezmoi.homeDir }}/.config/i3/wallpaper_simple.png
+exec --no-startup-id feh --bg-scale {{ .chezmoi.homeDir }}/.config/i3/wallpaper.png
 
 # Example: Start a compositor for basic transparency/shadows (requires 'picom' from Ansible)
 # Create a simple picom.conf or use its defaults.
-# exec --no-startup-id picom --daemon
+exec --no-startup-id picom --daemon
 
 # Example: Start a notification daemon (requires 'dunst' from Ansible)
-# exec --no-startup-id dunst
+exec --no-startup-id dunst
 
+# --- Launch Specific Applications on Startup ---
+# Use 'i3-msg' to execute commands after i3 has started, including switching
+# workspaces and then executing the application. Use 'sleep' to stagger them.
+
+
+# Workspace 1 (Left Monitor): Terminal
+# Switch to ws 1, then execute terminal. Delay slightly.
+exec --no-startup-id sleep 1 && i3-msg 'workspace number 1; exec $term' # Use number 1
+
+# Workspace 2 (Left Monitor): Brave Browser (Instance 1)
+# Switch to ws 2, then execute Brave. Delay slightly more.
+exec --no-startup-id sleep 2 && i3-msg 'workspace number 2; exec brave-browser' # Use number 2
+
+# Workspace 3 (Left Monitor): Obsidian
+# Switch to ws 3, then execute Obsidian.
+exec --no-startup-id sleep 3 && i3-msg 'workspace number 3; exec obsidian' # Use number 3
+
+# Workspace 5 (Right Monitor): OBS Studio
+# Switch to ws 5, then execute OBS.
+exec --no-startup-id sleep 4 && i3-msg 'workspace number 5; exec obs' # Use number 5
+
+# Workspace 6 (Right Monitor): Brave Browser (Instance 2)
+# Switch to ws 6, then execute Brave.
+exec --no-startup-id sleep 5 && i3-msg 'workspace number 6; exec brave-browser' # Use number 6
+
+# Optional: Switch back to workspace 1 after launching everything
+exec --no-startup-id sleep 6 && i3-msg 'workspace number 1' # Use number 1
 # --- End of i3 Configuration ---
