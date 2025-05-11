@@ -1,0 +1,16 @@
+# This is a non-templated config file specifically for CI bootstrapping
+# or for the first run of chezmoi if its main config is a template.
+
+sourceDir = "{{ env "GITHUB_WORKSPACE" }}/home" # GITHUB_WORKSPACE is where the repo is checked out# Set sourceDir based on GitHub Actions environment
+# This assumes your dotfiles content (the 'home' subdir) is at the root of the checkout
+
+[data]
+name = "Samir Hassen (CI)"
+email = "ci_email@example.com"
+terminal = "alacritty"
+editor = "nvim"
+browser = "brave-browser"
+
+# Add any other data fields your templates (including chezmoi.toml.tmpl itself if it uses them)
+# might need during the initial apply.
+# For example, if your chezmoi.toml.tmpl uses .chezmoi.os, that's fine as Chezmoi provides it.

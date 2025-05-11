@@ -26,13 +26,13 @@ jobs:
       - name: Run bootstrap.sh from workspace
         env:
           CI: true
-          # Set environment variable pointing to the repo root in the workspace
           DOTFILES_REPO_ROOT: ${{ github.workspace }}
         run: |
-          set -e # Exit on any error in this script block
+          set -e
           echo "Repository Path (DOTFILES_REPO_ROOT): $DOTFILES_REPO_ROOT"
-          ls -la "$DOTFILES_REPO_ROOT" # Debug: List contents
-          chmod +x "$DOTFILES_REPO_ROOT/bootstrap.sh"
-          # Execute script using paths relative to the workspace root
+          # ... (your bootstrap.sh execution) ...
+          # The key is that when bootstrap.sh calls ansible-playbook,
+          # and ansible-playbook calls chezmoi.yml,
+          # the chezmoi.yml playbook needs to tell 'chezmoi apply' to use this CI config.
           "$DOTFILES_REPO_ROOT/bootstrap.sh" "$DOTFILES_REPO_ROOT/playbook.yml" "$DOTFILES_REPO_ROOT/inventory.ini"
         shell: bash

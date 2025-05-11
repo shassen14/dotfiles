@@ -1,12 +1,55 @@
+---
 # playbooks/chezmoi.yml: Installs Chezmoi, initializes repo, and applies changes.
-# Assumes bootstrap.sh installed prerequisites and chezmoi binary.
 - hosts: all
-  gather_facts: true
+  gather_facts: true # For ansible_env, ansible_os_family
+  # become: false # Default for the play, individual tasks can override
+
+  vars:
+    # --- User and Path Definitions ---
+    # User for whom chezmoi will be set up.
+    # In CI, ansible_user_id might be 'runner' or similar.
+    # Locally, lookup('env','USER') is usually your logged-in user.
+    target_chezmoi_user: "{{ lookup('env', 'USER') if ansible_env.CI != 'true' else ansible_user_id | default('runner') }}"
+    target_chezmoi_home: "{{ ansible_env.HOME if ansible_env.CI != 'true' else '/home/' + target_chezmoi_user }}" # Adjust if CI user home is different
+
+    # --- Chezmoi Configuration ---
+    # Your Git repository for dotfiles
+    chezmoi_repo_url: "YOUR_GIT_REPO_URL_HERE" # e.g., github.com/yourusername/dotfiles.git
+    chezmoi_branch: "main" # Or your default branch
+
+    # --- CI Specific Configuration ---
+    # Path to the CI-specific, non-templated chezmoi config within your checked-out repository
+    # This file should exist at the root of your repo and contain the necessary [data].
+    chezmoi_ci_config_in_repo: "{{ ansible_env.GITHUB_WORKSPACE }}/chezmoi.ci.toml" # Must exist in your repo for CI
+
+    # Path where Chezmoi expects its config.
+    # This is where your private_dot_config/chezmoi/chezmoi.toml.tmpl will create its output.
+    chezmoi_target_config_file_path: "{{ target_chezmoi_home }}/.config/chezmoi/chezmoi.toml"
+
+    # Determine which config file 'chezmoi apply' should use.
+    # In CI: Always use the static chezmoi.ci.toml from the repo.
+    # Locally: Use the target ~/.config/chezmoi/chezmoi.toml if it exists,
+    # otherwise (for the very first local run), could also point to a bootstrap/CI config if you add one for local too,
+    # or rely on 'chezmoi init' having set up a basic one.
+    # For simplicity in this example: CI uses its dedicated config. Local relies on what 'init' or a prior 'apply' might establish.
+    # A more robust local first run might also use a temporary bootstrap config if the main one is templated.
+    ansible_chezmoi_config_for_apply: "{% if ansible_env.CI == 'true' %}{{ chezmoi_ci_config_in_repo }}{% else %}{{ chezmoi_target_config_file_path }}{% endif %}"
 
   tasks:
-    # Optional Redundancy - Can be removed if bootstrap is always run first
-    # --- Prerequisites ---
-    - name: Ensure prerequisites (git, curl) - Distribution Package Managers
+    # --- 0. Ensure User/Home Variables are Sensible (Debug) ---
+    - name: "DEBUG: User and Path Variables"
+      ansible.builtin.debug:
+        msg:
+          - "Target Chezmoi User: {{ target_chezmoi_user }}"
+          - "Target Chezmoi Home: {{ target_chezmoi_home }}"
+          - "Target Chezmoi Config Path: {{ chezmoi_target_config_file_path }}"
+          - "Effective Config for Apply: {{ ansible_chezmoi_config_for_apply }}"
+          - "CI Mode: {{ ansible_env.CI | default('false') }}"
+          - "GITHUB_WORKSPACE: {{ ansible_env.GITHUB_WORKSPACE | default('Not set') }}"
+      tags: [always, chezmoi, debug]
+
+    # --- 1. Prerequisites (Git, Curl) ---
+    - name: Ensure git and curl are installed (Linux)
       become: true
       ansible.builtin.package:
         name: [git, curl]
@@ -14,166 +57,111 @@
       when: ansible_os_family != "Darwin"
       tags: [always, chezmoi, prerequisites]
 
-    - name: Ensure prerequisites (git) - Homebrew (macOS)
-      become: false
+    - name: Ensure git and curl are installed (macOS via Homebrew)
+      # become: false # Homebrew module handles its own user context
       community.general.homebrew:
-        name: git
+        name: [git, curl] # Curl is usually present, git often via Xcode tools or brew
         state: present
       when: ansible_os_family == "Darwin"
       tags: [always, chezmoi, prerequisites]
 
-    # --- Chezmoi Installation (Optional Redundancy) ---
+    # --- 2. Chezmoi Installation ---
     - name: Install chezmoi via script (Linux)
       become: true # Install to /usr/local/bin needs sudo
       ansible.builtin.shell:
-        # Using original one-liner, without 'warn: false'
-        cmd: sh -c "$(curl -fsLS get.chezmoi.io)" -- -b /usr/local/bin
+        cmd: 'sh -c "$(curl -fsLS get.chezmoi.io)" -- -b /usr/local/bin'
       args:
-        creates: /usr/local/bin/chezmoi # Makes the task idempotent
+        creates: /usr/local/bin/chezmoi
       when: ansible_os_family != "Darwin"
       tags: [always, chezmoi, install]
 
     - name: Ensure chezmoi via Homebrew (macOS)
-      become: false
+      # become: false # Homebrew module handles its own user context
       community.general.homebrew:
         name: chezmoi
         state: present
       when: ansible_os_family == "Darwin"
       tags: [always, chezmoi, install]
 
-    # --- Chezmoi Initialization and Application (Split Steps) ---
-    - name: Check if chezmoi internal repository cache exists (.git dir)
-      # Checks the default location where 'chezmoi init' clones the repo
-      become: false
+    # --- 3. Chezmoi Initialization (Clone/Setup Source Repo) ---
+    # This task ensures that Chezmoi knows where your dotfiles are.
+    # It will clone them into ~/.local/share/chezmoi if not already there.
+    - name: Check if Chezmoi source directory exists
+      become: false # Check as the target user
       ansible.builtin.stat:
-        path: "{{ ansible_env.HOME }}/.local/share/chezmoi/.git"
-      register: chezmoi_internal_repo_git_check
-      tags: [always, chezmoi, config]
+        path: "{{ target_chezmoi_home }}/.local/share/chezmoi/.git"
+      register: chezmoi_source_dir_git_check
+      tags: [always, chezmoi, init]
 
-    - name: Initialize chezmoi (clone repository only)
-      # Clones the repo to internal cache if it doesn't exist. Does NOT apply yet.
-      become: false
+    - name: Initialize Chezmoi with your dotfiles repository (if not already initialized)
+      become: true # For privilege to switch to target_chezmoi_user
+      become_user: "{{ target_chezmoi_user }}"
       ansible.builtin.command:
-        # Run ONLY 'chezmoi init', NO '--apply'
-        # Add verbose flag for better debugging if needed
-        cmd: "chezmoi init --verbose --branch {{ chezmoi_branch }} {{ chezmoi_repo }}"
+        # In CI, DOTFILES_REPO_ROOT (github.workspace) is the source.
+        # Locally, you'd typically init from your git remote.
+        # This task aims to set up ~/.local/share/chezmoi correctly.
+        # If GITHUB_WORKSPACE is set (CI), init from that local path.
+        # Otherwise, init from the remote repository URL.
+        cmd: >
+          chezmoi init
+          {% if ansible_env.CI == 'true' and ansible_env.DOTFILES_REPO_ROOT is defined %}
+          --source={{ ansible_env.DOTFILES_REPO_ROOT }}
+          {% else %}
+          {{ chezmoi_repo_url }}
+          {% endif %}
+          --branch={{ chezmoi_branch }}
+          --apply=false
+          -v
       args:
-        chdir: "{{ ansible_env.HOME }}"
-        # This task creates the internal repo cache
-        creates: "{{ ansible_env.HOME }}/.local/share/chezmoi/.git"
-      # Run only if the internal repo cache check shows it doesn't exist
-      when: not chezmoi_internal_repo_git_check.stat.exists
+        chdir: "{{ target_chezmoi_home }}" # Run in the user's home directory
+        # Creates the internal .git directory if cloning, or updates if source is local.
+        creates: "{{ target_chezmoi_home }}/.local/share/chezmoi/.git"
+      when: not chezmoi_source_dir_git_check.stat.exists or (ansible_env.CI == 'true' and ansible_env.DOTFILES_REPO_ROOT is defined)
       register: chezmoi_init_result
-      tags: [always, chezmoi, config, init]
+      changed_when: "'Cloned' in chezmoi_init_result.stdout or 'Initialized' in chezmoi_init_result.stdout"
+      tags: [always, chezmoi, init]
 
-    - name: Display Init Result (Debug)
+    - name: Display Chezmoi Init Result (Debug)
       ansible.builtin.debug:
         var: chezmoi_init_result
-      when: chezmoi_init_result is defined and chezmoi_init_result.changed
-      tags: [always, chezmoi, config, init, debug]
+      when: chezmoi_init_result is defined and chezmoi_init_result.changed | default(false)
+      tags: [always, chezmoi, init, debug]
 
-    # --- Explicit Verification AFTER Init ---
-    # Check if the internal cache structure required for the next step exists
-    - name: Verify internal cache directory exists after init
-      become: false
-      ansible.builtin.stat:
-        # Check the main cache directory
-        path: "{{ ansible_env.HOME }}/.local/share/chezmoi"
-      register: internal_cache_dir_check
-      tags: [always, chezmoi, config, verify]
+    # --- 4. Chezmoi Apply ---
+    # This is the crucial step.
+    # In CI: it MUST use the static `chezmoi.ci.toml` from the repo root,
+    #          which contains the [data] section needed for all templates,
+    #          including for rendering the target `~/.config/chezmoi/chezmoi.toml`.
+    # Locally: it will use `~/.config/chezmoi/chezmoi.toml`. If this is the very
+    #          first run, `~/.config/chezmoi/chezmoi.toml` isn't there yet.
+    #          The `chezmoi init --apply <repo>` handles this better for local first run.
+    #          This playbook assumes local first run might need `chezmoi init <repo>` then `chezmoi apply`.
 
-    - name: Verify 'home' subdirectory exists in cache after init
-      become: false
-      ansible.builtin.stat:
-        # Check for the 'home' dir inside the cache
-        path: "{{ ansible_env.HOME }}/.local/share/chezmoi/home"
-      register: internal_cache_home_dir_check
-      tags: [always, chezmoi, config, verify]
-
-    - name: Fail if internal cache structure is missing after init
-      # Fails explicitly if init seemed to succeed but didn't create needed dirs
-      ansible.builtin.fail:
-        msg: |
-          Chezmoi init command reported success (rc={{ chezmoi_init_result.rc | default('N/A') }})
-          but the internal cache structure is missing or incomplete.
-          Cache dir exists: {{ internal_cache_dir_check.stat.exists | default('N/A') }}
-          Cache home dir exists: {{ internal_cache_home_dir_check.stat.exists | default('N/A') }}
-          Check permissions on ~/.local/share/ and network connectivity.
-          Init stderr: {{ chezmoi_init_result.stderr | default('N/A') }}
-      when:
-        # Fail if init ran (wasn't skipped) AND either cache dir OR home subdir is missing
-        - chezmoi_init_result is defined
-        - not chezmoi_init_result.skipped | default(false)
-        - not internal_cache_dir_check.stat.exists or not internal_cache_home_dir_check.stat.exists
-      tags: [always, chezmoi, config, verify]
-
-    # --- Chezmoi Application Steps (Only run if verification passed) ---
-    - name: Check if chezmoi target configuration file exists (before initial apply)
-      become: false
-      ansible.builtin.stat:
-        path: "{{ ansible_env.HOME }}/.config/chezmoi/chezmoi.toml"
-      register: chezmoi_target_config_check_before_apply
-      tags: [always, chezmoi, config]
-
-    - name: Perform initial chezmoi apply (creates target config using -S)
-      # Applies state for first time using source dir within internal cache.
-      become: false
+    - name: "Apply Chezmoi changes (using {{ ansible_chezmoi_config_for_apply }})"
+      become: true # For privilege to switch to target_chezmoi_user
+      become_user: "{{ target_chezmoi_user }}"
       ansible.builtin.command:
-        # Use '-S' pointing to the verified internal cache home subdir
-        cmd: >
-          chezmoi
-          -S {{ ansible_env.HOME }}/.local/share/chezmoi/home
-          apply -vvv
+        # -S is tricky if the sourceDir in chezmoi.ci.toml is also templated or needs resolving.
+        # Simpler to let `chezmoi apply` use its configured sourceDir.
+        # The --config flag tells Chezmoi which config file to load its *own settings and data from*.
+        cmd: "chezmoi apply --config {{ ansible_chezmoi_config_for_apply }} --force -v"
       args:
-        chdir: "{{ ansible_env.HOME }}"
-        # 'creates:' ensures this task only runs effectively once until the target file exists
-        creates: "{{ ansible_env.HOME }}/.config/chezmoi/chezmoi.toml"
-      # Run only if the internal cache structure looks OK AND target config is missing
-      when:
-        - internal_cache_dir_check.stat.exists # From verification task
-        - internal_cache_home_dir_check.stat.exists # From verification task
-        - not chezmoi_target_config_check_before_apply.stat.exists # Target doesn't exist yet
-      register: initial_apply_result
-      tags: [always, chezmoi, config, apply]
+        chdir: "{{ target_chezmoi_home }}" # Run in the user's home directory
+      environment:
+        # Pass environment variables that your templates might use,
+        # especially if your chezmoi.toml.tmpl uses them.
+        USER: "{{ target_chezmoi_user }}"
+        # DOTFILES_REPO_ROOT is needed by your private_dot_config/chezmoi/chezmoi.toml.tmpl
+        # for setting the sourceDir.
+        DOTFILES_REPO_ROOT: "{{ ansible_env.GITHUB_WORKSPACE if ansible_env.CI == 'true' else target_chezmoi_home + '/dotfiles' }}"
+      register: chezmoi_apply_result
+      changed_when: "'Applied' in chezmoi_apply_result.stdout or chezmoi_apply_result.stdout_lines | length > 1" # Heuristic
+      # Allow it to fail here to see the actual error from chezmoi apply if data is missing
+      # failed_when: chezmoi_apply_result.rc != 0 and 'template error' not in chezmoi_apply_result.stderr # Be more specific if needed
+      tags: [always, chezmoi, apply]
 
-    - name: Display Initial Apply Result (CRITICAL DEBUG)
+    - name: Display Chezmoi Apply Result (Debug)
       ansible.builtin.debug:
-        msg: |
-          Initial Apply STDOUT:
-          {{ initial_apply_result.stdout | default('N/A') }}
-          Initial Apply STDERR:
-          {{ initial_apply_result.stderr | default('N/A') }}
-      when: initial_apply_result is defined and not initial_apply_result.skipped | default(false)
-      tags: [always, chezmoi, config, apply, debug]
-
-    - name: Check if chezmoi target configuration file exists (NOW check AFTER apply attempt)
-      become: false
-      ansible.builtin.stat:
-        path: "{{ ansible_env.HOME }}/.config/chezmoi/chezmoi.toml"
-      register: chezmoi_target_config_check_after_apply
-      tags: [always, chezmoi, config]
-
-    - name: Display Target Config Check Result AFTER apply (Debug)
-      ansible.builtin.debug:
-        var: chezmoi_target_config_check_after_apply.stat
-      tags: [always, chezmoi, config, debug]
-
-    - name: Apply chezmoi changes on subsequent runs
-      # Runs if the target config file now exists. Reads that config file.
-      # That config file MUST point sourceDir to the final checkout location.
-      become: false
-      ansible.builtin.command:
-        cmd: "chezmoi apply --force -v" # Normal verbosity
-      args:
-        chdir: "{{ ansible_env.HOME }}"
-      # Condition based on check AFTER initial apply attempt
-      when: chezmoi_target_config_check_after_apply.stat.exists
-      register: subsequent_apply_result
-      changed_when: "'Applied' in subsequent_apply_result.stdout"
-      tags: [always, chezmoi, config, apply]
-
-    - name: Display Subsequent Apply Result (Debug)
-      ansible.builtin.debug:
-        var: subsequent_apply_result
-      when: subsequent_apply_result is defined and not subsequent_apply_result.skipped | default(false)
-      tags: [always, chezmoi, config, apply, debug]
+        var: chezmoi_apply_result
+      when: chezmoi_apply_result is defined # Always show for debugging
+      tags: [always, chezmoi, apply, debug]
