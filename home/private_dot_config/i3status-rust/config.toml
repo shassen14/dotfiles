@@ -1,0 +1,158 @@
+# ~/.config/i3status-rust/config.toml
+# Managed by Chezmoi: {{ .chezmoi.sourceFile }}
+# Using custom blocks for problematic items
+
+# --- Theme & Icons ---
+[theme]
+theme = "dracula" # Let's try Dracula again, maybe it works with custom blocks
+# If Dracula name fails, use overrides:
+# [theme.overrides]
+#    idle_bg = "#282a36"
+#    idle_fg = "#f8f8f2"
+#    info_bg = "#6272a4"
+#    info_fg = "#f8f8f2"
+#    good_bg = "#50fa7b"
+#    good_fg = "#282a36"
+#    warning_bg = "#f1fa8c"
+#    warning_fg = "#282a36"
+#    critical_bg = "#ff5555"
+#    critical_fg = "#f8f8f2"
+
+[icons]
+icons = "awesome4" # Requires Font Awesome 6 font
+
+# --- Block Definitions ---
+
+# Use native block if possible, otherwise custom script
+# [[block]]
+# block = "focused_window" # Try native first, if it fails use custom below
+# format = " $title.str(max_w:38) " # Limit width
+# [[block.click]] # Example click action
+# button = "left"
+# cmd = "wmctrl -a $title" # Needs wmctrl installed
+
+[[block]]
+block = "music"
+format = " $icon {$combo.str(max_w:20) $play $next |}"
+player = "spotify"
+
+#[[block]]
+#block = "load"
+#format = " $icon   $1m.eng(w:4)"
+#interval = 1
+
+[[block]]
+block = "cpu"
+interval = 1
+# format = " $icon    $barchart $utilization "
+# format_alt = " $icon    $frequency{ $boost|} "
+info_cpu = 20
+warning_cpu = 50
+critical_cpu = 90
+
+# --- Visual Separator ---
+[[block]]
+block = "custom"
+command = "echo '{\"text\":\" │ \", \"state\":\"Idle\"}'"
+json = true
+interval = "once"
+
+[[block]]
+block = "nvidia_gpu"
+interval = 1
+format = " $icon   3070 $utilization $temperature $clocks "
+
+# --- Visual Separator ---
+[[block]]
+block = "custom"
+command = "echo '{\"text\":\" │ \", \"state\":\"Idle\"}'"
+json = true
+interval = "once"
+
+[[block]]
+block = "memory"
+format = "$icon   $mem_used_percents.eng(w:1)"
+format_alt = "$icon_swap   $swap_free.eng(w:3,u:B,p:Mi)/$swap_total.eng(w:3,u:B,p:Mi)($swap_used_percents.eng(w:2))"
+interval = 30
+warning_mem = 70
+critical_mem = 90
+
+# --- Visual Separator ---
+[[block]]
+block = "custom"
+command = "echo '{\"text\":\" │ \", \"state\":\"Idle\"}'"
+json = true
+interval = "once"
+
+[[block]]
+block = "disk_space"
+info_type = "available"
+alert_unit = "GB"
+alert = 10.0
+warning = 15.0
+format = "$icon   $available"
+format_alt = "$icon   $available / $total"
+
+# --- Visual Separator ---
+[[block]]
+block = "custom"
+command = "echo '{\"text\":\" │\", \"state\":\"Idle\"}'"
+json = true
+interval = "once"
+
+[[block]] # Native Sound Block (was working)
+block = "sound"
+[[block.click]]
+button = "left"
+cmd = "pavucontrol"
+
+# --- Visual Separator ---
+[[block]]
+block = "custom"
+command = "echo '{\"text\":\" │ \", \"state\":\"Idle\"}'"
+json = true
+interval = "once"
+
+# [[block]] # Optional: Temperature (Custom script often needed)
+# block = "custom"
+# command = """ TEMP=$(sensors -u | grep -A 1 'temp1_input:' | awk '/temp1_input:/ {print $2}'); printf '{"icon":"temperature", "text":"%.0f°C"}' "$TEMP" """ # Very dependent on `sensors` output
+# interval = 5
+# json = true
+
+[[block]]
+block = "net"
+
+# --- Visual Separator ---
+[[block]]
+block = "custom"
+command = "echo '{\"text\":\" │ \", \"state\":\"Idle\"}'"
+json = true
+interval = "once"
+
+[[block]] # Native Time Block (was working)
+block = "time"
+interval = 1
+# Use datetime format helper and icons
+format = "$icon   $timestamp.datetime(f:'%a %d %b %H:%M:%S') "
+
+# --- Visual Separator ---
+[[block]]
+block = "custom"
+command = "echo '{\"text\":\" │ \", \"state\":\"Idle\"}'"
+json = true
+interval = "once"
+
+[[block]]
+block = "menu"
+text = "\uf011  "
+[[block.items]]
+display = "-&gt;   Sleep   &lt;- "
+cmd = "systemctl suspend"
+[[block.items]]
+display = "-&gt; Power Off &lt;- "
+cmd = "poweroff"
+confirm_msg = "Are you sure you want to power off?"
+[[block.items]]
+display = "-&gt;  Reboot   &lt;- "
+cmd = "reboot"
+confirm_msg = "Are you sure you want to reboot?"

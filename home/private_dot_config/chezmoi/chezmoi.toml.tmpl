@@ -12,6 +12,10 @@ sourceDir = "{{ env "DOTFILES_REPO_ROOT" | default (printf "%s/dotfiles" .chezmo
 [data]
   name = "Samir Hassen" # Or use Ansible/env vars if preferred
   email = "your_email@example.com" # Replace with your actual email
+  terminal = "alacritty"
+  editor = "nvim"
+  browser = "brave-browser"
+
   # Example of OS-specific data
 {{ if eq .chezmoi.os "darwin" }}
   # macOS specific data can go here if needed later

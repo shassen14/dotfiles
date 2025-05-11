@@ -1,0 +1,18 @@
+#!/bin/bash
+# ~/.config/i3/scripts/lock_and_suspend.sh
+# Locks the screen using lock.sh and then suspends.
+
+# Call the main lock script
+"{{ .chezmoi.homeDir }}/.config/i3/scripts/lock.sh"
+
+# Check if the lock command failed (it shouldn't normally, but just in case)
+if [ $? -ne 0 ]; then
+    echo "Lock script failed, aborting suspend."
+    exit 1
+fi
+
+# Give the lock screen a moment to definitely appear before suspending
+sleep 0.5
+
+# Suspend the system
+systemctl suspend

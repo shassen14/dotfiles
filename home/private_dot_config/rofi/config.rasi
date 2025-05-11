@@ -1,0 +1,46 @@
+/* ~/.config/rofi/config.rasi */
+/* Managed by Chezmoi: {{ .chezmoi.sourceFile }} */
+
+configuration {
+    modi: "drun,run,window,ssh"; /* Modes: Desktop Run, Run, Window Switcher, SSH */
+    icon-theme: "Papirus"; /* Or your preferred icon theme, e.g., Material-Icon-Theme */
+    show-icons: true;
+
+    terminal: "{{ .terminal | default "alacritty" }}";
+    ssh-client: "ssh";
+    ssh-command: "{terminal} -e {ssh-client} {host} [-p {port}]";
+    run-command: "{cmd}";
+    run-list-command: ""; /* For custom run lists, if any */
+    run-shell-command: "{terminal} -e {cmd}";
+
+    drun-display-format: "{icon} {name}"; /* How drun entries are displayed */
+    case-sensitive: false;
+    cycle: true;            /* Cycle through entries */
+    sidebar-mode: false;    /* Show mode switcher on the side */
+
+    font: "Fira Code 12";
+}
+    /* Theme location - this will load your custom theme */
+    // @theme "{{ .chezmoi.homeDir }}/.config/rofi/custom_theme.rasi"
+    @theme "~/.config/rofi/simple_theme.rasi"
+    // @theme "~/.config/rofi/custom_theme.rasi"
+
+
+
+    /* Other options */
+    // location: 0; /* Position: 0 (center), 1-8 for corners/sides */
+    // yoffset: 0;
+    // xoffset: 0;
+    // fixed-num-lines: true;
+    // threads: 0; /* Auto-detect */
+    // scroll-method: 0; /* 0: page, 1: continuous */
+    // window-format: "{w} · {c} · {t}"; /* Format for window switcher */
+    // click-to-exit: true;
+    // max-history-size: 25;
+    // combi-hide-mode-prefix: false;
+    // matching: "normal"; /* normal, regex, glob, fuzzy */
+    // sort: false;
+    // sorting-method: "normal"; /* normal, fzf */
+    // auto-select: false;
+    // parse-hosts: true;
+    // parse-known-hosts: true;

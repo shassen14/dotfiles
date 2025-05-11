@@ -1,0 +1,14 @@
+# chezmoi.ci.toml
+# This is a NON-TEMPLATED config file specifically for CI bootstrapping.
+# Its main purpose is to provide the [data] block for all templates.
+# sourceDir and destDir will be provided by CLI arguments in the CI 'chezmoi apply' task.
+
+[data]
+name = "Samir Hassen (CI)"
+email = "your_ci_email@example.com"
+terminal = "alacritty"
+editor = "nvim"
+browser = "brave-browser"
+
+# encryption = "gpg" # If you use encrypted files and have GPG set up in CI
+# pager = "less -R"

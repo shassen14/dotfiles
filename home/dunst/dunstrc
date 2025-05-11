@@ -1,0 +1,93 @@
+# ~/.config/dunst/dunstrc
+# Managed by Chezmoi: {{ .chezmoi.sourceFile }}
+
+[global]
+    # Display & Font
+    monitor = 1
+    follow = mouse # mouse/keyboard
+    font = Fira Code 10
+    # allow_markup = yes
+    format = "<b>%s</b>\n%b" # Summary bold, then body
+    sort = yes
+    indicate_hidden = yes
+    alignment = left # left/center/right
+    bounce_freq = 0 # Disable bounce for less distraction
+
+    # Geometry
+    width = 200
+    height = 66 # Max height for a single notification, not total
+    origin = top-right # top-left, top-center, top-right, bottom-left, ...
+    offset = 10x35 # x X y offset from origin corner
+
+    scale = 0 # Auto scale based on DPI
+
+    notification_limit = 20
+    progress_bar = true
+    progress_bar_height = 10
+    progress_bar_frame_width = 1
+    progress_bar_min_width = 150
+    progress_bar_max_width = 200
+
+    # Misc
+    # browse_path = /usr/bin/firefox # Command to open URLs
+    sticky_history = yes
+    history_length = 20
+    show_age_threshold = 60 # seconds
+    word_wrap = yes
+    ellipsize = middle # start, middle, end
+    ignore_newline = no
+    stack_duplicates = true
+    hide_duplicate_count = false
+    show_indicators = yes # (S)ticky, (A)ction, (M)uted
+
+    # Icons
+    icon_position = left # left, right, off
+    max_icon_size = 32
+    icon_path = /usr/share/icons/Papirus/16x16/actions/:/usr/share/icons/Papirus/16x16/apps/:/usr/share/icons/Papirus/22x22/actions/:/usr/share/icons/Papirus/22x22/apps/:/usr/share/icons/Papirus/24x24/actions/:/usr/share/icons/Papirus/24x24/apps/:/usr/share/icons/Papirus/32x32/actions/:/usr/share/icons/Papirus/32x32/apps/:/usr/share/icons/Papirus/48x48/actions/:/usr/share/icons/Papirus/48x48/apps/:/usr/share/icons/Papirus/64x64/actions/:/usr/share/icons/Papirus/64x64/apps/:/usr/share/icons/Papirus/scalable/actions/:/usr/share/icons/Papirus/scalable/apps/
+    # Adjust icon_path based on your installed icon themes
+
+    # Frame / Colors (Dracula-ish)
+    frame_width = 2
+    frame_color = "#44475a" # Current Line / Darker Purple
+    separator_color = "#6272a4" # Purple
+    padding = 8
+    horizontal_padding = 8
+
+    # Mouse actions
+    # mouse_left_click = close_current
+    # mouse_middle_click = do_action, close_current
+    # mouse_right_click = close_all
+
+[urgency_low]
+    background = "#282a36" # Background
+    foreground = "#f8f8f2" # Foreground
+    timeout = 10
+    # frame_color = "#44475a"
+
+[urgency_normal]
+    background = "#282a36" # Background
+    foreground = "#f8f8f2" # Foreground
+    timeout = 10
+    # frame_color = "#bd93f9" # Purple
+
+[urgency_critical]
+    background = "#ff5555" # Red
+    foreground = "#f8f8f2" # Foreground
+    frame_color = "#ffb86c" # Orange
+    timeout = 0 # Sticky until dismissed
+
+[spotify_ignore]
+    # Match notifications where the application name is 'spotify' (case-insensitive match using wildcard *)
+    # Adjust 'spotify' if you found a different appname (e.g., 'Spotify')
+    appname = "*Spotify*"
+    # You could also match on summary if needed, e.g.:
+    summary = "*Paused*"
+    summary = "*Playing*"
+    # To ignore ALL notifications from spotify:
+    set_ignored = true
+
+# Example rule:
+# [brightness_notification]
+#    summary = "*Brightness*"
+#    urgency = low
+#    icon = /usr/share/icons/Adwaita/scalable/status/display-brightness-symbolic.svg
