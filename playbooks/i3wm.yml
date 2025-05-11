@@ -75,14 +75,6 @@
       register: user_group_change
       tags: [i3, prerequisites, permissions, brightness]
 
-    - name: Install i3lock-color (Debian/Ubuntu)
-      ansible.builtin.apt:
-        name: i3lock-color
-        state: present
-      become: true
-      when: ansible_os_family == "Debian"
-      tags: [i3, i3lock, package, debian, ubuntu]
-
     - name: Ensure user systemd directory exists for user '{{ lookup('env', 'USER') }}'
       # This task MUST run as the user themselves OR as root.
       # If running as user (play become: false, task become: false), it's fine.
