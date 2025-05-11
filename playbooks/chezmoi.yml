@@ -127,30 +127,27 @@
     #          This playbook assumes local first run might need `chezmoi init <repo>` then `chezmoi apply`.
 
     - name: Initialize Chezmoi with your dotfiles repository (if not already initialized)
-      become:
-        true # Still needed if target_chezmoi_user is different from ansible connection user (less likely for localhost CI)
-        # OR if play default is become:false and this specific task needs to become a specific user
-      become_user: "{{ target_chezmoi_user }}" # Run as the runner user
+      become: true
+      become_user: "{{ target_chezmoi_user }}"
       ansible.builtin.command:
-        cmd: >
-          chezmoi init
-          {% if ansible_env.CI == 'true' and ansible_env.GITHUB_WORKSPACE is defined %}
-          --source={{ ansible_env.GITHUB_WORKSPACE }}  # Use the checkout dir as the source in CI
-          {% else %}
-          {{ chezmoi_repo_url }} # For local runs, init from remote
-          {% endif %}
-          --branch={{ chezmoi_branch }}
-          --apply=false
-          -v
+        # Using cmd: | for better control over the final string
+        cmd: |
+          chezmoi init \
+            {% if ansible_env.CI == 'true' and ansible_env.GITHUB_WORKSPACE is defined %}
+            --source={{ ansible_env.GITHUB_WORKSPACE }} \
+            {% else %}
+            {{ chezmoi_repo_url }} \
+            {% endif %}
+            --branch={{ chezmoi_branch }} \
+            --apply=false \
+            -v
       args:
-        chdir: "{{ target_chezmoi_home }}" # NOW THIS WILL BE /Users/runner on macOS or /home/runner on Linux
+        chdir: "{{ target_chezmoi_home }}"
         creates: "{{ target_chezmoi_home }}/.local/share/chezmoi/.git"
-      environment:
-        USER: "{{ target_chezmoi_user }}"
-        DOTFILES_REPO_ROOT: "{{ ansible_env.GITHUB_WORKSPACE if ansible_env.CI == 'true' else target_chezmoi_home + '/dotfiles' }}"
-      register: chezmoi_apply_result
-      changed_when: "'Applied' in chezmoi_apply_result.stdout or chezmoi_apply_result.stdout_lines | length > 1"
-      tags: [always, chezmoi, apply]
+      when: not chezmoi_source_dir_git_check.stat.exists or (ansible_env.CI == 'true' and ansible_env.GITHUB_WORKSPACE is defined)
+      register: chezmoi_init_result
+      changed_when: "'Cloned' in chezmoi_init_result.stdout or 'Initialized' in chezmoi_init_result.stdout"
+      tags: [always, chezmoi, init]
 
     - name: Display Chezmoi Apply Result (Debug)
       ansible.builtin.debug:
