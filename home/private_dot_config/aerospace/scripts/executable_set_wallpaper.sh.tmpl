@@ -1,0 +1,42 @@
+#!/bin/bash
+# Managed by Chezmoi: {{ .chezmoi.sourceFile }}
+# Sets the desktop wallpaper on macOS.
+
+# --- Configuration ---
+# Wallpaper path. Use a Chezmoi template variable if the path might change
+# or if you want to select from multiple wallpapers.
+# Assumes wallpaper is managed by Chezmoi and placed here.
+# Option 1: Wallpaper relative to this script or a known config path
+# WALLPAPER_PATH="{{ .chezmoi.homeDir }}/.config/aerospace/wallpaper.jpg"
+# Option 2: Wallpaper from a shared assets directory in your dotfiles source
+# This requires the wallpaper to be symlinked or copied by Chezmoi to a known target path.
+# Let's assume your wallpaper is at ~/Pictures/Wallpapers/my_wallpaper.png after Chezmoi runs.
+# WALLPAPER_PATH="{{ .chezmoi.homeDir }}/Pictures/Wallpapers/my_wallpaper.png"
+
+# For this example, let's assume your wallpaper is managed by chezmoi
+# and will be placed at ~/.config/aerospace/assets/wallpaper.png
+# You would add `dot_config/aerospace/assets/wallpaper.png` to your chezmoi source.
+WALLPAPER_PATH="{{ .chezmoi.homeDir }}/images/wallpaper.png" # <--- ADJUST THIS PATH
+
+# Check if the wallpaper file exists
+if [ ! -f "$WALLPAPER_PATH" ]; then
+    echo "Wallpaper not found at $WALLPAPER_PATH"
+    # You could fall back to a default macOS wallpaper or do nothing
+    # Example: osascript -e 'tell application "Finder" to set desktop picture to POSIX file "/System/Library/Desktop Pictures/Solid Colors/Stone.png"'
+    exit 1
+fi
+
+echo "Setting wallpaper to: $WALLPAPER_PATH"
+
+# Method 1: Using osascript (most common and reliable)
+osascript -e 'tell application "System Events" to tell every desktop to set picture to POSIX file "'"$WALLPAPER_PATH"'"'
+
+# Method 2: Using 'desktopper' (if installed via brew install desktopper)
+# if command -v desktopper &> /dev/null; then
+#     desktopper "$WALLPAPER_PATH"
+# else
+#     echo "'desktopper' command not found. Using osascript."
+#     osascript -e 'tell application "System Events" to tell every desktop to set picture to POSIX file "'"$WALLPAPER_PATH"'"'
+# fi
+
+echo "Wallpaper set."

@@ -21,7 +21,7 @@ set $mod Mod4
 # If not set there, it defaults to 'x-terminal-emulator', which should
 # point to a system-installed terminal (like gnome-terminal, xfce4-terminal, etc.).
 # Ensure your Ansible playbook installs a terminal (e.g., alacritty, kitty, xfce4-terminal).
-set $term {{ .terminal | default "x-terminal-emulator" }}
+set $term {{ .terminal_cmd_linux | default "alacritty" }}
 
 # Define your application launcher.
 # dmenu is very lightweight and traditional with i3.
@@ -228,7 +228,7 @@ bindsym $mod+Shift+p exec --no-startup-id flameshot full -c
 
 # --- Launch Web Browser ---
 # Uses the '.browser' variable defined in chezmoi.toml data section
-bindsym $mod+Shift+b exec {{ .browser | default "xdg-open http://localhost" }}
+bindsym $mod+Shift+b exec {{ .browser_cmd_linux | default "xdg-open http://localhost" }}
 
 # --- File Manager ---
 bindsym $mod+Shift+f exec thunar
@@ -309,7 +309,7 @@ exec --no-startup-id setxkbmap -option caps:swapescape
 # exec --no-startup-id xsetroot -solid "#333333"
 # Example: Set wallpaper using feh (requires 'feh' package from Ansible)
 # Ensure you have a wallpaper at this path or change it.
-exec --no-startup-id feh --bg-scale {{ .chezmoi.homeDir }}/.config/i3/wallpaper.png
+exec --no-startup-id feh --bg-scale {{ .chezmoi.homeDir }}/images/wallpaper.png
 
 # Example: Start a compositor for basic transparency/shadows (requires 'picom' from Ansible)
 # Create a simple picom.conf or use its defaults.

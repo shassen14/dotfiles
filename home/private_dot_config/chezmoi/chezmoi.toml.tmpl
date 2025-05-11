@@ -10,18 +10,13 @@ sourceDir = "{{ env "DOTFILES_REPO_ROOT" | default (printf "%s/dotfiles" .chezmo
 
 # --- Data Section ---
 [data]
-  name = "Samir Hassen" # Or use Ansible/env vars if preferred
-  email = "your_email@example.com" # Replace with your actual email
-  terminal = "alacritty"
+  name = "Samir Hassen"
+  email = "your_email@example.com"
+  terminal_app_name_mac = "Alacritty"    # For macOS 'open -a'
+  terminal_cmd_linux = "alacritty"     # For Linux exec
+  browser_app_name_mac = "Brave Browser" # For macOS 'open -a'
+  browser_cmd_linux = "brave-browser"   # For Linux exec
   editor = "nvim"
-  browser = "brave-browser"
-
-  # Example of OS-specific data
-{{ if eq .chezmoi.os "darwin" }}
-  # macOS specific data can go here if needed later
-{{ else if eq .chezmoi.os "linux" }}
-  # Linux specific data can go here if needed later
-{{ end }}
 
 # --- Other Chezmoi Settings ---
 # Add settings as needed (e.g., encryption, scripting config)

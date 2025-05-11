@@ -84,6 +84,11 @@
   when: ansible_os_family == "Debian" # <--- Crucial condition
   tags: [i3, i3wm, wm, desktop, gui, ubuntu, debian]
 
+- name: Install AeroSpace Tiling Window Manager (macOS Only)
+  import_playbook: playbooks/aerospace.yml
+  when: ansible_os_family == "Darwin" # <--- Crucial condition
+  tags: [aerospace, wm, macos, gui, tiling]
+
 # Streaming / Recording <-- Add OBS Here
 - name: Setup OBS Studio
   import_playbook: playbooks/obs.yml
