@@ -141,29 +141,26 @@
       become: true
       become_user: "{{ target_chezmoi_user }}"
       ansible.builtin.command:
-        cmd: >
-          chezmoi
-          apply
-          --config {{ ansible_chezmoi_config_for_apply }}
-          {% if ansible_env.CI == 'true' %}
-          --source {{ ansible_env.GITHUB_WORKSPACE }}/home  # Explicitly set source dir in CI
-          --destination {{ target_chezmoi_home }}         # Explicitly set dest dir in CI
-          {% endif %}
-          --force
-          -v
+        # Construct the base command
+        # For multi-line commands, ensure no unintended characters get passed.
+        # Using an array format (argv) for 'command' module is often safer if not needing shell features.
+        # However, since we have Jinja templating here, a shell string is common.
+        cmd: |
+          chezmoi apply \
+            --config {{ ansible_chezmoi_config_for_apply }} \
+            {% if ansible_env.CI == 'true' %}
+            --source {{ ansible_env.GITHUB_WORKSPACE }}/home \
+            --destination {{ target_chezmoi_home }} \
+            {% endif %}
+            --force \
+            -v
       args:
-        chdir: "{{ target_chezmoi_home }}" # Run in the user's home directory
+        chdir: "{{ target_chezmoi_home }}"
       environment:
-        # Pass environment variables that your templates might use,
-        # especially if your chezmoi.toml.tmpl uses them.
         USER: "{{ target_chezmoi_user }}"
-        # DOTFILES_REPO_ROOT is needed by your private_dot_config/chezmoi/chezmoi.toml.tmpl
-        # for setting the sourceDir.
         DOTFILES_REPO_ROOT: "{{ ansible_env.GITHUB_WORKSPACE if ansible_env.CI == 'true' else target_chezmoi_home + '/dotfiles' }}"
       register: chezmoi_apply_result
-      changed_when: "'Applied' in chezmoi_apply_result.stdout or chezmoi_apply_result.stdout_lines | length > 1" # Heuristic
-      # Allow it to fail here to see the actual error from chezmoi apply if data is missing
-      # failed_when: chezmoi_apply_result.rc != 0 and 'template error' not in chezmoi_apply_result.stderr # Be more specific if needed
+      changed_when: "'Applied' in chezmoi_apply_result.stdout or chezmoi_apply_result.stdout_lines | length > 1"
       tags: [always, chezmoi, apply]
 
     - name: Display Chezmoi Apply Result (Debug)
