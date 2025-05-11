@@ -1,25 +1,26 @@
 # This is a NON-TEMPLATED config file specifically for CI bootstrapping.
+# It tells Chezmoi where to find the source files within the CI checkout
+# AND provides the necessary [data] for all templates.
 
 # In CI, your repository is checked out to GITHUB_WORKSPACE.
-# If your Chezmoi 'home' source directory is at the root of this checkout:
-# (e.g., your repo has a 'home' dir: dotfiles/home/private_dot_config/...)
-# Then sourceDir should reflect this relative to the root of the *filesystem*.
-# GITHUB_WORKSPACE is an environment variable. You can't use it directly here
-# unless this file itself is templated.
-# Let's assume ansible sets the correct source dir via command line for CI instead.
+# Your `private_dot_config/chezmoi/chezmoi.toml.tmpl` defines its own sourceDir
+# using `env "DOTFILES_REPO_ROOT" + "/home"`.
+# This CI config's sourceDir is what `chezmoi apply --config ... --source ...` uses if --source is specified.
+# For the apply task in chezmoi.yml, we are now explicitly passing --source for CI.
+# So, sourceDir here can be minimal or match, but the --source on CLI takes precedence for that run.
+# For consistency, let's set it assuming DOTFILES_REPO_ROOT is GITHUB_WORKSPACE.
+# However, the --source in the Ansible task will override this for that specific 'apply'.
+# This mainly serves to ensure chezmoi itself has a valid config to load.
 
-# For simplicity, we might omit sourceDir and destDir from chezmoi.ci.toml
-# and rely on Chezmoi's defaults OR set them via CLI arguments to 'chezmoi apply'
-# if needed by the CI environment. If your 'home' directory is at the root
-# of the checkout, and 'chezmoi apply' is run from there, sourceDir might be inferred.
+destDir = "{{ env "HOME" }}" # HOME is usually set correctly in CI runners for the runner user# destDir is where files are written to.
 
-# The most crucial part is the [data] section.
+# CRITICAL: The [data] section that your templates need during the apply.
 [data]
 name = "Samir Hassen (CI)"
 email = "your_ci_email@example.com"
-terminal = "alacritty"
+terminal = "alacritty"              # <<< THE KEY THAT WAS MISSING FOR i3 TEMPLATE
 editor = "nvim"
 browser = "brave-browser"
 
-# You might also need 'encryption = "gpg"' if you have encrypted files
-# and have set up GPG in CI.
+# encryption = "gpg" # If you use encrypted files and have GPG set up in CI
+# pager = "less -R"
