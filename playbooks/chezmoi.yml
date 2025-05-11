@@ -7,32 +7,21 @@
   vars:
     # --- User and Path Definitions ---
     # User for whom chezmoi will be set up.
-    # In CI, ansible_user_id might be 'runner' or similar.
+    # In CI, ansible_user_id (or ansible_user) is typically 'runner'.
     # Locally, lookup('env','USER') is usually your logged-in user.
-    target_chezmoi_user: "{{ lookup('env', 'USER') if ansible_env.CI != 'true' else ansible_user_id | default('runner') }}"
-    target_chezmoi_home: "{{ ansible_env.HOME if ansible_env.CI != 'true' else '/home/' + target_chezmoi_user }}" # Adjust if CI user home is different
+    target_chezmoi_user: "{{ lookup('env', 'USER') if ansible_env.CI != 'true' else ansible_user | default('runner') }}" # 'ansible_user' is often 'runner' in CI
+
+    # target_chezmoi_home should be the actual home directory of the runner user in CI.
+    # ansible_env.HOME is generally reliable for this in CI.
+    target_chezmoi_home: "{{ ansible_env.HOME }}" # This works for both Linux and macOS runners.
 
     # --- Chezmoi Configuration ---
-    # Your Git repository for dotfiles
-    chezmoi_repo_url: "https://github.com/shassen14/dotfiles.git" # e.g., github.com/yourusername/dotfiles.git
-    chezmoi_branch: "main" # Or your default branch
+    chezmoi_repo_url: "https://github.com/shassen14/dotfiles.git"
+    chezmoi_branch: "main"
 
     # --- CI Specific Configuration ---
-    # Path to the CI-specific, non-templated chezmoi config within your checked-out repository
-    # This file should exist at the root of your repo and contain the necessary [data].
-    chezmoi_ci_config_in_repo: "{{ ansible_env.GITHUB_WORKSPACE }}/chezmoi.ci.toml" # Must exist in your repo for CI
-
-    # Path where Chezmoi expects its config.
-    # This is where your private_dot_config/chezmoi/chezmoi.toml.tmpl will create its output.
+    chezmoi_ci_config_in_repo: "{{ ansible_env.GITHUB_WORKSPACE }}/chezmoi.ci.toml"
     chezmoi_target_config_file_path: "{{ target_chezmoi_home }}/.config/chezmoi/chezmoi.toml"
-
-    # Determine which config file 'chezmoi apply' should use.
-    # In CI: Always use the static chezmoi.ci.toml from the repo.
-    # Locally: Use the target ~/.config/chezmoi/chezmoi.toml if it exists,
-    # otherwise (for the very first local run), could also point to a bootstrap/CI config if you add one for local too,
-    # or rely on 'chezmoi init' having set up a basic one.
-    # For simplicity in this example: CI uses its dedicated config. Local relies on what 'init' or a prior 'apply' might establish.
-    # A more robust local first run might also use a temporary bootstrap config if the main one is templated.
     ansible_chezmoi_config_for_apply: "{% if ansible_env.CI == 'true' %}{{ chezmoi_ci_config_in_repo }}{% else %}{{ chezmoi_target_config_file_path }}{% endif %}"
 
   tasks:
@@ -137,25 +126,25 @@
     #          The `chezmoi init --apply <repo>` handles this better for local first run.
     #          This playbook assumes local first run might need `chezmoi init <repo>` then `chezmoi apply`.
 
-    - name: "Apply Chezmoi changes (using {{ ansible_chezmoi_config_for_apply }})"
-      become: true
-      become_user: "{{ target_chezmoi_user }}"
+    - name: Initialize Chezmoi with your dotfiles repository (if not already initialized)
+      become:
+        true # Still needed if target_chezmoi_user is different from ansible connection user (less likely for localhost CI)
+        # OR if play default is become:false and this specific task needs to become a specific user
+      become_user: "{{ target_chezmoi_user }}" # Run as the runner user
       ansible.builtin.command:
-        # Construct the base command
-        # For multi-line commands, ensure no unintended characters get passed.
-        # Using an array format (argv) for 'command' module is often safer if not needing shell features.
-        # However, since we have Jinja templating here, a shell string is common.
-        cmd: |
-          chezmoi apply \
-            --config {{ ansible_chezmoi_config_for_apply }} \
-            {% if ansible_env.CI == 'true' %}
-            --source {{ ansible_env.GITHUB_WORKSPACE }}/home \
-            --destination {{ target_chezmoi_home }} \
-            {% endif %}
-            --force \
-            -v
+        cmd: >
+          chezmoi init
+          {% if ansible_env.CI == 'true' and ansible_env.GITHUB_WORKSPACE is defined %}
+          --source={{ ansible_env.GITHUB_WORKSPACE }}  # Use the checkout dir as the source in CI
+          {% else %}
+          {{ chezmoi_repo_url }} # For local runs, init from remote
+          {% endif %}
+          --branch={{ chezmoi_branch }}
+          --apply=false
+          -v
       args:
-        chdir: "{{ target_chezmoi_home }}"
+        chdir: "{{ target_chezmoi_home }}" # NOW THIS WILL BE /Users/runner on macOS or /home/runner on Linux
+        creates: "{{ target_chezmoi_home }}/.local/share/chezmoi/.git"
       environment:
         USER: "{{ target_chezmoi_user }}"
         DOTFILES_REPO_ROOT: "{{ ansible_env.GITHUB_WORKSPACE if ansible_env.CI == 'true' else target_chezmoi_home + '/dotfiles' }}"
