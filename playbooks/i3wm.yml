@@ -10,27 +10,27 @@
 
   vars:
     i3_companion_packages:
-      - i3lock          # Screen locker
-      - i3status        # Status bar generator
-      - suckless-tools  # Provides dmenu (default application launcher for i3)
-      - feh             # Lightweight image viewer, often used for setting wallpapers
-      - rofi            # A more versatile application launcher (alternative to dmenu)
-      - arandr          # GUI for XRandR (managing screen layouts)
-      - lxappearance    # To set GTK themes, icons, fonts
-      - pavucontrol     # PulseAudio volume control GUI
+      - i3lock # Screen locker
+      - i3status # Status bar generator
+      - suckless-tools # Provides dmenu (default application launcher for i3)
+      - feh # Lightweight image viewer, often used for setting wallpapers
+      - rofi # A more versatile application launcher (alternative to dmenu)
+      - arandr # GUI for XRandR (managing screen layouts)
+      - lxappearance # To set GTK themes, icons, fonts
+      - pavucontrol # PulseAudio volume control GUI
       - network-manager-gnome # Network management applet (if not using a more minimal network setup)
       # Compositor for transparency, shadows, fading (choose one or none)
       # - compton       # Older, well-known compositor
-      - picom           # A popular compton fork, often preferred now
+      - picom # A popular compton fork, often preferred now
       # Add any other tools you commonly use with i3:
       # - scrot         # Screenshot utility
-      - flameshot     # More advanced screenshot utility
-      - dunst         # Notification daemon
+      - flameshot # More advanced screenshot utility
+      - dunst # Notification daemon
       - libnotify-bin # For sending notifications (used by dunst or other notifiers)
       - pulseaudio-utils
-      - playerctl           # For media key control in status bar
+      - playerctl # For media key control in status bar
       - light
-      - fonts-font-awesome  # For icons (or nerd-fonts handled elsewhere)
+      - fonts-font-awesome # For icons (or nerd-fonts handled elsewhere)
       # - xautolock     # For automatically locking the screen
 
   tasks:
@@ -93,7 +93,7 @@
       ansible.builtin.file:
         path: "/home/{{ lookup('env', 'USER') }}/.config/systemd/user" # Explicit absolute path
         state: directory
-        mode: '0750' # User read/write/execute, group read/execute
+        mode: "0750" # User read/write/execute, group read/execute
         owner: "{{ lookup('env', 'USER') }}" # Ensure correct owner
         group: "{{ lookup('env', 'USER') }}" # Ensure correct group (or lookup primary group if needed)
       become: true # Run this task as root to ensure directory creation works robustly
@@ -104,7 +104,7 @@
       ansible.builtin.systemd:
         name: i3lock-resume.service
         enabled: yes
-        scope: user   # IMPORTANT: Specifies this is a user service
+        scope: user # IMPORTANT: Specifies this is a user service
       become: true # Elevate to root...
       become_user: "{{ lookup('env', 'USER') }}" # ...then run systemctl --user as the target user
       tags: [i3, systemd, user_service]
