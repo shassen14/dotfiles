@@ -4,7 +4,7 @@
 
 # --- Theme & Icons ---
 [theme]
-theme = "solarized-dark" # Let's try Dracula again, maybe it works with custom blocks
+theme = "dracula" # Let's try Dracula again, maybe it works with custom blocks
 # If Dracula name fails, use overrides:
 # [theme.overrides]
 #    idle_bg = "#282a36"
@@ -19,14 +19,14 @@ theme = "solarized-dark" # Let's try Dracula again, maybe it works with custom b
 #    critical_fg = "#f8f8f2"
 
 [icons]
-icons = "awesome6" # Requires Font Awesome 6 font
+icons = "awesome4" # Requires Font Awesome 6 font
 
 # --- Block Definitions ---
 
 # Use native block if possible, otherwise custom script
-[[block]]
-block = "focused_window" # Try native first, if it fails use custom below
-format = " $title.str(max_w:38) " # Limit width
+# [[block]]
+# block = "focused_window" # Try native first, if it fails use custom below
+# format = " $title.str(max_w:38) " # Limit width
 # [[block.click]] # Example click action
 # button = "left"
 # cmd = "wmctrl -a $title" # Needs wmctrl installed
@@ -119,8 +119,40 @@ interval = "once"
 # interval = 5
 # json = true
 
+[[block]]
+block = "net"
+
+# --- Visual Separator ---
+[[block]]
+block = "custom"
+command = "echo '{\"text\":\" │ \", \"state\":\"Idle\"}'"
+json = true
+interval = "once"
+
 [[block]] # Native Time Block (was working)
 block = "time"
 interval = 1
 # Use datetime format helper and icons
 format = "$icon   $timestamp.datetime(f:'%a %d %b %H:%M:%S') "
+
+# --- Visual Separator ---
+[[block]]
+block = "custom"
+command = "echo '{\"text\":\" │ \", \"state\":\"Idle\"}'"
+json = true
+interval = "once"
+
+[[block]]
+block = "menu"
+text = "\uf011  "
+[[block.items]]
+display = "-&gt;   Sleep   &lt;- "
+cmd = "systemctl suspend"
+[[block.items]]
+display = "-&gt; Power Off &lt;- "
+cmd = "poweroff"
+confirm_msg = "Are you sure you want to power off?"
+[[block.items]]
+display = "-&gt;  Reboot   &lt;- "
+cmd = "reboot"
+confirm_msg = "Are you sure you want to reboot?"

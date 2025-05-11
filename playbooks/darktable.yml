@@ -1,0 +1,50 @@
+# playbooks/darktable.yml
+# Installs Darktable RAW photo editor.
+
+- name: Install Darktable
+  hosts: all
+  become: true # For Linux package installs
+  gather_facts: true # For ansible_os_family
+  tags: [darktable, photo, raw, editing, graphics, gui]
+
+  tasks:
+    # --- Debian/Ubuntu ---
+    # Darktable is often in the main repos. For the latest, a PPA might be considered,
+    # but official repos are usually good enough and more stable.
+    - name: Install Darktable (Debian/Ubuntu)
+      ansible.builtin.apt:
+        name: darktable
+        state: present
+        update_cache: yes
+      when: ansible_os_family == "Debian"
+      tags: [darktable, package, debian, ubuntu]
+
+    # --- RedHat Family (Fedora, CentOS Stream, RHEL, Rocky, Alma) ---
+    - name: Install Darktable (RedHat family)
+      ansible.builtin.dnf:
+        name: darktable
+        state: present
+      when: ansible_os_family == "RedHat"
+      tags: [darktable, package, redhat, fedora]
+
+    # --- Arch Linux ---
+    - name: Install Darktable (Arch Linux)
+      community.general.pacman:
+        name: darktable
+        state: present
+      when: ansible_os_family == "Archlinux"
+      tags: [darktable, package, arch]
+
+    # --- macOS ---
+    - name: Install Darktable using Homebrew Cask (macOS)
+      become: false # Homebrew runs as user
+      community.general.homebrew_cask:
+        name: darktable
+        state: present
+      when: ansible_os_family == "Darwin"
+      tags: [darktable, package, macos]
+
+    - name: Installation complete summary for Darktable
+      ansible.builtin.debug:
+        msg: "Darktable installation attempted. Check specific task status above."
+      tags: [darktable, info]

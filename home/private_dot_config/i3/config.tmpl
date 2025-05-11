@@ -271,11 +271,11 @@ bindsym XF86AudioStop exec --no-startup-id playerctl stop # Optional: some playe
 bar {
     # NEW: Point to i3status-rust and its config file
     # status_command i3status-rs {{ .chezmoi.homeDir }}/.config/i3status-rust/config.toml
-    status_command i3status-rs 
+    status_command i3status-rs
 
     position top
     tray_output primary # Show tray on primary monitor
-    tray_padding 2 px 
+    tray_padding 2 px
     # Pixels padding for tray
 
     # Font for the bar - MUST include the icon font used in config.toml
@@ -301,6 +301,9 @@ bar {
 # --- Startup Applications (Optional) ---
 # -----------------------------------------------------------------------------
 # exec --no-startup-id <command>
+
+# Switching caps lock with escape key
+exec --no-startup-id setxkbmap -option caps:swapescape
 
 # Example: Set a simple background color (requires xsetroot, usually installed)
 # exec --no-startup-id xsetroot -solid "#333333"

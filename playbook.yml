@@ -94,6 +94,10 @@
   import_playbook: playbooks/bitwarden.yml
   tags: [bitwarden, app, security, passwordmanager, gui]
 
+- name: Install Darktable (RAW Photo Editor)
+  import_playbook: playbooks/darktable.yml
+  tags: [darktable, photo, graphics, gui]
+
 # Shell Setup (Install zsh/bash, starship, set defaults)
 - name: Configure Shell Environment
   import_playbook: playbooks/shell_setup.yml
