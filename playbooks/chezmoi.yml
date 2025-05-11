@@ -82,20 +82,15 @@
       register: chezmoi_source_dir_git_check
       tags: [always, chezmoi, init]
 
+    - name: Determine chezmoi init source argument
+      ansible.builtin.set_fact:
+        chezmoi_init_source_arg: "{% if ansible_env.CI == 'true' and ansible_env.GITHUB_WORKSPACE is defined %}--source={{ ansible_env.GITHUB_WORKSPACE }}{% else %}{{ chezmoi_repo_url }}{% endif %}"
+
     - name: Initialize Chezmoi with your dotfiles repository (if not already initialized)
       become: true
       become_user: "{{ target_chezmoi_user }}"
-      ansible.builtin.command:
-        cmd: >-
-          chezmoi init
-          {% if ansible_env.CI == 'true' and ansible_env.GITHUB_WORKSPACE is defined %}
-          --source={{ ansible_env.GITHUB_WORKSPACE }}
-          {% else %}
-          {{ chezmoi_repo_url }}
-          {% endif %}
-          --branch={{ chezmoi_branch }}
-          --apply=false
-          -v
+      ansible.builtin.shell: # Using shell to allow for easy variable interpolation
+        cmd: "chezmoi init {{ chezmoi_init_source_arg }} --branch={{ chezmoi_branch }} --apply=false -v"
       args:
         chdir: "{{ target_chezmoi_home }}"
         creates: "{{ target_chezmoi_home }}/.local/share/chezmoi/.git"
