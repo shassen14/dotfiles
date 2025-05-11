@@ -1,16 +1,25 @@
-# This is a non-templated config file specifically for CI bootstrapping
-# or for the first run of chezmoi if its main config is a template.
+# This is a NON-TEMPLATED config file specifically for CI bootstrapping.
 
-sourceDir = "{{ env "GITHUB_WORKSPACE" }}/home" # GITHUB_WORKSPACE is where the repo is checked out# Set sourceDir based on GitHub Actions environment
-# This assumes your dotfiles content (the 'home' subdir) is at the root of the checkout
+# In CI, your repository is checked out to GITHUB_WORKSPACE.
+# If your Chezmoi 'home' source directory is at the root of this checkout:
+# (e.g., your repo has a 'home' dir: dotfiles/home/private_dot_config/...)
+# Then sourceDir should reflect this relative to the root of the *filesystem*.
+# GITHUB_WORKSPACE is an environment variable. You can't use it directly here
+# unless this file itself is templated.
+# Let's assume ansible sets the correct source dir via command line for CI instead.
 
+# For simplicity, we might omit sourceDir and destDir from chezmoi.ci.toml
+# and rely on Chezmoi's defaults OR set them via CLI arguments to 'chezmoi apply'
+# if needed by the CI environment. If your 'home' directory is at the root
+# of the checkout, and 'chezmoi apply' is run from there, sourceDir might be inferred.
+
+# The most crucial part is the [data] section.
 [data]
 name = "Samir Hassen (CI)"
-email = "ci_email@example.com"
+email = "your_ci_email@example.com"
 terminal = "alacritty"
 editor = "nvim"
 browser = "brave-browser"
 
-# Add any other data fields your templates (including chezmoi.toml.tmpl itself if it uses them)
-# might need during the initial apply.
-# For example, if your chezmoi.toml.tmpl uses .chezmoi.os, that's fine as Chezmoi provides it.
+# You might also need 'encryption = "gpg"' if you have encrypted files
+# and have set up GPG in CI.

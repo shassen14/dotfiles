@@ -138,13 +138,19 @@
     #          This playbook assumes local first run might need `chezmoi init <repo>` then `chezmoi apply`.
 
     - name: "Apply Chezmoi changes (using {{ ansible_chezmoi_config_for_apply }})"
-      become: true # For privilege to switch to target_chezmoi_user
+      become: true
       become_user: "{{ target_chezmoi_user }}"
       ansible.builtin.command:
-        # -S is tricky if the sourceDir in chezmoi.ci.toml is also templated or needs resolving.
-        # Simpler to let `chezmoi apply` use its configured sourceDir.
-        # The --config flag tells Chezmoi which config file to load its *own settings and data from*.
-        cmd: "chezmoi apply --config {{ ansible_chezmoi_config_for_apply }} --force -v"
+        cmd: >
+          chezmoi
+          apply
+          --config {{ ansible_chezmoi_config_for_apply }}
+          {% if ansible_env.CI == 'true' %}
+          --source {{ ansible_env.GITHUB_WORKSPACE }}/home  # Explicitly set source dir in CI
+          --destination {{ target_chezmoi_home }}         # Explicitly set dest dir in CI
+          {% endif %}
+          --force
+          -v
       args:
         chdir: "{{ target_chezmoi_home }}" # Run in the user's home directory
       environment:
