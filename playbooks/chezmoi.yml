@@ -14,7 +14,7 @@
 
     # --- Chezmoi Configuration ---
     # Your Git repository for dotfiles
-    chezmoi_repo_url: "YOUR_GIT_REPO_URL_HERE" # e.g., github.com/yourusername/dotfiles.git
+    chezmoi_repo_url: "https://github.com/shassen14/dotfiles.git" # e.g., github.com/yourusername/dotfiles.git
     chezmoi_branch: "main" # Or your default branch
 
     # --- CI Specific Configuration ---
@@ -141,16 +141,19 @@
       become: true
       become_user: "{{ target_chezmoi_user }}"
       ansible.builtin.command:
-        # Construct the command as a single string, being careful with spaces and newlines from Jinja
-        cmd: >-
-          chezmoi apply
-          --config {{ ansible_chezmoi_config_for_apply }}
-          {% if ansible_env.CI == 'true' %}
-          --source {{ ansible_env.GITHUB_WORKSPACE }}/home
-          --destination {{ target_chezmoi_home }}
-          {% endif %}
-          --force
-          -v
+        # Construct the base command
+        # For multi-line commands, ensure no unintended characters get passed.
+        # Using an array format (argv) for 'command' module is often safer if not needing shell features.
+        # However, since we have Jinja templating here, a shell string is common.
+        cmd: |
+          chezmoi apply \
+            --config {{ ansible_chezmoi_config_for_apply }} \
+            {% if ansible_env.CI == 'true' %}
+            --source {{ ansible_env.GITHUB_WORKSPACE }}/home \
+            --destination {{ target_chezmoi_home }} \
+            {% endif %}
+            --force \
+            -v
       args:
         chdir: "{{ target_chezmoi_home }}"
       environment:
