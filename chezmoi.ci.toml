@@ -1,24 +1,12 @@
+# chezmoi.ci.toml
 # This is a NON-TEMPLATED config file specifically for CI bootstrapping.
-# It tells Chezmoi where to find the source files within the CI checkout
-# AND provides the necessary [data] for all templates.
+# Its main purpose is to provide the [data] block for all templates.
+# sourceDir and destDir will be provided by CLI arguments in the CI 'chezmoi apply' task.
 
-# In CI, your repository is checked out to GITHUB_WORKSPACE.
-# Your `private_dot_config/chezmoi/chezmoi.toml.tmpl` defines its own sourceDir
-# using `env "DOTFILES_REPO_ROOT" + "/home"`.
-# This CI config's sourceDir is what `chezmoi apply --config ... --source ...` uses if --source is specified.
-# For the apply task in chezmoi.yml, we are now explicitly passing --source for CI.
-# So, sourceDir here can be minimal or match, but the --source on CLI takes precedence for that run.
-# For consistency, let's set it assuming DOTFILES_REPO_ROOT is GITHUB_WORKSPACE.
-# However, the --source in the Ansible task will override this for that specific 'apply'.
-# This mainly serves to ensure chezmoi itself has a valid config to load.
-
-destDir = "{{ env "HOME" }}" # HOME is usually set correctly in CI runners for the runner user# destDir is where files are written to.
-
-# CRITICAL: The [data] section that your templates need during the apply.
 [data]
 name = "Samir Hassen (CI)"
 email = "your_ci_email@example.com"
-terminal = "alacritty"              # <<< THE KEY THAT WAS MISSING FOR i3 TEMPLATE
+terminal = "alacritty"
 editor = "nvim"
 browser = "brave-browser"
 
