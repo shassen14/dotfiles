@@ -83,18 +83,13 @@
       tags: [always, chezmoi, init]
 
     - name: Initialize Chezmoi with your dotfiles repository (if not already initialized)
-      become: true # For privilege to switch to target_chezmoi_user
+      become: true
       become_user: "{{ target_chezmoi_user }}"
       ansible.builtin.command:
-        # In CI, DOTFILES_REPO_ROOT (github.workspace) is the source.
-        # Locally, you'd typically init from your git remote.
-        # This task aims to set up ~/.local/share/chezmoi correctly.
-        # If GITHUB_WORKSPACE is set (CI), init from that local path.
-        # Otherwise, init from the remote repository URL.
-        cmd: >
+        cmd: >-
           chezmoi init
-          {% if ansible_env.CI == 'true' and ansible_env.DOTFILES_REPO_ROOT is defined %}
-          --source={{ ansible_env.DOTFILES_REPO_ROOT }}
+          {% if ansible_env.CI == 'true' and ansible_env.GITHUB_WORKSPACE is defined %}
+          --source={{ ansible_env.GITHUB_WORKSPACE }}
           {% else %}
           {{ chezmoi_repo_url }}
           {% endif %}
@@ -102,10 +97,9 @@
           --apply=false
           -v
       args:
-        chdir: "{{ target_chezmoi_home }}" # Run in the user's home directory
-        # Creates the internal .git directory if cloning, or updates if source is local.
+        chdir: "{{ target_chezmoi_home }}"
         creates: "{{ target_chezmoi_home }}/.local/share/chezmoi/.git"
-      when: not chezmoi_source_dir_git_check.stat.exists or (ansible_env.CI == 'true' and ansible_env.DOTFILES_REPO_ROOT is defined)
+      when: not chezmoi_source_dir_git_check.stat.exists or (ansible_env.CI == 'true' and ansible_env.GITHUB_WORKSPACE is defined)
       register: chezmoi_init_result
       changed_when: "'Cloned' in chezmoi_init_result.stdout or 'Initialized' in chezmoi_init_result.stdout"
       tags: [always, chezmoi, init]
