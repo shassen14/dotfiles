@@ -1,0 +1,122 @@
+#!/usr/bin/env bash
+# ~/.config/sketchybar/sketchybarrc
+# Managed by Chezmoi: {{ .chezmoi.sourceFile }}
+
+# Ensure this script is executable: chmod +x sketchybarrc
+
+# --- Global Bar Settings ---
+sketchybar --bar \
+  color=0xff282a36 \
+  position=top \
+  topmost=on \
+  layer=top \
+  sticky=on \
+  height=28 \
+  padding_left=10 \
+  padding_right=10 \
+  font="Hack Nerd Font:Regular:13.0" \
+  # font="SF Pro:Regular:13.0" # Alternative if you prefer SF Pro
+  # blur_radius=30 # Optional blur for the bar background
+
+# --- Defaults for Items ---
+sketchybar --default \
+  icon.color=0xfff8f8f2 \
+  icon.padding_left=5 \
+  icon.padding_right=5 \
+  label.color=0xfff8f8f2 \
+  label.padding_left=5 \
+  label.padding_right=5 \
+  background.padding_left=5 \
+  background.padding_right=5 \
+  updates=on # Update items when their scripts output changes or events fire
+
+# --- Configuration Variables ---
+# Path to your plugin scripts (managed by Chezmoi)
+PLUGIN_DIR="{{ .chezmoi.homeDir }}/.config/sketchybar/plugins"
+
+# --- AeroSpace Workspaces (Left Side) ---
+sketchybar --add item aerospace_workspaces left \
+           --set aerospace_workspaces \
+             icon.drawing=off \
+             label.drawing=on \
+             script="$PLUGIN_DIR/aerospace_workspaces.sh" \
+             update_freq=2 \
+           --subscribe aerospace_workspaces aerospace_workspace_change aerospace_window_detected aerospace_window_destroyed
+
+# --- Current App (Optional, Left Side) ---
+# sketchybar --add item current_app left \
+#            --set current_app \
+#              icon.drawing=off \
+#              label.font="Hack Nerd Font:Bold:13.0" \
+#              script='echo "$INFO"' \
+#            --subscribe current_app front_app_switched
+
+# --- Separator (Optional) ---
+sketchybar --add item separator_left left \
+           --set separator_left \
+             icon= \
+             icon.color=0xff44475a \
+             icon.font="Hack Nerd Font:Regular:16.0" \
+             label.drawing=off
+
+# --- Spotify/Music (Center or Right) ---
+sketchybar --add item current_track center \
+           --set current_track \
+             icon= \
+             icon.color=0xff1DB954 \
+             label.drawing=on \
+             label.max_chars=30 \
+             script="$PLUGIN_DIR/current_track.sh" \
+             update_freq=5 \
+           --subscribe current_track media_change
+
+
+# --- System Items (Right Side) ---
+
+# Sound Volume
+sketchybar --add item sound_volume right \
+           --set sound_volume \
+             icon.font="Hack Nerd Font:Regular:16.0" \
+             label.drawing=on \
+             script="$PLUGIN_DIR/sound_volume.sh" \
+             update_freq=3 \
+           --subscribe sound_volume volume_change system_woke
+
+
+# Battery
+sketchybar --add item battery right \
+           --set battery \
+             icon.font="Hack Nerd Font:Regular:16.0" \
+             label.drawing=on \
+             script="$PLUGIN_DIR/battery.sh" \
+             update_freq=120 \
+           --subscribe battery power_source_change system_woke
+
+
+# Date & Time
+sketchybar --add item current_time right \
+           --set current_time \
+             icon= \
+             icon.font="Hack Nerd Font:Regular:14.0" \
+             label.drawing=on \
+             script="$PLUGIN_DIR/current_time.sh" \
+             update_freq=10 # Update every 10 seconds
+
+# --- Separator (Optional) ---
+sketchybar --add item separator_right right \
+           --set separator_right \
+             icon= \
+             icon.color=0xff44475a \
+             icon.font="Hack Nerd Font:Regular:16.0" \
+             label.drawing=off
+
+# --- Finalize / Start Service ---
+# You can start sketchybar using:
+# `brew services start sketchybar`
+# OR add sketchybar to your Login Items in System Settings.
+# This script will be run by sketchybar when it starts.
+
+echo "SketchyBar configuration loaded."
+
+# To make sketchybar reload the config:
+# sketchybar --reloadß

@@ -89,6 +89,11 @@
   when: ansible_os_family == "Darwin" # <--- Crucial condition
   tags: [aerospace, wm, macos, gui, tiling]
 
+- name: Install SketchyBar Status Bar (macOS Only)
+  import_playbook: playbooks/sketchybar.yml
+  when: ansible_os_family == "Darwin" # <--- Crucial condition
+  tags: [sketchybar, macos, gui, statusbar, ui]
+
 # Streaming / Recording <-- Add OBS Here
 - name: Setup OBS Studio
   import_playbook: playbooks/obs.yml
