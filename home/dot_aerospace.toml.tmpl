@@ -18,9 +18,18 @@ after-startup-command = [
 ]
 
 # Run commands after Workspace Change
-exec-on-workspace-change = ['/bin/bash', '-c',
-    'sketchybar --trigger aerospace_workspace_change FOCUSED_WORKSPACE=$AEROSPACE_FOCUSED_WORKSPACE'
+exec-on-workspace-change = [
+    '/bin/bash',
+    '-c',
+    'FW="$AEROSPACE_FOCUSED_WORKSPACE"; sketchybar --trigger aerospace_workspace_changed FOCUSED_WORKSPACE="$FW"'
 ]
+
+#exec-on-workspace-change = [
+#    '/bin/bash',
+#    '-c',
+#    'echo "AeroSpace exec-on-workspace-change: AEROSPACE_FOCUSED_WORKSPACE=[$AEROSPACE_FOCUSED_WORKSPACE]" >> /tmp/aerospace_trigger_debug.log; TRIGGER_CMD="sketchybar --trigger aerospace_workspace_changed FOCUSED_WORKSPACE=\"$AEROSPACE_FOCUSED_WORKSPACE\""; echo "Executing: $TRIGGER_CMD" >> /tmp/aerospace_trigger_debug.log; $TRIGGER_CMD'
+#]
+
 
 # Normalizations
 enable-normalization-flatten-containers = true

@@ -2,155 +2,66 @@
 # ~/.config/sketchybar/sketchybarrc
 # Managed by Chezmoi: {{ .chezmoi.sourceFile }}
 
-
-#!/usr/bin/env bash
-
 source "{{ .chezmoi.homeDir }}/.config/sketchybar/variables.sh" # Loads all defined colors
 
-# General bar and defaults
-
-sketchybar --bar height=30 \
-	color="$BAR_COLOR" \
-	shadow="$SHADOW" \
-	position=top \
-	sticky=on \
+# --- General Bar Settings ---
+sketchybar --bar \
+  height=30 \
+  color="$BAR_COLOR" \
+  shadow="$SHADOW" \
+#   position=top \
+  sticky=on \
   topmost=on \
-  # layer=top \
-	padding_right=0 \
-	padding_left=3 \
-	corner_radius="$CORNER_RADIUS" \
-	y_offset=5 \
-	margin=5 \
-	blur_radius=20 \
-	notch_width=200 \
-	--default updates=when_shown \
-	icon.font="$FONT:Bold:13.5" \
-	icon.color="$ICON_COLOR" \
-	icon.padding_left="$PADDINGS" \
-	icon.padding_right="$PADDINGS" \
-	label.font="$FONT:Bold:13.0" \
-	label.color="$LABEL_COLOR" \
-	label.padding_left="$PADDINGS" \
-	label.padding_right="$PADDINGS" \
-	background.padding_right="$PADDINGS" \
-	background.padding_left="$PADDINGS" \
-	popup.background.border_width=1 \
-	popup.background.corner_radius=11 \
-	popup.background.border_color="$POPUP_BORDER_COLOR" \
-	popup.background.color="$POPUP_BACKGROUND_COLOR" \
-	popup.background.shadow.drawing="$SHADOW"
+  padding_right=0 \
+  padding_left=3 \
+  corner_radius="$CORNER_RADIUS" \
+  y_offset=5 \
+  margin=5 \
+  blur_radius=20 \
+  notch_width=200 \
+  updates=when_shown # Or 'on' if you prefer items to update even when bar is hidden due to notch
 
+# --- Default Settings for Items ---
+sketchybar --default \
+  icon.font="$FONT" \
+  icon.color="$ICON_COLOR" \
+  icon.padding_left="$PADDINGS" \
+  icon.padding_right="$PADDINGS" \
+  label.font="$FONT:Bold:13.0" \
+  label.color="$LABEL_COLOR" \
+  label.padding_left="$PADDINGS" \
+  label.padding_right="$PADDINGS" \
+  background.padding_right="$PADDINGS" \
+  background.padding_left="$PADDINGS" \
+  popup.background.border_width=1 \
+  popup.background.corner_radius=11 \
+  popup.background.border_color="$POPUP_BORDER_COLOR" \
+  popup.background.color="$POPUP_BACKGROUND_COLOR" \
+  popup.background.shadow.drawing="$SHADOW"
+
+# --- Load Items ---
+# (Ensure these files exist and are executable)
 # Left
-# source "$ITEM_DIR/apple.sh"
-source "$ITEM_DIR/spaces.sh"
-source "$ITEM_DIR/front_app.sh"
+# source "$ITEM_DIR/apple.sh" # Assuming ITEM_DIR is defined in variables.sh
+source "{{ .chezmoi.homeDir }}/.config/sketchybar/items/spaces.sh"
+source "{{ .chezmoi.homeDir }}/.config/sketchybar/items/front_app.sh"
 
 # Center (of notch)
-source "$ITEM_DIR/spotify.sh"
+source "{{ .chezmoi.homeDir }}/.config/sketchybar/items/spotify.sh"
 
 # Right
-source "$ITEM_DIR/clock.sh"
-source "$ITEM_DIR/calendar.sh"
-source "$ITEM_DIR/battery.sh"
-source "$ITEM_DIR/volume.sh"
-# source "$ITEM_DIR/cpu.sh"
+source "{{ .chezmoi.homeDir }}/.config/sketchybar/items/clock.sh"
+source "{{ .chezmoi.homeDir }}/.config/sketchybar/items/calendar.sh"
+source "{{ .chezmoi.homeDir }}/.config/sketchybar/items/battery.sh"
+source "{{ .chezmoi.homeDir }}/.config/sketchybar/items/volume.sh"
+# source "{{ .chezmoi.homeDir }}/.config/sketchybar/items/cpu.sh"
 
 #################### Finalizing Setup ####################
 
-sketchybar --hotload true
+# sketchybar --hotload true # Hotload is more for development. For production, a full load is fine.
+                            # When sketchybar starts via 'brew services start sketchybar', it runs this script.
 
-sketchybar --update
+sketchybar --update # Not strictly necessary here as items are added and will update,
+                    # but doesn't hurt. Usually for triggering updates after external changes.
 
 echo "sketchybar configuration loaded.."
-# fire
-
-# # --- Configuration Variables ---
-# # Path to your plugin scripts (managed by Chezmoi)
-# PLUGIN_DIR="{{ .chezmoi.homeDir }}/.config/sketchybar/plugins"
-
-# # --- AeroSpace Workspaces (Left Side) ---
-# sketchybar --add item aerospace_workspaces left \
-#            --set aerospace_workspaces \
-#              icon.drawing=off \
-#              label.drawing=on \
-#              script="$PLUGIN_DIR/aerospace_workspaces.sh" \
-#              update_freq=2 \
-#            --subscribe aerospace_workspaces aerospace_workspace_change aerospace_window_detected aerospace_window_destroyed
-
-# # --- Current App (Optional, Left Side) ---
-# # sketchybar --add item current_app left \
-# #            --set current_app \
-# #              icon.drawing=off \
-# #              label.font="Hack Nerd Font:Bold:13.0" \
-# #              script='echo "$INFO"' \
-# #            --subscribe current_app front_app_switched
-
-# # --- Separator (Optional) ---
-# sketchybar --add item separator_left left \
-#            --set separator_left \
-#              icon= \
-#              icon.color=0xff44475a \
-#              icon.font="Hack Nerd Font:Regular:16.0" \
-#              label.drawing=off
-
-# # --- Spotify/Music (Center or Right) ---
-# sketchybar --add item current_track center \
-#            --set current_track \
-#              icon= \
-#              icon.color=0xff1DB954 \
-#              label.drawing=on \
-#              label.max_chars=30 \
-#              script="$PLUGIN_DIR/current_track.sh" \
-#              update_freq=5 \
-#            --subscribe current_track media_change
-
-
-# # --- System Items (Right Side) ---
-
-# # Sound Volume
-# sketchybar --add item sound_volume right \
-#            --set sound_volume \
-#              icon.font="Hack Nerd Font:Regular:16.0" \
-#              label.drawing=on \
-#              script="$PLUGIN_DIR/sound_volume.sh" \
-#              update_freq=3 \
-#            --subscribe sound_volume volume_change system_woke
-
-
-# # Battery
-# sketchybar --add item battery right \
-#            --set battery \
-#              icon.font="Hack Nerd Font:Regular:16.0" \
-#              label.drawing=on \
-#              script="$PLUGIN_DIR/battery.sh" \
-#              update_freq=120 \
-#            --subscribe battery power_source_change system_woke
-
-
-# # Date & Time
-# sketchybar --add item current_time right \
-#            --set current_time \
-#              icon= \
-#              icon.font="Hack Nerd Font:Regular:14.0" \
-#              label.drawing=on \
-#              script="$PLUGIN_DIR/current_time.sh" \
-#              update_freq=10 # Update every 10 seconds
-
-# # --- Separator (Optional) ---
-# sketchybar --add item separator_right right \
-#            --set separator_right \
-#              icon= \
-#              icon.color=0xff44475a \
-#              icon.font="Hack Nerd Font:Regular:16.0" \
-#              label.drawing=off
-
-# # --- Finalize / Start Service ---
-# # You can start sketchybar using:
-# # `brew services start sketchybar`
-# # OR add sketchybar to your Login Items in System Settings.
-# # This script will be run by sketchybar when it starts.
-
-# echo "SketchyBar configuration loaded."
-
-# # To make sketchybar reload the config:
-# # sketchybar --reloadß

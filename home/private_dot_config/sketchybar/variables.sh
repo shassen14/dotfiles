@@ -1,4 +1,5 @@
 #!/usr/bin/env sh
+# ~/.config/sketchybar/variables.sh
 
 # Color Palette
 # Tokyonight Night
@@ -35,7 +36,7 @@ LABEL_COLOR=$WHITE # Color of all labels
 ITEM_DIR="$HOME/.config/sketchybar/items"
 PLUGIN_DIR="$HOME/.config/sketchybar/plugins"
 
-FONT="MesloLGS NF"
+FONT="Hack Nerd Font:Regular:13.0"
 
 PADDINGS=3
 
