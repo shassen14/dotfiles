@@ -1,0 +1,46 @@
+
+# ~/dotfiles/.chezmoi.toml.tmpl
+# This is a template for Chezmoi's configuration file itself,
+# used during 'chezmoi init'. The data defined here will be available
+# to all other templates during the initial 'init --apply'.
+
+# This sourceDir tells 'chezmoi init' where your actual dotfile sources are
+# within this repository.
+sourceDir = {{ joinPath .chezmoi.sourceDir "home" | quote }}
+
+# destDir = {{ .chezmoi.homeDir | quote }} # Usually default is fine
+
+[data]
+  name = "{{ env "CHEZMOI_FULL_NAME" | default "Samir Hassen" }}"
+  email = "{{ env "CHEZMOI_EMAIL" | default "your_email@example.com" }}"
+
+  terminal = "{{ env "CHEZMOI_TERMINAL" | default "alacritty" }}"
+  editor = "{{ env "CHEZMOI_EDITOR" | default "nvim" }}"
+  browser = "{{ env "CHEZMOI_BROWSER" | default "brave-browser" }}"
+
+  terminal_app_name_mac = "{{ env "CHEZMOI_TERMINAL_APP_MAC" | default "Alacritty" }}"
+  browser_app_name_mac = "{{ env "CHEZMOI_BROWSER_APP_MAC" | default "Brave Browser" }}"
+
+  terminal_cmd_linux = "{{ env "CHEZMOI_TERMINAL_CMD_LINUX" | default "alacritty" }}"
+  browser_cmd_linux = "{{ env "CHEZMOI_BROWSER_CMD_LINUX" | default "brave-browser" }}"
+
+  {{ if eq .chezmoi.os "darwin" }}
+  is_macos = true
+  is_linux = false
+  {{ else if eq .chezmoi.os "linux" }}
+  is_macos = false
+  is_linux = true
+  {{ else }}
+  is_macos = false
+  is_linux = false
+  {{ end }}
+
+# Other global settings for chezmoi itself
+# [edit]
+#   command = "{{ .editor }}" # Uses .editor from [data] above
+
+# [diff]
+#   command = "git"
+#   args = ["diff", "--no-pager", "--color=always"]
+
+# encryption = "gpg"

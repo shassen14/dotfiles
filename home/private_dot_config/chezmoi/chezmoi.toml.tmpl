@@ -1,25 +1,31 @@
-# Managed by Chezmoi
+# home/private_dot_config/chezmoi/chezmoi.toml.tmpl
 # Source: {{ .chezmoi.sourceFile | quote }}
 # Target: ~/.config/chezmoi/chezmoi.toml
 
-# Set sourceDir dynamically:
-# 1. Look for DOTFILES_REPO_ROOT environment variable (set in CI).
-# 2. If not found (running locally), default to "$HOME/dotfiles".
-# 3. Append the '/home' subdirectory where source files live.
-sourceDir = "{{ env "DOTFILES_REPO_ROOT" | default (printf "%s/dotfiles" .chezmoi.homeDir) }}/home"
+# This sourceDir should point to where 'chezmoi init' placed your 'home' subdir's contents.
+sourceDir = "{{ .chezmoi.homeDir }}/.local/share/chezmoi/home"
 
-# --- Data Section ---
+# This [data] section will be written into ~/.config/chezmoi/chezmoi.toml
+# It uses the data that was made available by .chezmoi.toml.tmpl during 'init --apply'.
 [data]
-  name = "Samir Hassen"
-  email = "your_email@example.com"
-  terminal_app_name_mac = "Alacritty"    # For macOS 'open -a'
-  terminal_cmd_linux = "alacritty"     # For Linux exec
-  browser_app_name_mac = "Brave Browser" # For macOS 'open -a'
-  browser_cmd_linux = "brave-browser"   # For Linux exec
-  editor = "nvim"
+  name = "{{ .name }}" # Gets .name from data established by .chezmoi.toml.tmpl
+  email = "{{ .email }}"
+  terminal = "{{ .terminal }}"
+  editor = "{{ .editor }}"
+  browser = "{{ .browser }}"
+  terminal_app_name_mac = "{{ .terminal_app_name_mac }}"
+  browser_app_name_mac = "{{ .browser_app_name_mac }}"
+  terminal_cmd_linux = "{{ .terminal_cmd_linux }}"
+  browser_cmd_linux = "{{ .browser_cmd_linux }}"
+  is_macos = {{ .is_macos }} # Boolean, no quotes needed
+  is_linux = {{ .is_linux }}
 
-# --- Other Chezmoi Settings ---
-# Add settings as needed (e.g., encryption, scripting config)
-# [edit]
-#   command = "code"
-#   args = ["--wait"]
+# Other settings like edit, diff, encryption for your ongoing local config
+[edit]
+  command = "{{ .editor }}"
+
+[diff]
+  command = "git"
+  args = ["diff", "--no-pager", "--color=always"]
+
+encryption = "gpg"
