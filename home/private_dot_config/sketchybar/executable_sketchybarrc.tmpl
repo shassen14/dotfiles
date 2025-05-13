@@ -1,0 +1,68 @@
+#!/usr/bin/env bash
+# ~/.config/sketchybar/sketchybarrc
+# Managed by Chezmoi: {{ .chezmoi.sourceFile }}
+
+source "{{ .chezmoi.homeDir }}/.config/sketchybar/variables.sh" # Loads all defined colors
+
+# --- General Bar Settings ---
+sketchybar --bar \
+  height=30 \
+  color="$BAR_COLOR" \
+  shadow="$SHADOW" \
+  \
+  sticky=on \
+  topmost=on \
+  padding_right=0 \
+  padding_left=3 \
+  corner_radius="$CORNER_RADIUS" \
+  y_offset=5 \
+  margin=5 \
+  blur_radius=20 \
+  notch_width=200 \
+  updates=when_shown #   position=top \
+# Or 'on' if you prefer items to update even when bar is hidden due to notch
+
+# --- Default Settings for Items ---
+sketchybar --default \
+  icon.font="$FONT" \
+  icon.color="$ICON_COLOR" \
+  icon.padding_left="$PADDINGS" \
+  icon.padding_right="$PADDINGS" \
+  label.font="$FONT:Bold:13.0" \
+  label.color="$LABEL_COLOR" \
+  label.padding_left="$PADDINGS" \
+  label.padding_right="$PADDINGS" \
+  background.padding_right="$PADDINGS" \
+  background.padding_left="$PADDINGS" \
+  popup.background.border_width=1 \
+  popup.background.corner_radius=11 \
+  popup.background.border_color="$POPUP_BORDER_COLOR" \
+  popup.background.color="$POPUP_BACKGROUND_COLOR" \
+  popup.background.shadow.drawing="$SHADOW"
+
+# --- Load Items ---
+# (Ensure these files exist and are executable)
+# Left
+# source "$ITEM_DIR/apple.sh" # Assuming ITEM_DIR is defined in variables.sh
+source "{{ .chezmoi.homeDir }}/.config/sketchybar/items/spaces.sh"
+source "{{ .chezmoi.homeDir }}/.config/sketchybar/items/front_app.sh"
+
+# Center (of notch)
+source "{{ .chezmoi.homeDir }}/.config/sketchybar/items/spotify.sh"
+
+# Right
+source "{{ .chezmoi.homeDir }}/.config/sketchybar/items/clock.sh"
+source "{{ .chezmoi.homeDir }}/.config/sketchybar/items/calendar.sh"
+source "{{ .chezmoi.homeDir }}/.config/sketchybar/items/battery.sh"
+source "{{ .chezmoi.homeDir }}/.config/sketchybar/items/volume.sh"
+source "{{ .chezmoi.homeDir }}/.config/sketchybar/items/cpu.sh"
+
+#################### Finalizing Setup ####################
+
+# sketchybar --hotload true # Hotload is more for development. For production, a full load is fine.
+# When sketchybar starts via 'brew services start sketchybar', it runs this script.
+
+sketchybar --update # Not strictly necessary here as items are added and will update,
+# but doesn't hurt. Usually for triggering updates after external changes.
+
+echo "sketchybar configuration loaded.."
