@@ -49,7 +49,7 @@ sketchybar --add bracket spaces_bracket '/space\..*/' \
 	background.border_color="$RED" \
 	background.border_width=$BORDER_WIDTH \
 	background.corner_radius=$CORNER_RADIUS \
-	background.height=26 \
+	background.height=$BACKGROUND_HEIGHT \
 	background.y_offset=0
 # Semi-transparent background for the bracket
 

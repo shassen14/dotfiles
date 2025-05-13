@@ -6,7 +6,7 @@ sketchybar \
 	--add item front_app left \
 	--set front_app script="$PLUGIN_DIR/front_app.sh" \
 	icon.drawing=off \
-	background.height=26 \
+	background.height=$BACKGROUND_HEIGHT \
 	background.padding_left=0 \
 	background.padding_right=10 \
 	background.border_width="$BORDER_WIDTH" \

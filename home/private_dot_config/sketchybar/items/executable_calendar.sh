@@ -8,7 +8,7 @@ sketchybar --add item calendar right \
 	icon.padding_left=10 \
 	label.color="$COLOR" \
 	label.padding_right=10 \
-	background.height=26 \
+	background.height=$BACKGROUND_HEIGHT \
 	background.corner_radius="$CORNER_RADIUS" \
 	background.padding_right=5 \
 	background.border_width="$BORDER_WIDTH" \

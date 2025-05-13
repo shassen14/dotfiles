@@ -9,7 +9,7 @@ sketchybar --bar \
   height=30 \
   color="$BAR_COLOR" \
   shadow="$SHADOW" \
-#   position=top \
+  \
   sticky=on \
   topmost=on \
   padding_right=0 \
@@ -19,7 +19,8 @@ sketchybar --bar \
   margin=5 \
   blur_radius=20 \
   notch_width=200 \
-  updates=when_shown # Or 'on' if you prefer items to update even when bar is hidden due to notch
+  updates=when_shown #   position=top \
+# Or 'on' if you prefer items to update even when bar is hidden due to notch
 
 # --- Default Settings for Items ---
 sketchybar --default \
@@ -54,14 +55,14 @@ source "{{ .chezmoi.homeDir }}/.config/sketchybar/items/clock.sh"
 source "{{ .chezmoi.homeDir }}/.config/sketchybar/items/calendar.sh"
 source "{{ .chezmoi.homeDir }}/.config/sketchybar/items/battery.sh"
 source "{{ .chezmoi.homeDir }}/.config/sketchybar/items/volume.sh"
-# source "{{ .chezmoi.homeDir }}/.config/sketchybar/items/cpu.sh"
+source "{{ .chezmoi.homeDir }}/.config/sketchybar/items/cpu.sh"
 
 #################### Finalizing Setup ####################
 
 # sketchybar --hotload true # Hotload is more for development. For production, a full load is fine.
-                            # When sketchybar starts via 'brew services start sketchybar', it runs this script.
+# When sketchybar starts via 'brew services start sketchybar', it runs this script.
 
 sketchybar --update # Not strictly necessary here as items are added and will update,
-                    # but doesn't hurt. Usually for triggering updates after external changes.
+# but doesn't hurt. Usually for triggering updates after external changes.
 
 echo "sketchybar configuration loaded.."
