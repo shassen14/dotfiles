@@ -8,7 +8,10 @@ name = "Samir Hassen (CI)"
 email = "your_ci_email@example.com"
 terminal = "alacritty"
 editor = "nvim"
-browser = "brave-browser"
+terminal_app_name_mac = "Alacritty"    # For macOS 'open -a'
+terminal_cmd_linux = "alacritty"       # For Linux exec
+browser_app_name_mac = "Brave Browser" # For macOS 'open -a'
+browser_cmd_linux = "brave-browser"    # For Linux exec
 
 # encryption = "gpg" # If you use encrypted files and have GPG set up in CI
 # pager = "less -R"
