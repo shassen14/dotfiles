@@ -61,8 +61,8 @@ outer.bottom = 0
 
 # Main keybindings
 [mode.main.binding]
-alt-enter = 'exec-and-forget open -n -a "{{ "Alacritty" | default "Alacritty" }}"'
-alt-shift-b = 'exec-and-forget open -a "{{ "Brave Browser" | default "Brave Browser" }}"'
+alt-enter = 'exec-and-forget open -n -a "{{ .terminal_app_name_mac | default "Alacritty" }}"'
+alt-shift-b = 'exec-and-forget open -a "{{ .browser_app_name_mac | default "Brave Browser" }}"'
 alt-shift-q = 'close'
 
 # Layout switching with notifications

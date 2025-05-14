@@ -6,7 +6,15 @@ set -e # Exit immediately if a command exits with a non-zero status.
 echo "🚀 Starting Dotfiles Bootstrap Process..."
 
 # --- Detect OS and Set Specific Commands ---
-# ... (your OS detection logic remains the same) ...
+echo "🔍 Detecting Operating System..."
+OS_FAMILY=""
+OS_DISTRO=""
+UPDATE_CMD="" # Command to update package lists
+INSTALL_CMD="" # Command to install packages
+GIT_PKG="git" # Default git package name
+CURL_PKG="curl" # Default curl package name
+ANSIBLE_PKG="ansible" # Default ansible package name
+
 if [[ "$OSTYPE" == "linux-gnu"* ]]; then
     if command -v apt-get &> /dev/null; then
         OS_FAMILY="Debian"
@@ -40,19 +48,30 @@ else
     exit 1
 fi
 
-# --- Install Prerequisites (Git, Curl) ---
-# ... (your Git and Curl install logic can remain similar, ensuring they don't use sudo unnecessarily) ...
-# Example for Git on Linux:
-if ! command -v git &> /dev/null && [[ "$OS_FAMILY" != "Darwin" ]] && [[ -n "$INSTALL_CMD" ]]; then
+if ! command -v git &> /dev/null; then
     echo "📦 Installing Git..."
-    $UPDATE_CMD || { echo "⚠️ Failed to update package lists for Git install, continuing..."; }
-    $INSTALL_CMD $GIT_PKG || { echo "❌ Failed to install Git."; exit 1; }
-    echo "✅ Git installed."
-elif command -v git &> /dev/null; then
+    if [[ "$OS_FAMILY" == "Darwin" ]]; then
+        echo "ℹ️ Git not found. Will be installed via Homebrew or Command Line Tools."
+    elif [[ -n "$INSTALL_CMD" ]]; then
+        $UPDATE_CMD || { echo "⚠️ Failed to update package lists, continuing..."; }
+        $INSTALL_CMD $GIT_PKG || { echo "❌ Failed to install Git."; exit 1; }
+        echo "✅ Git installed."
+    fi
+else
     echo "✅ Git already installed."
 fi
-# Similar for curl
 
+if ! command -v curl &> /dev/null; then
+     echo "📦 Installing Curl..."
+     if [[ "$OS_FAMILY" == "Darwin" ]]; then
+         echo "ℹ️ Curl not found, but usually present on macOS. Continuing..."
+     elif [[ -n "$INSTALL_CMD" ]]; then
+        $INSTALL_CMD $CURL_PKG || { echo "❌ Failed to install Curl."; exit 1; }
+         echo "✅ Curl installed."
+     fi
+else
+     echo "✅ Curl already installed."
+fi
 
 # --- Setup Homebrew (macOS ONLY) and Update PATH Early ---
 if [[ "$OS_FAMILY" == "Darwin" ]]; then
