@@ -1,6 +1,9 @@
 ---
-# playbooks/chezmoi.yml: Installs Chezmoi, initializes/updates source, and applies changes.
+# playbooks/chezmoi.yml: Installs Chezmoi and applies changes.
+# Assumes 'chezmoi init --apply <your_repo_url>' has been run manually for the first time
+# on a new machine to set up ~/.local/share/chezmoi and ~/.config/chezmoi/chezmoi.toml.
 - hosts: all
+  gather_facts: true
   gather_facts: true
 
   vars:
@@ -79,10 +82,8 @@
       when: ansible_os_family != "Darwin"
       tags: [always, chezmoi, install]
 
-    - name: Ensure chezmoi via Homebrew (macOS)
-      community.general.homebrew:
-        name: chezmoi
-        state: present
+    - name: Install chezmoi via Homebrew (macOS)
+      community.general.homebrew: { name: chezmoi, state: present }
       when: ansible_os_family == "Darwin"
       tags: [always, chezmoi, install]
 
@@ -181,6 +182,7 @@
           -v
       args:
         chdir: "{{ target_chezmoi_home }}"
+        chdir: "{{ target_chezmoi_home }}"
       environment:
         USER: "{{ target_chezmoi_user }}"
         DOTFILES_REPO_ROOT: "{{ env_dotfiles_repo_root_for_main_config_template }}"
@@ -200,29 +202,29 @@
     # This ensures that if chezmoi.toml itself was changed and contains new data/config,
     # other templates depending on that *new* data are re-evaluated correctly.
     # In CI, the ci.toml is static, so a second pass with it isn't strictly for data changes.
-    - name: "Re-apply Chezmoi (local only, if main config was potentially just created/updated)"
-      become: true
-      become_user: "{{ target_chezmoi_user }}"
-      ansible.builtin.command:
-        cmd: >-
-          chezmoi apply
-          --config {{ chezmoi_target_config_file_path }}
-          --force
-          -v
-      args:
-        chdir: "{{ target_chezmoi_home }}"
-      environment:
-        USER: "{{ target_chezmoi_user }}"
-        DOTFILES_REPO_ROOT: "{{ env_dotfiles_repo_root_for_main_config_template }}"
-        HOME: "{{ target_chezmoi_home }}"
-      register: chezmoi_apply_result_pass2
-      changed_when: "'Applied' in chezmoi_apply_result_pass2.stdout or (chezmoi_apply_result_pass2.stdout | default('')).splitlines() | length > 1"
-      when:
-        - not running_in_ci
-        # Run if the first apply pass actually ran (wasn't skipped) and might have created/changed the target config
-        - chezmoi_apply_result_pass1 is defined
-        - not (chezmoi_apply_result_pass1.skipped | default(false))
-      tags: [always, chezmoi, apply]
+    # - name: "Re-apply Chezmoi (local only, if main config was potentially just created/updated)"
+    #   become: true
+    #   become_user: "{{ target_chezmoi_user }}"
+    #   ansible.builtin.command:
+    #     cmd: >-
+    #       chezmoi apply
+    #       --config {{ chezmoi_target_config_file_path }}
+    #       --force
+    #       -v
+    #   args:
+    #     chdir: "{{ target_chezmoi_home }}"
+    #   environment:
+    #     USER: "{{ target_chezmoi_user }}"
+    #     DOTFILES_REPO_ROOT: "{{ env_dotfiles_repo_root_for_main_config_template }}"
+    #     HOME: "{{ target_chezmoi_home }}"
+    #   register: chezmoi_apply_result_pass2
+    #   changed_when: "'Applied' in chezmoi_apply_result_pass2.stdout or (chezmoi_apply_result_pass2.stdout | default('')).splitlines() | length > 1"
+    #   when:
+    #     - not running_in_ci
+    #     # Run if the first apply pass actually ran (wasn't skipped) and might have created/changed the target config
+    #     - chezmoi_apply_result_pass1 is defined
+    #     - not (chezmoi_apply_result_pass1.skipped | default(false))
+    #   tags: [always, chezmoi, apply]
 
     - name: "Display Chezmoi Apply Pass 2 Result (Debug)"
       ansible.builtin.debug:

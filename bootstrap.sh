@@ -1,6 +1,5 @@
 #!/usr/bin/env bash
 # bootstrap.sh: Installs dependencies (Ansible, Chezmoi), then runs Ansible.
-# Assumes Ansible playbook will handle chezmoi init/apply.
 
 set -e # Exit immediately if a command exits with a non-zero status.
 
@@ -42,13 +41,13 @@ if [[ "$OSTYPE" == "linux-gnu"* ]]; then
 elif [[ "$OSTYPE" == "darwin"* ]]; then
     OS_FAMILY="Darwin"
     OS_DISTRO="macos"
-    echo "✅ macOS Detected"
+    ANSIBLE_PKG="ansible"
+    echo "✅ macOS Detected, ANSIBLE_PKG set to '$ANSIBLE_PKG'"
 else
     echo "❌ Unsupported Operating System: $OSTYPE"
     exit 1
 fi
 
-# --- Install Prerequisites (Git, Curl) ---
 if ! command -v git &> /dev/null; then
     echo "📦 Installing Git..."
     if [[ "$OS_FAMILY" == "Darwin" ]]; then
@@ -78,29 +77,44 @@ fi
 if [[ "$OS_FAMILY" == "Darwin" ]]; then
     if ! command -v brew &> /dev/null; then
         echo "🍺 Homebrew not found. Installing Homebrew..."
-        NONINTERACTIVE=1 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)" || { echo "❌ Failed to install Homebrew."; exit 1; }
+        echo "ℹ️ The Homebrew installer might prompt for your macOS password."
+        # DO NOT set NONINTERACTIVE=1 for local runs if password prompt is needed.
+        # The Homebrew script itself will use `sudo` where necessary and prompt you.
+        if [[ "$CI" == "true" ]]; then
+            # In CI, we expect passwordless sudo or for NONINTERACTIVE to work.
+            NONINTERACTIVE=1 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)" || { echo "❌ Failed to install Homebrew in CI environment."; exit 1; }
+        else
+            # For local interactive install, allow the script to prompt for sudo password.
+            /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)" || { echo "❌ Failed to install Homebrew. Ensure Xcode Command Line Tools are installed ('xcode-select --install') and try again. If prompted, enter your macOS password."; exit 1; }
+        fi
+        echo "✅ Homebrew installed."
     else
          echo "✅ Homebrew already installed."
     fi
-    echo "🍺 Sourcing Homebrew environment variables..."
-    if [[ "$(uname -m)" == "arm64" ]]; then
+
+    echo "🍺 Evaluating Homebrew environment variables..."
+    # Correctly evaluate and export Homebrew path
+    if [[ "$(uname -m)" == "arm64" ]]; then # Apple Silicon
       eval "$(/opt/homebrew/bin/brew shellenv)"
+      # Redundant if shellenv already does it, but ensures it if shellenv didn't modify current shell's PATH
       export PATH="/opt/homebrew/bin:$PATH"
-    else
+    else # Intel
       eval "$(/usr/local/bin/brew shellenv)"
       export PATH="/usr/local/bin:$PATH"
     fi
-    echo "🍺 Homebrew environment sourced. PATH=$PATH"
+    echo "🍺 Homebrew environment sourced. Current PATH includes Homebrew."
 
     echo "🍺 Updating Homebrew formulas..."
     brew update --quiet || echo "⚠️ Failed to update Homebrew formulas, continuing..."
 fi
 
 # --- Install Ansible ---
+# ... (your Ansible install logic - ensure 'brew install ansible' on macOS does NOT use sudo)
 if ! command -v ansible &>/dev/null; then
     echo "📦 Installing Ansible..."
     case "$OS_FAMILY" in
         Debian)
+            # This part uses sudo, which is fine as it's for apt
             $UPDATE_CMD || { echo "⚠️ Failed to update package lists, continuing..."; }
             $INSTALL_CMD software-properties-common || { echo "❌ Failed to install software-properties-common."; exit 1; }
             sudo apt-add-repository --yes --update ppa:ansible/ansible || { echo "❌ Failed to add Ansible PPA."; exit 1; }
@@ -110,7 +124,7 @@ if ! command -v ansible &>/dev/null; then
             $INSTALL_CMD $ANSIBLE_PKG || $INSTALL_CMD ansible || { echo "❌ Failed to install Ansible/Ansible-Core."; exit 1; }
             ;;
         Archlinux)
-            $UPDATE_CMD # Ensure list is synced before install for pacman
+            $UPDATE_CMD
             $INSTALL_CMD $ANSIBLE_PKG || { echo "❌ Failed to install Ansible."; exit 1; }
             ;;
         Darwin)
@@ -123,50 +137,39 @@ else
     echo "✅ Ansible already installed."
 fi
 
-# # --- Install Chezmoi ---
-# if ! command -v chezmoi &> /dev/null; then
-#     echo "📦 Installing Chezmoi..."
-#     if [[ "$OS_FAMILY" == "Darwin" ]]; then
-#         brew install chezmoi || { echo "❌ Failed to install Chezmoi via Homebrew."; exit 1; }
-#     else
-#         echo "Installing Chezmoi using install script..."
-#         sh -c "$(curl -fsLS get.chezmoi.io)" -- -b /usr/local/bin || { echo "❌ Failed to install Chezmoi using script."; exit 1; }
-#     fi
-#     echo "✅ Chezmoi installed successfully."
-# else
-#     echo "✅ Chezmoi already installed."
-# fi
-
-# # --- Verify chezmoi command exists before running Ansible ---
-# if ! command -v chezmoi &> /dev/null; then
-#     echo "❌ CRITICAL FAILURE: chezmoi command not found in PATH before running Ansible!"
-#     echo "Current PATH=$PATH"
-#     exit 1
-# fi
-# echo "✅ chezmoi command found in PATH."
 
 # --- Run Ansible Playbook ---
-# Assumes playbook/inventory are relative to where bootstrap.sh is run
-PLAYBOOK=${1:-playbook.yml}
-INVENTORY=${2:-inventory.ini}
+PLAYBOOK="${1:-playbook.yml}" # Use $DOTFILES_REPO_ROOT if defined and path is relative
+INVENTORY="${2:-inventory.ini}" # Use $DOTFILES_REPO_ROOT if defined and path is relative
 
-if [[ ! -f "$PLAYBOOK" ]]; then
-    echo "❌ Playbook file not found: $PLAYBOOK (relative to $(pwd))"
+# If DOTFILES_REPO_ROOT is set (e.g., in CI), assume playbook/inventory are relative to it.
+# Otherwise, assume they are relative to the current directory (where bootstrap.sh is).
+PLAYBOOK_PATH="$PLAYBOOK"
+INVENTORY_PATH="$INVENTORY"
+if [[ -n "$DOTFILES_REPO_ROOT" ]]; then
+    PLAYBOOK_PATH="$DOTFILES_REPO_ROOT/$PLAYBOOK"
+    INVENTORY_PATH="$DOTFILES_REPO_ROOT/$INVENTORY"
+fi
+
+
+if [[ ! -f "$PLAYBOOK_PATH" ]]; then
+    echo "❌ Playbook file not found: $PLAYBOOK_PATH"
     exit 1
 fi
-if [[ ! -f "$INVENTORY" ]]; then
-    echo "❌ Inventory file not found: $INVENTORY (relative to $(pwd))"
+if [[ ! -f "$INVENTORY_PATH" ]]; then
+    echo "❌ Inventory file not found: $INVENTORY_PATH"
     exit 1
 fi
 
-echo "🚀 Running Ansible Playbook: $PLAYBOOK with Inventory: $INVENTORY"
+echo "🚀 Running Ansible Playbook: $PLAYBOOK_PATH with Inventory: $INVENTORY_PATH"
+# For Ansible, it will use 'become: true' in playbooks for tasks needing sudo.
+# The '-K' flag for local runs will make Ansible prompt for the sudo password.
 if [[ "$CI" == "true" ]]; then
-    echo "ℹ️ Running in non-interactive CI mode (passwordless sudo assumed)."
-    # Run ansible from the directory containing the playbook
-    ansible-playbook -i "$INVENTORY" "$PLAYBOOK"
+    echo "ℹ️ Running in non-interactive CI mode (passwordless sudo assumed for 'become' tasks)."
+    ansible-playbook -i "$INVENTORY_PATH" "$PLAYBOOK_PATH"
 else
-    echo "ℹ️ Running in interactive mode. You may be prompted for your sudo password."
-    ansible-playbook -i "$INVENTORY" "$PLAYBOOK" -K
+    echo "ℹ️ Running in interactive mode. Ansible may prompt for your sudo password for 'become' tasks."
+    ansible-playbook -i "$INVENTORY_PATH" "$PLAYBOOK_PATH" -K
 fi
 
 echo "✅ Ansible Playbook finished."
