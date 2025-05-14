@@ -17,12 +17,12 @@ sourceDir = "{{ .chezmoi.homeDir }}/.local/share/chezmoi/home"
   browser_app_name_mac = "Brave Browser"
   terminal_cmd_linux = "alacritty"
   browser_cmd_linux = "brave-browser"
-  is_macos = {{ .is_macos }} # Boolean, no quotes needed
-  is_linux = {{ .is_linux }}
+  is_macos = false # Boolean, no quotes needed
+  is_linux = false
 
 # Other settings like edit, diff, encryption for your ongoing local config
-[edit]
-  command = "{{ .editor }}"
+#[edit]
+#  command = "{{ .editor }}"
 
 [diff]
   command = "git"
