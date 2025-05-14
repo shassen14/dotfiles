@@ -1,0 +1,26 @@
+
+# chezmoi.bootstrap.toml
+# A NON-TEMPLATED config for the VERY FIRST local 'chezmoi apply' run by Ansible.
+# Its main purpose is to provide [data] so that your actual
+# templated ~/.config/chezmoi/chezmoi.toml can be generated correctly.
+
+# This sourceDir assumes you've cloned your dotfiles to '~/dotfiles'
+# and your actual dotfile sources are in '~/dotfiles/home'.
+# It uses env "HOME" which should be set for the user running Ansible.
+sourceDir = "/Users/samir/dotfiles/home" # Adjust if your clone location or source subdir differs
+
+# destDir will be the user's home.
+destDir = "/Users/samir"
+
+[data]
+  name = "Samir Hassen" # Your actual local data
+  email = "your_real_email@example.com"
+  terminal = "alacritty"
+  editor = "nvim"
+  browser = "brave-browser"
+  terminal_app_name_mac = "Alacritty"    # For macOS 'open -a'
+  terminal_cmd_linux = "alacritty"     # For Linux exec
+  browser_app_name_mac = "Brave Browser" # For macOS 'open -a'
+  browser_cmd_linux = "brave-browser"   # For Linux exec
+  # Add any other data your templates need, including os-specific stubs if required by
+  # your private_dot_config/chezmoi/chezmoi.toml.tmpl during its first render.

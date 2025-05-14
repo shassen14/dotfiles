@@ -50,6 +50,14 @@
       tags: [sketchybar, prerequisites, macos, homebrew]
       ignore_errors: true # In case the tap already exists or has issues, don't fail all
 
+    - name: Ensure SketchyBar service is started and enabled at login (macOS)
+      become: false # brew services should run as the user
+      ansible.builtin.command: "brew services start sketchybar"
+      register: sketchybar_service_start
+      changed_when: "'Successfully started `sketchybar`' in sketchybar_service_start.stdout" # Only report change if it actually started it
+      when: ansible_os_family == "Darwin"
+      tags: [sketchybar, macos, service]
+
     - name: Inform user about SketchyBar setup
       ansible.builtin.debug:
         msg: |
