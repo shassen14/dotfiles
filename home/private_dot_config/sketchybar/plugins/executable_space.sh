@@ -31,7 +31,7 @@ SPACE_ICONS=("1" "2" "3" "4" "5" "6" "7" "8" "9") # Numbered icons
 
 ICON_TO_SET=""
 # Attempt to get an icon based on ITEM_SID if it's a number 1-10
-if [[ "$ITEM_SID" =~ ^[0-9]+$ ]] && [ "$ITEM_SID" -ge 1 ] && [ "$ITEM_SID" -le 10 ]; then
+if [[ "$ITEM_SID" =~ ^[1-9]+$ ]] && [ "$ITEM_SID" -ge 1 ] && [ "$ITEM_SID" -le 10 ]; then
 	ICON_TO_SET="${SPACE_ICONS[$((ITEM_SID - 1))]}" # Array is 0-indexed for 1-10
 else
 	# Fallback or use named icons if ITEM_SID is not a simple number

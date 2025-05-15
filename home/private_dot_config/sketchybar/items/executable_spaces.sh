@@ -34,8 +34,9 @@ for sid in $CURRENT_WORKSPACES; do
 		icon.padding_right=7 \
 		label.drawing=off \
 		script="$PLUGIN_DIR/space.sh" \
-		click_script="aerospace workspace $sid" \
 		--subscribe "space.$sid" aerospace_workspace_changed mouse.clicked
+				# click_script="aerospace workspace $sid" \
+
 	# We'll use icons primarily
 	# This script will handle styling based on focus
 	# Subscribe to our custom event & clicks

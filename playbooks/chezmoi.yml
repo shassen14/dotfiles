@@ -4,7 +4,6 @@
 # on a new machine to set up ~/.local/share/chezmoi and ~/.config/chezmoi/chezmoi.toml.
 - hosts: all
   gather_facts: true
-  gather_facts: true
 
   vars:
     is_ci_env_var_set_to_true: "{{ lookup('env', 'CI') == 'true' }}"
@@ -167,26 +166,28 @@
         var: effective_apply_config_path
       tags: [always, chezmoi, apply, debug]
 
-    - name: "Apply Chezmoi changes for '{{ target_chezmoi_user }}' (using config: {{ effective_apply_config_path }})" # Use the fact
+    - name: "Apply Chezmoi changes for '{{ target_chezmoi_user }}' (potentially bootstrapping main config)"
       become: true
       become_user: "{{ target_chezmoi_user }}"
-      ansible.builtin.command:
-        cmd: >-
-          chezmoi apply
-          --config {{ effective_apply_config_path }} {# This fact is now safely defined #}
-          {% if running_in_ci %}
-          --source {{ _github_workspace_env }}/home   {# Use safe _github_workspace_env #}
-          --destination {{ target_chezmoi_home }}
-          {% endif %}
-          --force
-          -v
+      ansible.builtin.shell: # Switch to shell to allow multiple commands and redirection easily
+        cmd: |
+          set -e # Exit on error
+          echo "DEBUG: DOTFILES_REPO_ROOT as seen by this shell command is: [${DOTFILES_REPO_ROOT}]" > /tmp/ansible_chezmoi_env_debug.txt
+          echo "DEBUG: HOME as seen by this shell command is: [${HOME}]" >> /tmp/ansible_chezmoi_env_debug.txt
+          chezmoi apply \
+            --config {{ effective_apply_config_path }} \
+            {% if running_in_ci %}
+            --source {{ _github_workspace_env }}/home \
+            --destination {{ target_chezmoi_home }} \
+            {% endif %}
+            --force \
+            -v
       args:
         chdir: "{{ target_chezmoi_home }}"
-        chdir: "{{ target_chezmoi_home }}"
+        # We can't use 'creates' here if we always want to try and apply based on bootstrap logic
       environment:
         USER: "{{ target_chezmoi_user }}"
         DOTFILES_REPO_ROOT: "{{ env_dotfiles_repo_root_for_main_config_template }}"
-        # Pass HOME explicitly in case `become_user` doesn't fully set it for Chezmoi's env lookup
         HOME: "{{ target_chezmoi_home }}"
       register: chezmoi_apply_result_pass1
       changed_when: "'Applied' in chezmoi_apply_result_pass1.stdout or (chezmoi_apply_result_pass1.stdout | default('')).splitlines() | length > 1"

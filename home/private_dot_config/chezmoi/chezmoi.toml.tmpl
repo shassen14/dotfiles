@@ -3,7 +3,9 @@
 # Target: ~/.config/chezmoi/chezmoi.toml
 
 # This sourceDir should point to where 'chezmoi init' placed your 'home' subdir's contents.
-sourceDir = "{{ .chezmoi.homeDir }}/.local/share/chezmoi/home"
+sourceDir = "{{ env "DOTFILES_REPO_ROOT" }}/home"
+
+destDir = "{{ env "HOME" }}"
 
 # This [data] section will be written into ~/.config/chezmoi/chezmoi.toml
 # It uses the data that was made available by .chezmoi.toml.tmpl during 'init --apply'.
@@ -26,6 +28,7 @@ sourceDir = "{{ .chezmoi.homeDir }}/.local/share/chezmoi/home"
 
 [diff]
   command = "git"
-  args = ["diff", "--no-pager", "--color=always"]
+  args = ["diff", "--color=always"]
+  #  "--no-pager"
 
 encryption = "gpg"
