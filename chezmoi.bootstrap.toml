@@ -7,10 +7,10 @@
 # This sourceDir assumes you've cloned your dotfiles to '~/dotfiles'
 # and your actual dotfile sources are in '~/dotfiles/home'.
 # It uses env "HOME" which should be set for the user running Ansible.
-sourceDir = "/Users/samir/dotfiles/home" # Adjust if your clone location or source subdir differs
+sourceDir = "~/dotfiles/home" # Adjust if your clone location or source subdir differs
 
 # destDir will be the user's home.
-destDir = "/Users/samir"
+destDir = "~"
 
 [data]
   name = "Samir Hassen" # Your actual local data
