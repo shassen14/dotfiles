@@ -13,6 +13,7 @@ local config = {
   verbose = true,
   flat_leetcode_nvim_structure = true,
   debug_mode = false,
+  skip_acceptance_check = false, -- New: Set to true to always sync on save regardless of acceptance
 }
 
 -- Debug print helper
@@ -49,13 +50,30 @@ local function run_async_cmd(cmd_parts, cwd, on_exit_callback)
   })
 end
 
--- Extract problem info (This function remains the same as the previous "sync on any save" version)
-local function extract_problem_info(current_file_path, lines)
-  dbg_print("extract_problem_info: Starting for file:", current_file_path)
+-- Helper to check current (UI) buffer for acceptance strings
+local function check_current_buffer_for_acceptance_ui()
+  dbg_print("check_current_buffer_for_acceptance_ui: Checking current visible buffer for acceptance strings.")
+  local current_buf_lines = vim.api.nvim_buf_get_lines(0, 0, 100, false) -- Check first 100 lines of current buffer
+  for i, line in ipairs(current_buf_lines) do
+    if line:match("[Aa]ccepted") or line:match("[Rr]untime:") or line:match("Solution accepted") or line:match("Test Succeeded") or line:match("Success") then
+      dbg_print("check_current_buffer_for_acceptance_ui: Found acceptance-like string on line", i, ":", line)
+      return true
+    end
+  end
+  dbg_print("check_current_buffer_for_acceptance_ui: No acceptance-like string found in current visible buffer's first 100 lines.")
+  return false
+end
+
+
+-- Extract problem info
+local function extract_problem_info(current_file_path, file_content_lines, check_ui_for_acceptance_flag)
+  dbg_print("extract_problem_info: Starting for file:", current_file_path, "UI check requested:", check_ui_for_acceptance_flag)
   local info = {
     id = nil, name = nil, title_slug = nil, difficulty = nil,
-    accepted_marker_found = false, 
-    description = {}, solution_code = {},
+    accepted_marker_found_in_file = false,
+    accepted_via_ui_check = false,
+    description = {}, description_markers_found = false,
+    solution_code = {},
     language_ext = vim.fn.fnamemodify(current_file_path, ":e"),
     original_filename_slug = nil,
   }
@@ -72,14 +90,13 @@ local function extract_problem_info(current_file_path, lines)
 
   local in_description, in_solution_code = false, false
 
-  for i, line in ipairs(lines) do
+  for i, line in ipairs(file_content_lines) do -- Iterate over lines from the actual file content
     local lcpr_key, lcpr_val = line:match("^%s*--%s*@lcpr%s+([^=]+)=(.*)")
     if not lcpr_key then lcpr_key, lcpr_val = line:match("^%s*//%s*@lcpr%s+([^=]+)=(.*)") end
     if not lcpr_key then lcpr_key, lcpr_val = line:match("^%s*#%s*@lcpr%s+([^=]+)=(.*)") end
 
     if lcpr_key and lcpr_val then
       lcpr_key, lcpr_val = lcpr_key:gsub("%s*$", ""), lcpr_val:gsub("%s*$", "")
-      dbg_print("extract_problem_info: Found @lcpr:", lcpr_key, "=", lcpr_val)
       if lcpr_key == "id" then info.id = lcpr_val
       elseif lcpr_key == "name" then info.name = lcpr_val
       elseif lcpr_key == "title" then info.title_slug = lcpr_val
@@ -94,18 +111,17 @@ local function extract_problem_info(current_file_path, lines)
       if num and tle then
         if not info.id then info.id = num end
         info.name = tle:match("^(.-)%s*$")
-        dbg_print("extract_problem_info: Fallback name extraction - ID:", info.id, "Name:", info.name)
       end
     end
 
-    if not info.accepted_marker_found then
+    if not info.accepted_marker_found_in_file then
       if line:match("^%s*--%s*Runtime:") or line:match("^%s*//%s*Runtime:") or line:match("^%s*#%s*Runtime:") then
-        info.accepted_marker_found = true
-        dbg_print("extract_problem_info: Found 'Runtime:' on line #", i, " - (marker for acceptance found).")
+        info.accepted_marker_found_in_file = true
+        dbg_print("extract_problem_info: Found 'Runtime:' in FILE on line #", i)
       end
     end
-
-    if line:match("@lcpr desc=start") then in_description = true; goto continue_loop end
+    
+    if line:match("@lcpr desc=start") then in_description = true; info.description_markers_found = true; goto continue_loop end
     if line:match("@lcpr desc=end") then in_description = false; goto continue_loop end
     if in_description then table.insert(info.description, line) end
 
@@ -119,8 +135,20 @@ local function extract_problem_info(current_file_path, lines)
     ::continue_loop::
   end
   
-  if not info.accepted_marker_found then
-      dbg_print("extract_problem_info: Did NOT find any 'Runtime:' indicating line in the entire file.")
+  if not info.accepted_marker_found_in_file then dbg_print("extract_problem_info: Did NOT find 'Runtime:' line in FILE content.") end
+  if not info.description_markers_found then dbg_print("extract_problem_info: Did NOT find @lcpr desc=start marker in FILE content.") end
+
+  if check_ui_for_acceptance_flag then
+    info.accepted_via_ui_check = check_current_buffer_for_acceptance_ui()
+  end
+
+  local should_proceed = false
+  if config.skip_acceptance_check then
+    should_proceed = true; dbg_print("extract_problem_info: Proceeding: skip_acceptance_check is true.")
+  elseif info.accepted_marker_found_in_file then
+    should_proceed = true; dbg_print("extract_problem_info: Proceeding: Marker found in FILE content.")
+  elseif info.accepted_via_ui_check then
+    should_proceed = true; dbg_print("extract_problem_info: Proceeding: Acceptance found via UI check.")
   end
 
   if not info.id then
@@ -130,20 +158,21 @@ local function extract_problem_info(current_file_path, lines)
   if not info.name then
     info.name = info.title_slug or info.original_filename_slug or ("Problem " .. info.id)
     if info.name == ("Problem " .. info.id) then notify("Could not extract problem name/title. Using generic.", vim.log.levels.WARN) end
-    dbg_print("extract_problem_info: Final name used:", info.name)
   end
   if not info.title_slug then
     info.title_slug = info.original_filename_slug or info.name:lower():gsub("[^%w%s%-]", ""):gsub("%s+", "-"):gsub("-%-", "-")
-    dbg_print("extract_problem_info: Final title_slug used:", info.title_slug)
   end
 
-  if not info.difficulty then
-    notify("Problem difficulty not found in @lcpr metadata. README will not have difficulty badge.", vim.log.levels.WARN)
+  if not should_proceed then
+    notify("Solution not determined as accepted. Skipping sync for " .. (info.name or "ID: "..info.id), vim.log.levels.INFO)
+    dbg_print("extract_problem_info: FAIL - Not determined as accepted (file marker, UI check, or skip_acceptance_check).")
+    return nil
   end
-  dbg_print("extract_problem_info: Success (Proceeding with sync). ID:", info.id, "Name:", info.name, "Slug:", info.title_slug)
+
+  if not info.difficulty then notify("Problem difficulty not found in @lcpr metadata.", vim.log.levels.WARN) end
+  dbg_print("extract_problem_info: Success. ID:", info.id, "Name:", info.name, "Slug:", info.title_slug)
   return info
 end
-
 
 -- Get difficulty badge HTML
 local function get_difficulty_badge(difficulty)
@@ -160,6 +189,7 @@ end
 
 -- Main sync function
 function M.do_sync_current_buffer(triggered_by_autocmd)
+  local is_manual_trigger = not triggered_by_autocmd
   if triggered_by_autocmd then
     dbg_print("do_sync_current_buffer: Auto-triggered by BufWritePost.")
   else
@@ -173,11 +203,18 @@ function M.do_sync_current_buffer(triggered_by_autocmd)
   end
   dbg_print("do_sync_current_buffer: Processing file:", current_file_path)
 
-  local lines = vim.api.nvim_buf_get_lines(0, 0, -1, false)
-  local problem_info = extract_problem_info(current_file_path, lines)
+  -- Get the buffer number for the file path
+  local file_bufnr = vim.fn.bufnr(current_file_path)
+  if file_bufnr == -1 then
+      notify("Could not find buffer for file: " .. current_file_path, vim.log.levels.ERROR)
+      dbg_print("do_sync_current_buffer: Buffer not found for file path."); return
+  end
+  local file_content_lines = vim.api.nvim_buf_get_lines(file_bufnr, 0, -1, false)
+  
+  local problem_info = extract_problem_info(current_file_path, file_content_lines, is_manual_trigger)
 
   if not problem_info then
-    dbg_print("do_sync_current_buffer: problem_info extraction failed (e.g. no ID).")
+    dbg_print("do_sync_current_buffer: problem_info extraction failed or solution not determined as accepted.")
     return
   end
 
@@ -194,27 +231,19 @@ function M.do_sync_current_buffer(triggered_by_autocmd)
   end
   dbg_print("do_sync_current_buffer: mkdir success/exists for", dest_dir_path)
 
-  -- ******** CHANGED FILE COPY METHOD ********
   local err, success_or_errmsg = pcall(vim.uv.fs_copyfile, current_file_path, dest_file_path, 0)
-  if not err or not success_or_errmsg then -- pcall returns false on error; fs_copyfile returns nil on success, error string on failure
-    -- Check if fs_copyfile returned an error string (meaning pcall succeeded but fs_copyfile itself failed)
-    if success_or_errmsg then -- This means fs_copyfile returned an error message
+  if not err or not success_or_errmsg then
+    if success_or_errmsg then
         notify("Failed to copy solution file to " .. dest_file_path .. ". Error: " .. tostring(success_or_errmsg), vim.log.levels.ERROR)
-        dbg_print("do_sync_current_buffer: vim.uv.fs_copyfile FAILED from", current_file_path, "to", dest_file_path, "Error:", tostring(success_or_errmsg))
-        return
+        dbg_print("do_sync_current_buffer: vim.uv.fs_copyfile FAILED from", current_file_path, "to", dest_file_path, "Error:", tostring(success_or_errmsg)); return
     end
-    -- If pcall itself failed (not err is true), or fs_copyfile returned nil (success) but err was false (should not happen)
     if not err then
         notify("Error during pcall for file copy: " .. tostring(success_or_errmsg), vim.log.levels.ERROR)
-        dbg_print("do_sync_current_buffer: pcall(vim.uv.fs_copyfile) FAILED. Error:", tostring(success_or_errmsg))
-        return
+        dbg_print("do_sync_current_buffer: pcall(vim.uv.fs_copyfile) FAILED. Error:", tostring(success_or_errmsg)); return
     end
   end
-  -- If we reach here, fs_copyfile succeeded (returned nil) and pcall also succeeded.
   notify("Solution file copied to " .. dest_file_path, vim.log.levels.INFO)
   dbg_print("do_sync_current_buffer: vim.uv.fs_copyfile SUCCESS to", dest_file_path)
-  -- ******************************************
-
 
   local problem_url = "https://leetcode.com/problems/" .. problem_info.title_slug .. "/"
   local readme_content = {
@@ -226,10 +255,12 @@ function M.do_sync_current_buffer(triggered_by_autocmd)
   table.insert(readme_content, "")
 
   if #problem_info.description > 0 then
+    dbg_print("do_sync_current_buffer: Adding", #problem_info.description, "lines of description to README.")
     vim.list_extend(readme_content, problem_info.description)
-    table.insert(readme_content, "")
+    table.insert(readme_content, "") 
   else
-    notify("Problem description not found (missing @lcpr desc=start/end). README will be minimal.", vim.log.levels.WARN)
+    notify("Problem description not found in solution file (missing @lcpr desc=start/end content). README will be minimal.", vim.log.levels.WARN)
+    dbg_print("do_sync_current_buffer: No description content found in problem_info.description.")
   end
 
   if #problem_info.solution_code > 0 then
@@ -289,13 +320,15 @@ function M.do_sync_current_buffer(triggered_by_autocmd)
   end)
 end
 
--- Setup function (This function remains the same as the previous version)
+-- Setup function
 function M.setup(user_config)
   config = vim.tbl_deep_extend("force", config, user_config or {})
-  dbg_print("M.setup: Config loaded. Debug mode:", config.debug_mode)
+  config.skip_acceptance_check = config.skip_acceptance_check or false 
+
+  dbg_print("M.setup: Config loaded. Debug mode:", config.debug_mode, "Skip acceptance check:", config.skip_acceptance_check)
   dbg_print("M.setup: Leetcode dir:", config.leetcode_nvim_solution_dir)
   dbg_print("M.setup: Github repo:", config.github_repo_path)
-  dbg_print("M.setup: Flat structure:", config.flat_leetcode_nvim_structure)
+  dbg_print("M.setup: Flat structure:", config.flat_leetcode_nvim_structure) -- Corrected typo from previous
 
   if not vim.fn.isdirectory(config.leetcode_nvim_solution_dir) then
     notify("LeetCode.nvim solution directory not found: " .. config.leetcode_nvim_solution_dir, vim.log.levels.ERROR); return
@@ -330,7 +363,7 @@ function M.setup(user_config)
 
       if args.file and should_trigger then
         dbg_print("Autocmd: Conditions met, calling M.do_sync_current_buffer(true)")
-        M.do_sync_current_buffer(true)
+        M.do_sync_current_buffer(true) -- Pass true (autocmd)
       else
         dbg_print("Autocmd: Conditions NOT met. File:", args.file, "Trigger check (flat):", should_trigger)
       end
@@ -338,7 +371,7 @@ function M.setup(user_config)
   })
 
   vim.api.nvim_create_user_command("LeetCodeSyncNow", function()
-    M.do_sync_current_buffer(false)
+    M.do_sync_current_buffer(false) -- Pass false (manual)
   end, {
     desc = "Manually sync current LeetCode solution to GitHub repo",
   })
@@ -351,6 +384,5 @@ function M.setup(user_config)
     notify("Using autocmd pattern: " .. autocmd_pattern, vim.log.levels.DEBUG)
   end
 end
-
 
 return M
