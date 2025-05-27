@@ -76,6 +76,37 @@ return {
     },
   },
 
+  -- add rust to lspconfig
+  {
+    "neovim/nvim-lspconfig",
+    opts = {
+      servers = {
+        rust_analyzer = {
+          settings = {
+            ["rust-analyzer"] = {
+              cargo = {
+                allFeatures = true,
+                targetDir = true,
+              },
+              checkOnSave = {
+                command = "clippy",
+              },
+              inlayHints = {
+                lifetimeElisionHints = {
+                  enable = true,
+                  useParameterNames = true,
+                },
+                reborrowHints = {
+                  enable = true,
+                },
+              },
+            },
+          },
+        },
+      },
+    },
+  },
+
   -- add tsserver and setup with typescript.nvim instead of lspconfig
   {
     "neovim/nvim-lspconfig",
