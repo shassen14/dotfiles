@@ -3,7 +3,7 @@
 
 [global]
     # Display & Font
-    monitor = 1
+    monitor = "DP-0"
     follow = mouse # mouse/keyboard
     font = Fira Code 10
     # allow_markup = yes
