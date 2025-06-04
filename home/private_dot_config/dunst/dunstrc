@@ -4,14 +4,14 @@
 [global]
     # Display & Font
     monitor = 1
-    follow = mouse # mouse/keyboard
+    # follow = mouse # mouse/keyboard
     font = Fira Code 10
     # allow_markup = yes
     format = "<b>%s</b>\n%b" # Summary bold, then body
     sort = yes
     indicate_hidden = yes
     alignment = left # left/center/right
-    bounce_freq = 0 # Disable bounce for less distraction
+    # bounce_freq = 0 # Disable bounce for less distraction
 
     # Geometry
     width = 200
@@ -76,15 +76,15 @@
     frame_color = "#ffb86c" # Orange
     timeout = 0 # Sticky until dismissed
 
-[spotify_ignore]
-    # Match notifications where the application name is 'spotify' (case-insensitive match using wildcard *)
-    # Adjust 'spotify' if you found a different appname (e.g., 'Spotify')
-    appname = "*Spotify*"
-    # You could also match on summary if needed, e.g.:
-    summary = "*Paused*"
-    summary = "*Playing*"
-    # To ignore ALL notifications from spotify:
-    set_ignored = true
+# [spotify_ignore]
+#     # Match notifications where the application name is 'spotify' (case-insensitive match using wildcard *)
+#     # Adjust 'spotify' if you found a different appname (e.g., 'Spotify')
+#     appname = "*Spotify*"
+#     # You could also match on summary if needed, e.g.:
+#     summary = "*Paused*"
+#     summary = "*Playing*"
+#     # To ignore ALL notifications from spotify:
+#     set_ignored = true
 
 # Example rule:
 # [brightness_notification]
