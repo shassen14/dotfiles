@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# ~/.config/sketchybar/sketchybarrc
+# {{ .chezmoi.homeDir }}/.config/sketchybar/sketchybarrc
 # Managed by Chezmoi: {{ .chezmoi.sourceFile }}
 
 source "{{ .chezmoi.homeDir }}/.config/sketchybar/variables.sh" # Loads all defined colors
@@ -10,7 +10,6 @@ sketchybar --bar \
   color="$BAR_COLOR" \
   shadow="$SHADOW" \
   sticky=on \
-  
   padding_right=0 \
   padding_left=3 \
   corner_radius="$CORNER_RADIUS" \
@@ -18,6 +17,7 @@ sketchybar --bar \
   margin=5 \
   blur_radius=20 \
   notch_width=200 \
+  display=all \
   updates=when_shown 
   #   position=top \ topmost=on \
 # Or 'on' if you prefer items to update even when bar is hidden due to notch
@@ -34,7 +34,7 @@ sketchybar --default \
   label.padding_right="$PADDINGS" \
   background.padding_right="$PADDINGS" \
   background.padding_left="$PADDINGS" \
-  popup.background.border_width=1 \
+  popup.background.border_width=2 \
   popup.background.corner_radius=11 \
   popup.background.border_color="$POPUP_BORDER_COLOR" \
   popup.background.color="$POPUP_BACKGROUND_COLOR" \
