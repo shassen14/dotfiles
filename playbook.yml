@@ -78,6 +78,18 @@
   import_playbook: playbooks/aldente.yml
   tags: [aldente, app, macos, gui, utility]
 
+- name: Install Blender 3D Software
+  import_playbook: playbooks/blender.yml
+  tags: [blender, 3d, graphics, gui] 
+
+# - name: Install GIMP (Raster Graphics Editor)
+#   import_playbook: playbooks/gimp.yml
+#   tags: [gimp, graphics, photo, gui]
+
+- name: Install Krita (Digital Painting & Design)
+  import_playbook: playbooks/krita.yml
+  tags: [krita, graphics, painting, gui]
+
 # Desktop Environments / Window Managers
 - name: Install i3 Window Manager (Debian/Ubuntu Only)
   import_playbook: playbooks/i3wm.yml

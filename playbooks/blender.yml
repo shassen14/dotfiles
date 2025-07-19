@@ -1,0 +1,50 @@
+---
+# playbooks/blender.yml
+# Installs Blender 3D creation suite.
+
+- name: Install Blender 3D Software
+  hosts: all
+  become: true # For Linux package installs
+  gather_facts: true # For ansible_os_family
+  tags: [blender, 3d, graphics, vfx, gui, app] # Add relevant tags
+
+  tasks:
+    # --- Debian/Ubuntu ---
+    # Installs from the official distribution repositories.
+    - name: Install Blender (Debian/Ubuntu)
+      ansible.builtin.apt:
+        name: blender
+        state: present
+        update_cache: yes
+      when: ansible_os_family == "Debian"
+      tags: [blender, package, debian, ubuntu]
+
+    # --- RedHat Family (Fedora, CentOS Stream, RHEL, Rocky, Alma) ---
+    - name: Install Blender (RedHat family)
+      ansible.builtin.dnf:
+        name: blender
+        state: present
+      when: ansible_os_family == "RedHat"
+      tags: [blender, package, redhat, fedora]
+
+    # --- Arch Linux ---
+    - name: Install Blender (Arch Linux)
+      community.general.pacman:
+        name: blender
+        state: present
+      when: ansible_os_family == "Archlinux"
+      tags: [blender, package, arch]
+
+    # --- macOS ---
+    - name: Install Blender using Homebrew Cask (macOS)
+      become: false # Homebrew Cask runs as user
+      community.general.homebrew_cask:
+        name: blender
+        state: present
+      when: ansible_os_family == "Darwin"
+      tags: [blender, package, macos]
+
+    - name: Blender installation summary
+      ansible.builtin.debug:
+        msg: "Blender installation attempted. Check task status for details."
+      tags: [blender, info]

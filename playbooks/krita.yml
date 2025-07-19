@@ -1,0 +1,44 @@
+---
+# playbooks/krita.yml
+# Installs Krita, a professional digital painting and raster graphics editor.
+
+- name: Install Krita
+  hosts: all
+  become: true # For Linux package installs
+  gather_facts: true # For ansible_os_family
+  tags: [krita, graphics, photo, painting, gui, app]
+
+  tasks:
+    # --- Debian/Ubuntu ---
+    - name: Install Krita (Debian/Ubuntu)
+      ansible.builtin.apt:
+        name: krita
+        state: present
+        update_cache: yes
+      when: ansible_os_family == "Debian"
+      tags: [krita, package, debian, ubuntu]
+
+    # --- RedHat Family (Fedora) ---
+    - name: Install Krita (RedHat family)
+      ansible.builtin.dnf:
+        name: krita
+        state: present
+      when: ansible_os_family == "RedHat"
+      tags: [krita, package, redhat, fedora]
+
+    # --- Arch Linux ---
+    - name: Install Krita (Arch Linux)
+      community.general.pacman:
+        name: krita
+        state: present
+      when: ansible_os_family == "Archlinux"
+      tags: [krita, package, arch]
+
+    # --- macOS ---
+    - name: Install Krita using Homebrew Cask (macOS)
+      become: false # Homebrew Cask runs as user
+      community.general.homebrew_cask:
+        name: krita
+        state: present
+      when: ansible_os_family == "Darwin"
+      tags: [krita, package, macos]
