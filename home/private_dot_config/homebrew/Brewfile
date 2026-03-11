@@ -1,0 +1,49 @@
+# ~/.config/homebrew/Brewfile
+# Run: brew bundle --file ~/.config/homebrew/Brewfile
+
+tap "nikitabobko/tap"      # AeroSpace
+tap "FelixKratz/formulae"  # SketchyBar
+
+# CLI tools
+brew "bash"
+brew "chezmoi"
+brew "cmake"
+brew "curl"
+brew "fd"
+brew "gh"
+brew "git"
+brew "jq"
+brew "neovim"
+brew "node"
+brew "pkg-config"
+brew "ripgrep"
+brew "starship"
+brew "switchaudio-osx"
+brew "tmux"
+brew "wget"
+brew "zsh"
+
+# macOS window manager + status bar
+cask "nikitabobko/tap/aerospace"
+brew "FelixKratz/formulae/sketchybar"
+
+# Fonts
+cask "font-fira-code-nerd-font"
+cask "font-hack-nerd-font"
+cask "font-meslo-lg-nerd-font"
+
+# Apps
+cask "aldente"
+cask "alacritty"
+cask "bitwarden"
+cask "blender"
+cask "brave-browser"
+cask "darktable"
+cask "discord"
+cask "docker"
+cask "gimp"
+cask "krita"
+cask "obs"
+cask "obsidian"
+cask "spotify"
+cask "visual-studio-code"

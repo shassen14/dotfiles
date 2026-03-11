@@ -1,71 +1,66 @@
-# My Cross-Platform Dotfiles & Setup
+# Dotfiles
 
-This repository uses Ansible and Chezmoi to configure my development environment consistently across macOS and various Linux distributions.
+Cross-platform dotfiles for macOS and Linux managed entirely with **Chezmoi**.
 
-## Philosophy
+## How it works
 
--   **Ansible:** Handles system-level setup, package/application installation (using native managers and Homebrew), and service configuration. Aims for idempotency.
--   **Chezmoi:** Manages user-specific configuration files (dotfiles) stored in a separate Git repository. Handles templating for OS differences and secret management.
+| File/Dir | Purpose |
+|---|---|
+| `bootstrap.sh` | Fresh-machine setup: installs Homebrew (macOS) + chezmoi, then applies dotfiles |
+| `home/` | Chezmoi source — everything here gets applied to `~` |
+| `home/private_dot_config/homebrew/Brewfile` | macOS packages (`brew bundle`) |
+| `home/run_once_install-packages-darwin.sh` | Runs `brew bundle` once on macOS |
+| `home/run_once_install-packages-linux.sh` | Installs packages via apt/dnf/pacman on Linux |
 
-## Prerequisites
+## Fresh machine
 
-1.  **Git:** Needs to be installed to clone this repository and for Chezmoi.
-2.  **Curl:** Used by the bootstrap script and potentially Chezmoi install.
-3.  **Sudo access:** The bootstrap script and Ansible require `sudo` privileges for package installation and system configuration. You will likely be prompted for your password during the `bootstrap.sh` run unless passwordless sudo is configured.
-4.  **(Linux Arch):** An AUR helper (defaults to `yay` in the playbook) is required for installing AUR packages like Obsidian. The playbook attempts to install `yay` if not found.
-5.  **(Optional) Password Manager CLI:** If your Chezmoi templates rely on a password manager (like `pass`, `bw`, `op`), ensure the corresponding CLI tool is installed (you might need to add tasks to Ansible for this).
+```bash
+curl -fsSL https://raw.githubusercontent.com/shassen14/dotfiles/main/bootstrap.sh | bash
+```
+
+Or clone first:
+
+```bash
+git clone https://github.com/shassen14/dotfiles.git ~/dotfiles
+~/dotfiles/bootstrap.sh
+```
+
+## Day-to-day
+
+```bash
+# Pull and apply latest dotfiles
+chezmoi update
+
+# Preview changes before applying
+chezmoi diff
+
+# Edit a dotfile and re-apply
+chezmoi edit ~/.zshrc
+chezmoi apply
+
+# Add a new package (macOS)
+# 1. Edit home/private_dot_config/homebrew/Brewfile
+# 2. Bump the version comment in home/run_once_install-packages-darwin.sh
+# 3. chezmoi apply
+```
+
+## Platforms
+
+- **macOS**: AeroSpace (tiling WM) + SketchyBar + Homebrew
+- **Linux**: i3wm + apt/dnf/pacman (Debian, Fedora, Arch)
 
 ## Structure
 
--   `bootstrap.sh`: The initial script to run on a new machine. Installs Ansible and executes the main playbook.
--   `inventory.ini`: Ansible inventory file (typically just `localhost`).
--   `playbook.yml`: The main Ansible playbook that imports role-specific playbooks.
--   `playbooks/`: Directory containing modular Ansible playbooks for different components (Chezmoi, Docker, VSCode, etc.).
--   `group_vars/all.yml`: Global variables for Ansible (like Chezmoi repo URL).
-
-## Usage
-
-1.  **Clone this Repository:**
-    ```bash
-    git clone https://your-repo-url/ansible-dotfiles.git
-    cd ansible-dotfiles
-    ```
-
-2.  **Review Configuration:**
-    *   Modify `group_vars/all.yml` to set your correct `chezmoi_repo` URL.
-    *   Review playbooks in `playbooks/` and adjust package lists or configurations as needed.
-
-3.  **Run the Bootstrap Script:**
-    ```bash
-    ./bootstrap.sh
-    ```
-    *   This script will detect your OS, install Ansible if necessary, and then run `ansible-playbook`.
-    *   You may be prompted for your `sudo` password.
-
-4.  **Subsequent Runs:**
-    *   To re-apply the entire configuration or apply updates:
-        ```bash
-        ansible-playbook playbook.yml -i inventory.ini -K
-        ```
-    *   To apply only specific parts using tags (e.g., update Docker and VSCode):
-        ```bash
-        ansible-playbook playbook.yml -i inventory.ini -K --tags "docker,vscode"
-        ```
-    *   To update only your dotfiles via Chezmoi after Ansible has run:
-        ```bash
-        chezmoi update
-        chezmoi apply -v
-        ```
-        (Or just re-run the Ansible playbook, as it includes a `chezmoi apply` step).
-
-## Chezmoi Repository
-
-This setup assumes your actual dotfiles are managed in a *separate* Git repository configured within `group_vars/all.yml`. Refer to the [Chezmoi documentation](https://www.chezmoi.io/) for managing that repository.
-
-## TODO / Future Improvements
-
--   [ ] Add installation tasks for password manager CLIs if needed by Chezmoi.
--   [ ] Implement more robust error handling in `bootstrap.sh`.
--   [ ] Consider using Ansible Vault for managing any secrets needed by Ansible itself.
--   [ ] Add specific Ansible handlers for restarting services only when configs change.
--   [ ] Explore Flatpak/Snap installations for apps like Obsidian on Linux distributions without easy native packages/repos.
+```
+home/
+  dot_zshrc.tmpl                          → ~/.zshrc
+  dot_aliases.tmpl                        → ~/.aliases
+  private_dot_config/
+    nvim/                                 → ~/.config/nvim/   (LazyVim)
+    alacritty/alacritty.toml.tmpl         → ~/.config/alacritty/alacritty.toml
+    sketchybar/                           → ~/.config/sketchybar/   (macOS)
+    aerospace/                            → ~/.config/aerospace/    (macOS)
+    i3/                                   → ~/.config/i3/           (Linux)
+    homebrew/Brewfile                     → ~/.config/homebrew/Brewfile
+    chezmoi/chezmoi.toml.tmpl             → ~/.config/chezmoi/chezmoi.toml
+```
