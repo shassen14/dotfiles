@@ -3,11 +3,14 @@ return {
   opts = {
     ensure_installed = {
       "lua_ls",
-      "tsserver",
+      "ts_ls",
       "pyright",
       "clangd",
-      "rust-analyzer",
-      -- add any other LSP servers you want
+      "rust_analyzer",
+      "bashls",
+      "yamlls",
+      "jsonls",
+      "taplo",
     },
   },
 }

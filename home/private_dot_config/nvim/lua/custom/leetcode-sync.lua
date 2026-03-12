@@ -10,7 +10,7 @@ local config = {
   auto_push = true,
   readme_solution_header = "## Solution",
   languages_pattern = "{cpp,py,java,js,ts,go,rs,lua,kt,swift,cs,rb,php,scala,dart}",
-  verbose = true,
+  verbose = false,
   flat_leetcode_nvim_structure = true,
   debug_mode = false,
   skip_acceptance_check = false, -- New: Set to true to always sync on save regardless of acceptance
@@ -174,17 +174,10 @@ local function extract_problem_info(current_file_path, file_content_lines, check
   return info
 end
 
--- Get difficulty badge HTML
-local function get_difficulty_badge(difficulty)
+-- Get difficulty tag (LeetHub style)
+local function get_difficulty_tag(difficulty)
   if not difficulty or difficulty == "" then return "" end
-  local color
-  if difficulty:lower() == "easy" then color = "brightgreen"
-  elseif difficulty:lower() == "medium" then color = "orange"
-  elseif difficulty:lower() == "hard" then color = "red"
-  else dbg_print("get_difficulty_badge: Unknown difficulty:", difficulty); return ""
-  end
-  return string.format("<img src='https://img.shields.io/badge/Difficulty-%s-%s' alt='Difficulty: %s' />",
-                       difficulty, color, difficulty)
+  return string.format("<h3>Difficulty: %s</h3>", difficulty)
 end
 
 -- Main sync function
@@ -249,8 +242,8 @@ function M.do_sync_current_buffer(triggered_by_autocmd)
   local readme_content = {
     "<h2><a href=\"" .. problem_url .. "\">" .. problem_info.id .. ". " .. problem_info.name .. "</a></h2>",
   }
-  local badge = get_difficulty_badge(problem_info.difficulty)
-  if badge ~= "" then table.insert(readme_content, badge) end
+  local diff_tag = get_difficulty_tag(problem_info.difficulty)
+  if diff_tag ~= "" then table.insert(readme_content, diff_tag) end
   table.insert(readme_content, "<hr>")
   table.insert(readme_content, "")
 
@@ -264,7 +257,9 @@ function M.do_sync_current_buffer(triggered_by_autocmd)
   end
 
   if #problem_info.solution_code > 0 then
-    table.insert(readme_content, config.readme_solution_header .. " (`" .. problem_info.language_ext .. "`)")
+    table.insert(readme_content, "---")
+    table.insert(readme_content, "")
+    table.insert(readme_content, config.readme_solution_header)
     table.insert(readme_content, "")
     table.insert(readme_content, "```" .. problem_info.language_ext)
     vim.list_extend(readme_content, problem_info.solution_code)
@@ -377,12 +372,7 @@ function M.setup(user_config)
   })
   dbg_print("M.setup: User command LeetCodeSyncNow created.")
 
-  notify("LeetCode GitHub Sync enabled.", vim.log.levels.INFO)
-  if config.verbose or config.debug_mode then
-    notify("LeetCode.nvim dir: " .. config.leetcode_nvim_solution_dir .. (config.flat_leetcode_nvim_structure and " (flat)" or " (nested)"), vim.log.levels.DEBUG)
-    notify("Syncing to GitHub repo: " .. config.github_repo_path, vim.log.levels.DEBUG)
-    notify("Using autocmd pattern: " .. autocmd_pattern, vim.log.levels.DEBUG)
-  end
+  dbg_print("M.setup: LeetCode GitHub Sync enabled. Dir:", config.leetcode_nvim_solution_dir, "Repo:", config.github_repo_path, "Pattern:", autocmd_pattern)
 end
 
 return M
