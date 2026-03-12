@@ -7,6 +7,7 @@ tap "FelixKratz/formulae"  # SketchyBar
 # CLI tools
 brew "bash"
 brew "chezmoi"
+brew "clang-format"
 brew "cmake"
 brew "curl"
 brew "fd"

@@ -33,18 +33,6 @@ setopt SHARE_HISTORY
 # Enable Vi mode if desired
 # bindkey -v
 
-# --- Load Plugins ---
-
-# zsh-history-substring-search
-# Source the plugin file if it exists
-HISTSUBSEARCH_DIR="${ZDOTDIR:-$HOME}/.zsh/plugins/zsh-history-substring-search"
-if [ -f "$HISTSUBSEARCH_DIR/zsh-history-substring-search.zsh" ]; then
-  source "$HISTSUBSEARCH_DIR/zsh-history-substring-search.zsh"
-else
-  # Optional: warning if plugin isn't found
-  # echo "WARN: zsh-history-substring-search plugin not found at $HISTSUBSEARCH_DIR"
-fi
-
 # --- Keybindings for History Beginning Search ---
 # Bind arrow keys directly to Zsh's built-in widgets
 

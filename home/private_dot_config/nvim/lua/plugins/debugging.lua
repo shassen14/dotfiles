@@ -43,6 +43,28 @@ return {
         }
       end
 
+      -- C / C++
+      local codelldb = vim.fn.stdpath("data") .. "/mason/packages/codelldb/extension/adapter/codelldb"
+      dap.adapters.codelldb = {
+        type = "server",
+        port = "${port}",
+        executable = { command = codelldb, args = { "--port", "${port}" } },
+      }
+      for _, lang in ipairs({ "c", "cpp" }) do
+        dap.configurations[lang] = {
+          {
+            type = "codelldb",
+            request = "launch",
+            name = "Launch",
+            program = function()
+              return vim.fn.input("Path to executable: ", vim.fn.getcwd() .. "/", "file")
+            end,
+            cwd = "${workspaceFolder}",
+            stopOnEntry = false,
+          },
+        }
+      end
+
       -- Auto open/close dapui
       dap.listeners.after.event_initialized["dapui_config"] = function() dapui.open() end
       dap.listeners.before.event_terminated["dapui_config"] = function() dapui.close() end

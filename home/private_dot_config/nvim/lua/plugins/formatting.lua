@@ -6,6 +6,8 @@ return {
       python     = { "black", "isort" },
       javascript = { "prettier" },
       typescript = { "prettier" },
+      c          = { "clang_format" },
+      cpp        = { "clang_format" },
       rust       = { "rustfmt" },
       sh         = { "shfmt" },
       yaml       = { "prettier" },
