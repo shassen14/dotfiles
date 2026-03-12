@@ -60,15 +60,6 @@ source "{{ .chezmoi.homeDir }}/.config/sketchybar/items/volume.sh"
 source "{{ .chezmoi.homeDir }}/.config/sketchybar/items/cpu.sh"
 source "{{ .chezmoi.homeDir }}/.config/sketchybar/items/spotify.sh"
 
-# Force initial Spotify state — media_change only fires on track change, not on bar startup
-if pgrep -x "Spotify" >/dev/null 2>&1; then
-  _SP_STATE=$(osascript -e 'tell app "Spotify" to player state as string' 2>/dev/null)
-  if [ "$_SP_STATE" = "playing" ]; then
-    _SP_TRACK=$(osascript -e 'tell app "Spotify" to (name of current track & " - " & artist of current track)' 2>/dev/null)
-    sketchybar --set spotify label="$_SP_TRACK" drawing=on
-  fi
-fi
-
 #################### Finalizing Setup ####################
 
 # sketchybar --hotload true # Hotload is more for development. For production, a full load is fine.

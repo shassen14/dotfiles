@@ -18,6 +18,6 @@ sketchybar --add item spotify right \
 	label.padding_right=10 \
 	label.max_chars=23 \
 	associated_display=active \
-	updates=on \
+	update_freq=5 \
 	script="$PLUGIN_DIR/spotify.sh" \
 	--subscribe spotify media_change
