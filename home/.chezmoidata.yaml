@@ -1,0 +1,10 @@
+# for CI/CD
+name: "Samir Hassen"
+email: "fake@email.com"
+terminal: "alacritty"
+editor: "nvim"
+browser: "brave-browser"
+terminal_app_name_mac: "Alacritty"
+browser_app_name_mac: "Brave Browser"
+terminal_cmd_linux: "alacritty"
+browser_cmd_linux: "brave-browser"
