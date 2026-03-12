@@ -35,6 +35,7 @@ cask "font-meslo-lg-nerd-font"
 # Apps
 cask "aldente"
 cask "alacritty"
+cask "ghostty"
 cask "bitwarden"
 cask "blender"
 cask "brave-browser"

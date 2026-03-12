@@ -1,0 +1,19 @@
+# Ghostty config — managed by Chezmoi
+# Kitty Graphics Protocol (KGP) enabled by default in Ghostty
+
+font-family = FiraCode Nerd Font
+font-size = 12
+
+theme = tokyonight
+
+window-padding-x = 5
+window-padding-y = 5
+
+scrollback-limit = 10000
+
+copy-on-select = true
+
+cursor-style = block
+cursor-style-blink = false
+
+shell-integration = zsh

@@ -2,7 +2,7 @@
 # run_once_install-packages-linux.sh
 # Installs packages on Linux via the native package manager.
 # Chezmoi re-runs this when the file content changes — bump the version below to force a re-run.
-# version: 1
+# version: 2
 
 [[ "$(uname)" != "Linux" ]] && exit 0
 
@@ -18,6 +18,14 @@ if command -v apt-get &>/dev/null; then
         python3 python3-pip python3-venv \
         xclip unzip
 
+    # Ghostty not in apt repos — install via Flatpak
+    if command -v flatpak &>/dev/null; then
+        flatpak remote-add --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
+        flatpak install --noninteractive flathub com.mitchellh.ghostty
+    else
+        echo "Ghostty: install flatpak then re-run, or install Ghostty manually." >&2
+    fi
+
 elif command -v dnf &>/dev/null; then
     sudo dnf install -y \
         bash zsh git curl wget jq \
@@ -25,6 +33,7 @@ elif command -v dnf &>/dev/null; then
         neovim ripgrep fd tmux \
         nodejs npm \
         python3 python3-pip \
+        ghostty \
         xclip unzip
 
 elif command -v pacman &>/dev/null; then
@@ -34,6 +43,7 @@ elif command -v pacman &>/dev/null; then
         neovim ripgrep fd tmux \
         nodejs npm \
         python python-pip \
+        ghostty \
         xclip unzip
 
 else
