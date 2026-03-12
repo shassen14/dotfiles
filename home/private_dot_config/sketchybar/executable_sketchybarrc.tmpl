@@ -4,6 +4,12 @@
 
 source "{{ .chezmoi.homeDir }}/.config/sketchybar/variables.sh" # Loads all defined colors
 
+# --- Dynamic Notch Detection ---
+# Set notch_width=200 only when the built-in display is active (MacBook lid open).
+# When running in clamshell mode (external monitor only), set to 0.
+BUILTIN_COUNT=$(system_profiler SPDisplaysDataType 2>/dev/null | grep -c "Built-In")
+NOTCH_WIDTH=$([[ "$BUILTIN_COUNT" -gt 0 ]] && echo 200 || echo 0)
+
 # --- General Bar Settings ---
 sketchybar --bar \
   height=30 \
@@ -16,7 +22,7 @@ sketchybar --bar \
   y_offset=5 \
   margin=5 \
   blur_radius=20 \
-  notch_width=200 \
+  notch_width="$NOTCH_WIDTH" \
   display=all \
   updates=when_shown 
   #   position=top \ topmost=on \
