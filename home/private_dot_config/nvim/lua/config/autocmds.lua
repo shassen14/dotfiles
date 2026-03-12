@@ -7,6 +7,26 @@ local autocmd = vim.api.nvim_create_autocmd
 -- Optional: A general group for your custom autocommands
 local _MY_CUSTOM_AUTOCMDS = augroup("MyCustomAutocmds", { clear = true })
 
+-- Force wrap in leetcode description window (image_support disables it)
+autocmd("FileType", {
+  pattern = "leetcode.nvim",
+  callback = function()
+    local win = vim.api.nvim_get_current_win()
+    vim.defer_fn(function()
+      if vim.api.nvim_win_is_valid(win) then
+        vim.api.nvim_win_set_option(win, "wrap", true)
+      end
+    end, 10)
+  end,
+})
+autocmd("WinEnter", {
+  callback = function()
+    if vim.bo.filetype == "leetcode.nvim" then
+      vim.wo.wrap = true
+    end
+  end,
+})
+
 autocmd("VimEnter", {
   group = _MY_CUSTOM_AUTOCMDS, 
   pattern = "*",
@@ -22,7 +42,7 @@ autocmd("VimEnter", {
               leetcode_nvim_solution_dir = vim.fn.expand("~/.local/share/nvim/leetcode"),
               github_repo_path = vim.fn.expand("~/Documents/learning/lc_direct"),
               flat_leetcode_nvim_structure = true,
-              verbose = true,
+              verbose = false,
               debug_mode = false, -- Keep true while testing
 
               -- ***** CHOOSE YOUR ACCEPTANCE STRATEGY HERE *****

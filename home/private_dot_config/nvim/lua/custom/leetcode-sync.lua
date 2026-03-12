@@ -125,8 +125,8 @@ local function extract_problem_info(current_file_path, file_content_lines, check
     if line:match("@lcpr desc=end") then in_description = false; goto continue_loop end
     if in_description then table.insert(info.description, line) end
 
-    if line:match("@lc code=start") then in_solution_code = true; goto continue_loop end
-    if line:match("@lc code=end") then in_solution_code = false; goto continue_loop end
+    if line:match("@leet start") then in_solution_code = true; goto continue_loop end
+    if line:match("@leet end") then in_solution_code = false; goto continue_loop end
     if in_solution_code then
       if not line:match("@lcpr-template") and not line:match("Please remember to NOT include package statement") then
          table.insert(info.solution_code, line)
@@ -169,7 +169,7 @@ local function extract_problem_info(current_file_path, file_content_lines, check
     return nil
   end
 
-  if not info.difficulty then notify("Problem difficulty not found in @lcpr metadata.", vim.log.levels.WARN) end
+  if not info.difficulty then notify("Problem difficulty not found in @lcpr metadata.", vim.log.levels.INFO) end
   dbg_print("extract_problem_info: Success. ID:", info.id, "Name:", info.name, "Slug:", info.title_slug)
   return info
 end
@@ -252,7 +252,7 @@ function M.do_sync_current_buffer(triggered_by_autocmd)
     vim.list_extend(readme_content, problem_info.description)
     table.insert(readme_content, "") 
   else
-    notify("Problem description not found in solution file (missing @lcpr desc=start/end content). README will be minimal.", vim.log.levels.WARN)
+    notify("Problem description not found in solution file (missing @lcpr desc=start/end content). README will be minimal.", vim.log.levels.INFO)
     dbg_print("do_sync_current_buffer: No description content found in problem_info.description.")
   end
 
@@ -265,7 +265,7 @@ function M.do_sync_current_buffer(triggered_by_autocmd)
     vim.list_extend(readme_content, problem_info.solution_code)
     table.insert(readme_content, "```")
   else
-    notify("Solution code for README not found (missing @lc code=start/end).", vim.log.levels.WARN)
+    notify("Solution code for README not found (missing @leet start/end).", vim.log.levels.INFO)
   end
 
   local readme_file = io.open(readme_path, "w")
@@ -307,7 +307,7 @@ function M.do_sync_current_buffer(triggered_by_autocmd)
           dbg_print("do_sync_current_buffer: Auto push disabled.")
         end
       elseif commit_exit_code == 1 then
-         notify("Commit skipped for " .. problem_info.name .. " (likely no changes).", vim.log.levels.WARN)
+         notify("Commit skipped for " .. problem_info.name .. " (likely no changes).", vim.log.levels.INFO)
       else
         notify("Failed to git commit for " .. problem_info.name, vim.log.levels.ERROR)
       end
