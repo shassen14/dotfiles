@@ -7,9 +7,10 @@ return {
       -- "ibhagwan/fzf-lua",
       "nvim-lua/plenary.nvim",
       "MunifTanjim/nui.nvim",
+      "3rd/image.nvim",
     },
     opts = {
-      -- configuration goes here
+      image_support = true,
     },
   },
 }

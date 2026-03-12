@@ -3,6 +3,7 @@ return {
   build = false,
   opts = {
     backend = "kitty",
+    processor = "magick_cli",
     integrations = { markdown = { enabled = true } },
   },
 }

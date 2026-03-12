@@ -28,6 +28,10 @@ set -g default-terminal "screen-256color" # Alternative if tmux-256color causes 
 # set -as terminal-overrides ",xterm*:Tc" # Alternative way to enable True Color
 set -as terminal-features ",*:RGB" # Another True Color setting if needed
 
+# Allow passthrough for kitty graphics protocol (needed for image.nvim)
+# Requires tmux >= 3.3a
+if-shell "[ $(tmux -V | sed 's/[^0-9.]//g' | awk -F. '{printf \"%d%02d\", $1, $2}') -ge 303 ]" "set -g allow-passthrough on"
+
 # Reduce escape key delay for faster responsiveness (e.g., in Vim)
 set -sg escape-time 0
 

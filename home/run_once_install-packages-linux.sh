@@ -2,7 +2,7 @@
 # run_once_install-packages-linux.sh
 # Installs packages on Linux via the native package manager.
 # Chezmoi re-runs this when the file content changes — bump the version below to force a re-run.
-# version: 2
+# version: 3
 
 [[ "$(uname)" != "Linux" ]] && exit 0
 
@@ -16,6 +16,7 @@ if command -v apt-get &>/dev/null; then
         neovim ripgrep fd-find tmux \
         nodejs npm \
         python3 python3-pip python3-venv \
+        imagemagick \
         xclip unzip
 
     # Ghostty not in apt repos — install via Flatpak
@@ -33,7 +34,7 @@ elif command -v dnf &>/dev/null; then
         neovim ripgrep fd tmux \
         nodejs npm \
         python3 python3-pip \
-        ghostty \
+        ghostty imagemagick \
         xclip unzip
 
 elif command -v pacman &>/dev/null; then
@@ -43,7 +44,7 @@ elif command -v pacman &>/dev/null; then
         neovim ripgrep fd tmux \
         nodejs npm \
         python python-pip \
-        ghostty \
+        ghostty imagemagick \
         xclip unzip
 
 else
