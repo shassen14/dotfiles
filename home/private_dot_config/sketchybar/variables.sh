@@ -1,5 +1,6 @@
 #!/usr/bin/env sh
 # ~/.config/sketchybar/variables.sh
+# shellcheck disable=SC2034  # Variables are exported for use by sourcing scripts
 
 # Color Palette
 # Tokyonight Night

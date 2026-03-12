@@ -1,0 +1,14 @@
+# Optional local dev tool — the CI lint.yml already runs these checks on push.
+# Only useful if you want to catch issues before committing locally.
+# Setup: pre-commit install  (only needed once per machine)
+repos:
+  - repo: https://github.com/koalaman/shellcheck-precommit
+    rev: v0.10.0
+    hooks:
+      - id: shellcheck
+
+  - repo: https://github.com/adrienverge/yamllint
+    rev: v1.35.1
+    hooks:
+      - id: yamllint
+        args: [--strict, -d, "{extends: default, rules: {line-length: {max: 120}, truthy: {allowed-values: ['true', 'false']}}}"]

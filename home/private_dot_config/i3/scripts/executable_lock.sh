@@ -56,11 +56,12 @@ if command -v i3lock-color &> /dev/null; then
         --greeterpos="tx:ty+60" \
         --greetersize=14 \
         --modsize=10 \
-        # --blur 5 \ # Optional: Add blur if desired and picom doesn't interfere
-        # --image /path/to/background.png \ # Optional: Use an image background
-        --clock # Show time and date
-        # --datestr="%A, %d %B %Y" \
-        # --timestr="%H:%M:%S"
+        --clock
+        # Optional flags (uncomment and add \ to previous line to enable):
+        #   --blur 5
+        #   --image /path/to/background.png
+        #   --datestr="%A, %d %B %Y"
+        #   --timestr="%H:%M:%S"
 
 else
     # Fallback to simple i3lock if i3lock-color isn't found
