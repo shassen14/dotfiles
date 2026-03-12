@@ -75,3 +75,9 @@ alias ipy='ipython' # If installed
 # Reload shell config
 # (This will be overridden in zshrc/bashrc to source the correct file)
 alias reload='echo "Source ~/.zshrc or ~/.bashrc manually"'
+
+# --- Dotfiles Sync (chezmoi) ---
+alias dots-push='chezmoi re-add && chezmoi cd && git add -A && git commit -m "update" && git push'
+alias dots-pull='chezmoi update'
+alias dots-diff='chezmoi diff'
+alias dots-status='chezmoi status'
