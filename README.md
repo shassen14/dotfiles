@@ -14,26 +14,35 @@ Cross-platform dotfiles for macOS and Linux managed entirely with **Chezmoi**.
 
 ## Fresh machine
 
-```bash
-curl -fsSL https://raw.githubusercontent.com/shassen14/dotfiles/main/bootstrap.sh | bash
-```
-
-Or clone first:
+Clone the repo and run bootstrap — the working copy becomes the chezmoi source directly (no separate clone):
 
 ```bash
 git clone https://github.com/shassen14/dotfiles.git ~/dotfiles
 ~/dotfiles/bootstrap.sh
 ```
 
-## Day-to-day
+Or pipe directly (chezmoi clones from the remote instead):
 
 ```bash
-# Pull and apply latest dotfiles
-chezmoi update
+curl -fsSL https://raw.githubusercontent.com/shassen14/dotfiles/main/bootstrap.sh | bash
+```
 
-# Preview changes before applying
-chezmoi diff
+## Day-to-day
 
+A `Makefile` is included for common workflows:
+
+```bash
+make help     # list all targets
+make apply    # chezmoi apply -v
+make update   # pull remote changes and apply
+make push     # re-add changed files, commit, and push
+make diff     # preview pending changes
+make install  # full bootstrap (./bootstrap.sh)
+```
+
+Or use chezmoi directly:
+
+```bash
 # Edit a dotfile and re-apply
 chezmoi edit ~/.zshrc
 chezmoi apply

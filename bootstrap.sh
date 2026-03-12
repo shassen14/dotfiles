@@ -3,6 +3,7 @@
 set -e
 
 DOTFILES_REPO="https://github.com/shassen14/dotfiles.git"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 # macOS: install Homebrew if missing
 if [[ "$OSTYPE" == "darwin"* ]] && ! command -v brew &>/dev/null; then
@@ -20,6 +21,12 @@ if ! command -v chezmoi &>/dev/null; then
     fi
 fi
 
-# Clone dotfiles repo, then apply from the home/ subdirectory
-chezmoi init "$DOTFILES_REPO"
-exec chezmoi apply --source "$(chezmoi source-path)/home"
+# Use local clone as chezmoi source if running from the repo (no separate clone needed).
+# Otherwise fall back to cloning from the remote.
+if [[ -d "$SCRIPT_DIR/home" ]]; then
+    chezmoi init --source "$SCRIPT_DIR/home"
+else
+    chezmoi init "$DOTFILES_REPO"
+fi
+
+exec chezmoi apply -v
