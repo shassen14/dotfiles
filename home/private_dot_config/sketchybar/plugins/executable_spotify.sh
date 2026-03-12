@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+[ "$SENDER" != "media_change" ] && exit 0
+
 STATE="$(echo "$INFO" | jq -r '.state')"
 APP="$(echo "$INFO" | jq -r '.app')"
 
