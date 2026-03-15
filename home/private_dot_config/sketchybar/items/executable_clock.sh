@@ -9,7 +9,7 @@ sketchybar --add item clock right \
 	icon="" \
 	label.color="$COLOR" \
 	label.padding_right=5 \
-	label.width=150 \
+	label.width=175 \
 	align=center \
 	background.height=$BACKGROUND_HEIGHT \
 	background.corner_radius="$CORNER_RADIUS" \
