@@ -31,7 +31,7 @@ setopt SHARE_HISTORY
 
 # --- Keybindings ---
 # Enable Vi mode if desired
-# bindkey -v
+bindkey -v
 
 # --- Keybindings for History Beginning Search ---
 # Bind arrow keys directly to Zsh's built-in widgets
@@ -115,5 +115,7 @@ _BREW_PREFIX="${HOMEBREW_PREFIX:-/opt/homebrew}"
 [ -r /usr/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh ] && \
   source /usr/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
 {{ end -}}
+
+export PATH="$HOME/.cargo/bin:$PATH"
 
 echo "Loaded ~/.zshrc" # Optional: for debugging
