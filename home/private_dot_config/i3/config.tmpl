@@ -21,7 +21,7 @@ set $mod Mod4
 # If not set there, it defaults to 'x-terminal-emulator', which should
 # point to a system-installed terminal (like gnome-terminal, xfce4-terminal, etc.).
 # Ensure your Ansible playbook installs a terminal (e.g., alacritty, kitty, xfce4-terminal).
-set $term {{ .terminal_cmd_linux | default "alacritty" }}
+set $term {{ .terminal_cmd_linux | default "ghostty" }}
 
 # Define your application launcher.
 # dmenu is very lightweight and traditional with i3.
