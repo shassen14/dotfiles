@@ -4,13 +4,13 @@ Cross-platform dotfiles for macOS and Linux managed entirely with **Chezmoi**.
 
 ## How it works
 
-| File/Dir | Purpose |
-|---|---|
-| `bootstrap.sh` | Fresh-machine setup: installs Homebrew (macOS) + chezmoi, then applies dotfiles |
-| `home/` | Chezmoi source — everything here gets applied to `~` |
-| `home/private_dot_config/homebrew/Brewfile` | macOS packages (`brew bundle`) |
-| `home/run_once_install-packages-darwin.sh` | Runs `brew bundle` once on macOS |
-| `home/run_once_install-packages-linux.sh` | Installs packages via apt/dnf/pacman on Linux |
+| File/Dir                                    | Purpose                                                                         |
+| ------------------------------------------- | ------------------------------------------------------------------------------- |
+| `bootstrap.sh`                              | Fresh-machine setup: installs Homebrew (macOS) + chezmoi, then applies dotfiles |
+| `home/`                                     | Chezmoi source — everything here gets applied to `~`                            |
+| `home/private_dot_config/homebrew/Brewfile` | macOS packages (`brew bundle`)                                                  |
+| `home/run_once_install-packages-darwin.sh`  | Runs `brew bundle` once on macOS                                                |
+| `home/run_once_install-packages-linux.sh`   | Installs packages via apt/dnf/pacman on Linux                                   |
 
 ## Fresh machine
 

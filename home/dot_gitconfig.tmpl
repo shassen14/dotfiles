@@ -1,0 +1,43 @@
+# ~/.gitconfig - Managed by Chezmoi
+# Edit name/email in home/private_dot_config/chezmoi/chezmoi.toml.tmpl
+
+[user]
+	name  = {{ .name | quote }}
+	email = {{ .email | quote }}
+
+[core]
+	editor     = {{ .editor | quote }}
+	pager      = less -R
+	autocrlf   = input
+	whitespace = fix,trailing-space,space-before-tab
+
+[init]
+	defaultBranch = main
+
+[push]
+	default       = current
+	autoSetupRemote = true
+
+[pull]
+	rebase = true
+
+[rebase]
+	autoStash = true
+
+[merge]
+	conflictstyle = diff3
+
+[diff]
+	colorMoved = zebra
+
+[color]
+	ui = auto
+
+[fetch]
+	prune = true
+
+[help]
+	autocorrect = 10
+
+[alias]
+	lg = log --oneline --graph --decorate --all

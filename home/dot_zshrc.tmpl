@@ -95,8 +95,7 @@ fi
 # --- zoxide (smarter cd with frecency) ---
 # Usage: z <partial-path>  e.g. "z nvim" jumps to ~/.config/nvim
 if command -v zoxide >/dev/null; then
-  eval "$(zoxide init zsh)"
-  alias cd='z'
+  eval "$(zoxide init zsh --cmd cd)"
 fi
 
 # --- zsh plugins ---
@@ -116,6 +115,9 @@ _BREW_PREFIX="${HOMEBREW_PREFIX:-/opt/homebrew}"
   source /usr/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
 {{ end -}}
 
-export PATH="$HOME/.cargo/bin:$PATH"
-
-echo "Loaded ~/.zshrc" # Optional: for debugging
+# --- tmux auto-attach ---
+# Opens or re-attaches to a persistent "main" session.
+# Skipped when already inside tmux or in VS Code's terminal.
+if command -v tmux >/dev/null && [ -z "$TMUX" ] && [ "$TERM_PROGRAM" != "vscode" ]; then
+  tmux new-session -A -s main
+fi
