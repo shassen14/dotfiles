@@ -2,7 +2,7 @@
 # run_once_install-packages-linux.sh
 # Installs packages on Linux via the native package manager.
 # Chezmoi re-runs this when the file content changes — bump the version below to force a re-run.
-# version: 4
+# version: 5
 
 [[ "$(uname)" != "Linux" ]] && exit 0
 
@@ -68,4 +68,12 @@ fi
 # Rustup
 if ! command -v rustup &>/dev/null; then
     curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --no-modify-path
+fi
+
+# OrcaSlicer (via Flatpak — not in distro repos)
+if command -v flatpak &>/dev/null; then
+    flatpak remote-add --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
+    flatpak install --noninteractive flathub com.bambulab.OrcaSlicer
+else
+    echo "OrcaSlicer: install flatpak then re-run, or install OrcaSlicer manually." >&2
 fi
