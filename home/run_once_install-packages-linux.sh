@@ -2,7 +2,7 @@
 # run_once_install-packages-linux.sh
 # Installs packages on Linux via the native package manager.
 # Chezmoi re-runs this when the file content changes — bump the version below to force a re-run.
-# version: 5
+# version: 6
 
 [[ "$(uname)" != "Linux" ]] && exit 0
 
@@ -76,4 +76,14 @@ if command -v flatpak &>/dev/null; then
     flatpak install --noninteractive flathub com.bambulab.OrcaSlicer
 else
     echo "OrcaSlicer: install flatpak then re-run, or install OrcaSlicer manually." >&2
+fi
+
+# Ollama (local LLM runner)
+if ! command -v ollama &>/dev/null; then
+    curl -fsSL https://ollama.com/install.sh | sh
+fi
+
+# OpenCode (terminal AI coding agent)
+if ! command -v opencode &>/dev/null; then
+    curl -fsSL https://opencode.ai/install | sh
 fi
