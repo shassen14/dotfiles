@@ -1,3 +1,12 @@
+local JS_LANGS = { "javascript", "typescript" }
+local C_LANGS  = { "c", "cpp" }
+
+-- Builds a path inside the mason data directory
+local function mason_pkg(pkg, ...)
+  local parts = { vim.fn.stdpath("data"), "mason", "packages", pkg, ... }
+  return table.concat(parts, "/")
+end
+
 return {
   {
     "mfussenegger/nvim-dap",
@@ -8,17 +17,21 @@ return {
       "mfussenegger/nvim-dap-python",
       "leoluz/nvim-dap-go",
     },
+    keys = {
+      { "<leader>db", function() require("dap").toggle_breakpoint() end, desc = "Debug: Toggle breakpoint" },
+      { "<leader>dc", function() require("dap").continue() end,          desc = "Debug: Continue" },
+      { "<leader>di", function() require("dap").step_into() end,         desc = "Debug: Step into" },
+      { "<leader>do", function() require("dap").step_over() end,         desc = "Debug: Step over" },
+      { "<leader>dO", function() require("dap").step_out() end,          desc = "Debug: Step out" },
+      { "<leader>du", function() require("dapui").toggle() end,          desc = "Debug: Toggle UI" },
+    },
     config = function()
-      local dap = require("dap")
-      local dapui = require("dapui")
+      local dap    = require("dap")
+      local dapui  = require("dapui")
 
       require("dapui").setup()
       require("nvim-dap-virtual-text").setup()
-
-      -- Python
       require("dap-python").setup("python")
-
-      -- Go (delve)
       require("dap-go").setup()
 
       -- Node / TypeScript
@@ -28,55 +41,52 @@ return {
         port = "${port}",
         executable = {
           command = "node",
-          args = { vim.fn.stdpath("data") .. "/mason/packages/js-debug-adapter/js-debug/src/dapDebugServer.js", "${port}" },
+          args = {
+            mason_pkg("js-debug-adapter", "js-debug", "src", "dapDebugServer.js"),
+            "${port}",
+          },
         },
       }
-      for _, lang in ipairs({ "javascript", "typescript" }) do
+      for _, lang in ipairs(JS_LANGS) do
         dap.configurations[lang] = {
           {
-            type = "pwa-node",
+            type    = "pwa-node",
             request = "launch",
-            name = "Launch file",
+            name    = "Launch file",
             program = "${file}",
-            cwd = "${workspaceFolder}",
+            cwd     = "${workspaceFolder}",
           },
         }
       end
 
       -- C / C++
-      local codelldb = vim.fn.stdpath("data") .. "/mason/packages/codelldb/extension/adapter/codelldb"
       dap.adapters.codelldb = {
         type = "server",
         port = "${port}",
-        executable = { command = codelldb, args = { "--port", "${port}" } },
+        executable = {
+          command = mason_pkg("codelldb", "extension", "adapter", "codelldb"),
+          args    = { "--port", "${port}" },
+        },
       }
-      for _, lang in ipairs({ "c", "cpp" }) do
+      for _, lang in ipairs(C_LANGS) do
         dap.configurations[lang] = {
           {
-            type = "codelldb",
-            request = "launch",
-            name = "Launch",
-            program = function()
+            type         = "codelldb",
+            request      = "launch",
+            name         = "Launch",
+            program      = function()
               return vim.fn.input("Path to executable: ", vim.fn.getcwd() .. "/", "file")
             end,
-            cwd = "${workspaceFolder}",
-            stopOnEntry = false,
+            cwd          = "${workspaceFolder}",
+            stopOnEntry  = false,
           },
         }
       end
 
-      -- Auto open/close dapui
-      dap.listeners.after.event_initialized["dapui_config"] = function() dapui.open() end
-      dap.listeners.before.event_terminated["dapui_config"] = function() dapui.close() end
-      dap.listeners.before.event_exited["dapui_config"] = function() dapui.close() end
+      -- Auto open/close dapui with debug sessions
+      dap.listeners.after.event_initialized["dapui_config"]  = function() dapui.open() end
+      dap.listeners.before.event_terminated["dapui_config"]  = function() dapui.close() end
+      dap.listeners.before.event_exited["dapui_config"]      = function() dapui.close() end
     end,
-    keys = {
-      { "<leader>db", function() require("dap").toggle_breakpoint() end, desc = "Toggle Breakpoint" },
-      { "<leader>dc", function() require("dap").continue() end,          desc = "Continue" },
-      { "<leader>di", function() require("dap").step_into() end,         desc = "Step Into" },
-      { "<leader>do", function() require("dap").step_over() end,         desc = "Step Over" },
-      { "<leader>dO", function() require("dap").step_out() end,          desc = "Step Out" },
-      { "<leader>du", function() require("dapui").toggle() end,          desc = "Toggle DAP UI" },
-    },
   },
 }
