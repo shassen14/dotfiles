@@ -81,6 +81,15 @@ local function setup_lsp_keymaps()
       bmap("<leader>ln", vim.lsp.buf.rename,         "LSP: Rename symbol")
       bmap("<leader>lr", "<cmd>LspRestart<cr>",      "LSP: Restart server")
       bmap("<leader>li", "<cmd>LspInfo<cr>",         "LSP: Server info")
+      bmap("<leader>lh", function()
+        vim.lsp.inlay_hint.enable(not vim.lsp.inlay_hint.is_enabled({ bufnr = buf }), { bufnr = buf })
+      end, "LSP: Toggle inlay hints")
+
+      -- Enable inlay hints automatically for servers that support them
+      local client = vim.lsp.get_client_by_id(event.data.client_id)
+      if client and client:supports_method("textDocument/inlayHint") then
+        vim.lsp.inlay_hint.enable(true, { bufnr = buf })
+      end
     end,
   })
 end
