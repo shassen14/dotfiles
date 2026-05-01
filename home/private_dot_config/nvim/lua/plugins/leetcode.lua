@@ -12,9 +12,7 @@ local SYNC_CONFIG = {
 return {
   "kawre/leetcode.nvim",
   lazy = false,
-  build = ":TSUpdate html",
   dependencies = {
-    "nvim-treesitter/nvim-treesitter",
     "nvim-lua/plenary.nvim",
     "MunifTanjim/nui.nvim",
   },

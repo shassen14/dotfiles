@@ -25,6 +25,15 @@ vim.api.nvim_create_autocmd({ "BufEnter", "InsertLeave" }, {
   desc = "Refresh diagnostics on buffer enter and insert leave",
 })
 
+-- Enable treesitter highlighting for filetypes that have installed parsers.
+-- Replaces nvim-treesitter's highlight module — Neovim 0.11+ handles this natively.
+vim.api.nvim_create_autocmd("FileType", {
+  group = augroup("TreesitterHighlight"),
+  pattern = { "bash", "c", "cpp", "json", "lua", "python", "rust", "toml", "tsx", "typescript", "javascript", "yaml", "html" },
+  callback = function(args) pcall(vim.treesitter.start, args.buf) end,
+  desc = "Enable built-in treesitter highlighting",
+})
+
 -- Strip trailing whitespace on save
 vim.api.nvim_create_autocmd("BufWritePre", {
   group = augroup("StripTrailingWhitespace"),
