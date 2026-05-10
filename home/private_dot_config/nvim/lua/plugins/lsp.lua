@@ -32,6 +32,7 @@ local TOOLS = {
   "isort",
   "prettier",
   "shfmt",
+  "fourmolu",
 }
 
 local DIAGNOSTIC_SIGNS = {

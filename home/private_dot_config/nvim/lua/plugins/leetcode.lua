@@ -11,7 +11,10 @@ local SYNC_CONFIG = {
 
 return {
   "kawre/leetcode.nvim",
-  lazy = false,
+  lazy = true,
+  cond = function()
+    return vim.fn.argc(-1) == 1 and vim.fn.argv(0) == "leetcode.nvim"
+  end,
   dependencies = {
     "nvim-lua/plenary.nvim",
     "MunifTanjim/nui.nvim",

@@ -12,6 +12,7 @@ local FORMATTERS_BY_FT = {
   yaml       = { "prettier" },
   json       = { "prettier" },
   toml       = { "taplo" },
+  haskell    = { "fourmolu" },
 }
 
 return {
