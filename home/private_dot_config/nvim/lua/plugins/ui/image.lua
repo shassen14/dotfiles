@@ -1,6 +1,6 @@
 return {
   "3rd/image.nvim",
-  lazy = false,
+  lazy = true,
   opts = {
     backend  = "kitty",
     processor = "magick_cli",  -- uses ImageMagick CLI, no luarocks needed

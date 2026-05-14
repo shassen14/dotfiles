@@ -11,7 +11,7 @@ local SYNC_CONFIG = {
 
 return {
   "kawre/leetcode.nvim",
-  lazy = true,
+  lazy = false,
   cond = function()
     return vim.fn.argc(-1) == 1 and vim.fn.argv(0) == "leetcode.nvim"
   end,
@@ -20,9 +20,13 @@ return {
     "MunifTanjim/nui.nvim",
   },
   opts = {
-    lang = LEETCODE_LANG,
+    lang          = LEETCODE_LANG,
+    image_support = true,
   },
   config = function(_, opts)
+    -- Load image.nvim after leetcode UI is ready so its terminal probing
+    -- doesn't interfere with the initial render.
+    require("lazy").load({ plugins = { "image.nvim" } })
     require("leetcode").setup(opts)
 
     -- Force line wrapping in the problem description pane
