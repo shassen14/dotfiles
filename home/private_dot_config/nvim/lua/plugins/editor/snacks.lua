@@ -30,6 +30,7 @@ return {
     { "<leader>fb", function() require("snacks").picker.buffers() end, desc = "Find buffers" },
     { "<leader>fh", function() require("snacks").picker.help() end,    desc = "Find help" },
     { "<leader>fr", function() require("snacks").picker.recent() end,      desc = "Recent files" },
-    { "<leader>xd", function() require("snacks").picker.diagnostics() end, desc = "Diagnostics: picker" },
+    { "<leader>xd", function() require("snacks").picker.diagnostics() end,   desc = "Diagnostics: picker" },
+    { "<leader>fs", function() require("snacks").picker.lsp_symbols() end,   desc = "Find LSP symbols" },
   },
 }

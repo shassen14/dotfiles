@@ -15,7 +15,13 @@ map("n", "<C-Right>", "<cmd>vertical resize +2<cr>", { desc = "Increase window w
 -- Buffer navigation
 map("n", "<S-l>", "<cmd>bnext<cr>",     { desc = "Next buffer" })
 map("n", "<S-h>", "<cmd>bprevious<cr>", { desc = "Previous buffer" })
-map("n", "<leader>bd", "<cmd>bdelete<cr>", { desc = "Delete buffer" })
+map("n", "<leader>bd", function()
+  local bufs = vim.fn.getbufinfo({ buflisted = 1 })
+  if #bufs > 1 then
+    vim.cmd("bprevious")
+  end
+  vim.cmd("bdelete #")
+end, { desc = "Delete buffer" })
 
 -- Move selected lines up/down
 map("v", "<A-j>", ":m '>+1<cr>gv=gv", { desc = "Move selection down" })

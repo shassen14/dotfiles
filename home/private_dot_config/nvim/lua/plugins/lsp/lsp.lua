@@ -36,10 +36,10 @@ local TOOLS = {
 }
 
 local DIAGNOSTIC_SIGNS = {
-  Error = "E",
-  Warn  = "W",
-  Hint  = "H",
-  Info  = "I",
+  Error = "󰅚",
+  Warn  = "󰀪",
+  Hint  = "󰌶",
+  Info  = "",
 }
 
 local DIAGNOSTIC_CONFIG = {
