@@ -38,7 +38,8 @@ return {
         local win = vim.api.nvim_get_current_win()
         vim.defer_fn(function()
           if vim.api.nvim_win_is_valid(win) then
-            vim.wo[win].wrap = true
+            vim.wo[win].wrap     = true
+            vim.wo[win].scrolloff = 0
           end
         end, 10)
       end,
@@ -47,7 +48,8 @@ return {
       group = wrap_group,
       callback = function()
         if vim.bo.filetype == "leetcode.nvim" then
-          vim.wo.wrap = true
+          vim.wo.wrap     = true
+          vim.wo.scrolloff = 0
         end
       end,
     })
