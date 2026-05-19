@@ -40,3 +40,12 @@ map("n", "<Esc>", "<cmd>nohlsearch<cr>", { desc = "Clear search highlight" })
 map("n", "[d", vim.diagnostic.goto_prev,  { desc = "Previous diagnostic" })
 map("n", "]d", vim.diagnostic.goto_next,  { desc = "Next diagnostic" })
 map("n", "<leader>e", vim.diagnostic.open_float, { desc = "Show diagnostic float" })
+
+-- Terminal mode: jk exits to normal mode (mirrors insert-mode habit)
+map("t", "jk", [[<C-\><C-n>]], { desc = "Exit terminal mode" })
+
+-- Terminal mode: navigate to adjacent nvim splits without leaving the keyboard row
+map("t", "<C-h>", [[<C-\><C-n><C-w>h]], { desc = "Terminal: move to left window" })
+map("t", "<C-j>", [[<C-\><C-n><C-w>j]], { desc = "Terminal: move to lower window" })
+map("t", "<C-k>", [[<C-\><C-n><C-w>k]], { desc = "Terminal: move to upper window" })
+map("t", "<C-l>", [[<C-\><C-n><C-w>l]], { desc = "Terminal: move to right window" })
