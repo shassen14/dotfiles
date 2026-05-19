@@ -6,9 +6,11 @@ return {
     keymap = {
       preset = "default",
       -- Tab / Shift-Tab to navigate the menu; Enter to confirm
-      ["<Tab>"]   = { "select_next", "fallback" },
-      ["<S-Tab>"] = { "select_prev", "fallback" },
-      ["<CR>"]    = { "accept", "fallback" },
+      ["<Tab>"]     = { "select_next", "fallback" },
+      ["<S-Tab>"]   = { "select_prev", "fallback" },
+      ["<CR>"]      = { "accept", "fallback" },
+      -- Release C-Space so the floating terminal toggle can claim it
+      ["<C-Space>"] = {},
     },
     appearance = {
       nerd_font_variant = "mono",

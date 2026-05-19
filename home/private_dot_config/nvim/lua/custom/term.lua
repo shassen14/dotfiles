@@ -87,10 +87,20 @@ function M.toggle()
       end)
     end
   else
-    M.caller_insert = vim.api.nvim_get_mode().mode:sub(1, 1) == "i"
+    local mode = vim.api.nvim_get_mode().mode
+    M.caller_insert = mode:sub(1, 1) == "i"
     M.caller_win    = vim.api.nvim_get_current_win()
     M.caller_pos    = vim.api.nvim_win_get_cursor(0)
-    M.open()
+    -- nvim_open_win / termopen must be called from normal mode. Any non-normal,
+    -- non-terminal mode needs to be exited first via feedkeys <Esc>.
+    if mode == "n" then
+      M.open()
+    else
+      vim.api.nvim_feedkeys(
+        vim.api.nvim_replace_termcodes("<Esc>", true, false, true), "nx", false
+      )
+      vim.schedule(M.open)
+    end
   end
 end
 
