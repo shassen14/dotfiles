@@ -95,6 +95,10 @@ bind X kill-window
 # Use Vi keybindings in copy mode
 setw -g mode-keys vi
 
+# Half-page scrolling like Vim (C-u / C-d)
+bind-key -T copy-mode-vi C-u send-keys -X halfpage-up
+bind-key -T copy-mode-vi C-d send-keys -X halfpage-down
+
 # Setup 'v' to begin selection and 'y' to yank (copy)
 # Use 'C-v' for rectangle toggle like Vim visual block mode
 bind-key -T copy-mode-vi v send-keys -X begin-selection

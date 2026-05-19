@@ -26,7 +26,6 @@ function M.open()
     border   = "single",
   })
   -- Keep the cursor (bottom of output) always visible.
-  vim.wo[M.win].scrolloff = 999
   if fresh or vim.bo[M.buf].buftype ~= "terminal" then
     vim.fn.termopen(vim.o.shell, {
       on_exit = function()
