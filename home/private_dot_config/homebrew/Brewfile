@@ -59,3 +59,6 @@ cask "orcaslicer"
 cask "obsidian"
 cask "spotify"
 cask "visual-studio-code"
+
+# Optional: Haskell (uncomment to install)
+# brew "ghcup"   # Haskell toolchain manager — gives you ghc, ghci, cabal, stack

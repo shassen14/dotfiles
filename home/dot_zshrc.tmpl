@@ -115,6 +115,10 @@ _BREW_PREFIX="${HOMEBREW_PREFIX:-/opt/homebrew}"
   source /usr/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
 {{ end -}}
 
+# --- Haskell (ghcup) ---
+# Only active when ghcup is installed; no-op otherwise.
+[ -f "$HOME/.ghcup/env" ] && source "$HOME/.ghcup/env"
+
 # --- tmux auto-attach ---
 # Opens or re-attaches to a persistent "main" session.
 # Skipped when already inside tmux or in VS Code's terminal.

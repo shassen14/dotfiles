@@ -9,6 +9,7 @@ local SERVERS = {
   "yamlls",
   "jsonls",
   "taplo",
+  "hls",
 }
 
 -- Per-server settings applied on top of nvim-lspconfig defaults.
