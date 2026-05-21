@@ -9,12 +9,17 @@ local SERVERS = {
   "yamlls",
   "jsonls",
   "taplo",
-  "hls",
+  "sqlls",
 }
 
 -- Per-server settings applied on top of nvim-lspconfig defaults.
 -- Most servers need nothing here; only list what differs from defaults.
 local SERVER_OVERRIDES = {
+  -- Use rustup's rust-analyzer so it always matches the active toolchain.
+  -- Mason's standalone binary drifts out of sync and causes offset errors.
+  rust_analyzer = {
+    cmd = { "rustup", "run", "stable", "rust-analyzer" },
+  },
   lua_ls = {
     settings = {
       Lua = {
@@ -34,6 +39,7 @@ local TOOLS = {
   "prettier",
   "shfmt",
   "fourmolu",
+  "sql-formatter",
 }
 
 local DIAGNOSTIC_SIGNS = {

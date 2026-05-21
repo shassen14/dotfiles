@@ -3,11 +3,12 @@
 -- or explicit :bd!.
 local M = {}
 
-M.buf = nil
-M.win = nil
-M.last_mode = nil    -- 't' = terminal-job, 'n' = terminal-normal
-M.caller_win = nil
-M.caller_pos = nil
+M.buf       = nil
+M.win       = nil
+M.last_mode = nil   -- 't' = terminal-job, 'n' = terminal-normal
+M.last_view = nil
+M.caller_win    = nil
+M.caller_pos    = nil
 M.caller_insert = false
 
 function M.open()
@@ -25,7 +26,6 @@ function M.open()
     col      = math.floor((vim.o.columns - w) / 2),
     border   = "single",
   })
-  -- Keep the cursor (bottom of output) always visible.
   if fresh or vim.bo[M.buf].buftype ~= "terminal" then
     vim.fn.termopen(vim.o.shell, {
       on_exit = function()
@@ -42,15 +42,19 @@ function M.open()
     return
   end
   vim.api.nvim_set_current_win(M.win)
-  if M.last_mode == "t" then
-    vim.cmd("startinsert")
-  end
+  -- When focus moves to a terminal buffer, Neovim auto-enters terminal-job
+  -- mode which forces the view to the bottom. stopinsert first so winrestview
+  -- can set the scroll position, then re-enter terminal mode if needed.
+  if M.last_mode ~= "t" then vim.cmd("stopinsert") end
+  if M.last_view then vim.fn.winrestview(M.last_view) end
+  if M.last_mode == "t" then vim.cmd("startinsert") end
 end
 
 function M.hide()
   if M.win and vim.api.nvim_win_is_valid(M.win) then
     vim.api.nvim_set_current_win(M.win)
     M.last_mode = vim.api.nvim_get_mode().mode == "t" and "t" or "n"
+    M.last_view = vim.fn.winsaveview()
     vim.api.nvim_win_close(M.win, true)
     M.win = nil
   end
@@ -63,7 +67,7 @@ function M.toggle()
     local caller_pos    = M.caller_pos
     M.hide()
     if resume_insert then
-      vim.schedule(function()
+      vim.defer_fn(function()
         if caller_win and vim.api.nvim_win_is_valid(caller_win) then
           vim.api.nvim_set_current_win(caller_win)
         end
@@ -83,15 +87,13 @@ function M.toggle()
         else
           vim.cmd("startinsert")
         end
-      end)
+      end, 10)
     end
   else
     local mode = vim.api.nvim_get_mode().mode
     M.caller_insert = mode:sub(1, 1) == "i"
     M.caller_win    = vim.api.nvim_get_current_win()
     M.caller_pos    = vim.api.nvim_win_get_cursor(0)
-    -- nvim_open_win / termopen must be called from normal mode. Any non-normal,
-    -- non-terminal mode needs to be exited first via feedkeys <Esc>.
     if mode == "n" then
       M.open()
     else
@@ -104,13 +106,12 @@ function M.toggle()
 end
 
 -- Toggle binding: <C-Space> in normal, insert, and terminal modes.
--- Three variants cover different terminal encodings for Ctrl-Space.
 for _, key in ipairs({ "<C-Space>", "<C-@>", "<NUL>" }) do
   vim.keymap.set({ "n", "i", "t" }, key, M.toggle, { desc = "Toggle floating terminal" })
 end
 
 -- In a terminal buffer, `gf` opens the file under the cursor in the main
--- (non-floating) window. Parses optional trailing :LINE or :LINE:COL.
+-- (non-floating) window.
 vim.api.nvim_create_autocmd("TermOpen", {
   group = vim.api.nvim_create_augroup("FloatTermGf", { clear = true }),
   callback = function(ev)
@@ -118,7 +119,6 @@ vim.api.nvim_create_autocmd("TermOpen", {
       local line = vim.api.nvim_get_current_line()
       local col  = vim.api.nvim_win_get_cursor(0)[2] + 1
 
-      -- Expand whitespace-delimited token around the cursor.
       local s, e = col, col
       while s > 1 and not line:sub(s - 1, s - 1):match("%s") do s = s - 1 end
       while e <= #line and not line:sub(e, e):match("%s") do e = e + 1 end
@@ -141,7 +141,6 @@ vim.api.nvim_create_autocmd("TermOpen", {
         return
       end
 
-      -- Find the first non-floating window to open the file in.
       local target
       for _, w in ipairs(vim.api.nvim_tabpage_list_wins(0)) do
         if (vim.api.nvim_win_get_config(w).relative or "") == "" then

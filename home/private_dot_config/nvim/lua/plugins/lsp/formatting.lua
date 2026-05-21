@@ -13,6 +13,7 @@ local FORMATTERS_BY_FT = {
   json       = { "prettier" },
   toml       = { "taplo" },
   haskell    = { "fourmolu" },
+  sql        = { "sql_formatter" },
 }
 
 return {
