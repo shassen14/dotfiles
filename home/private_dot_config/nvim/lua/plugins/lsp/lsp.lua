@@ -15,11 +15,12 @@ local SERVERS = {
 -- Per-server settings applied on top of nvim-lspconfig defaults.
 -- Most servers need nothing here; only list what differs from defaults.
 local SERVER_OVERRIDES = {
-  -- Use rustup's rust-analyzer so it always matches the active toolchain.
-  -- Mason's standalone binary drifts out of sync and causes offset errors.
-  rust_analyzer = {
-    cmd = { "rustup", "run", "stable", "rust-analyzer" },
-  },
+  -- rust_analyzer uses the default cmd ("rust-analyzer"), which mason prepends
+  -- to PATH. Don't pin to `rustup run stable` here: the toolchain is Homebrew,
+  -- not rustup, and rustup's rust-analyzer component isn't installed, so that
+  -- command fails to spawn. The "Invalid offset" errors seen in leetcode are a
+  -- document-position desync from single-file (detached) mode, not a binary
+  -- mismatch — see the LeetCode rust note below.
   lua_ls = {
     settings = {
       Lua = {
@@ -60,6 +61,27 @@ local DIAGNOSTIC_CONFIG = {
     source = "always",
   },
 }
+
+-- rust-analyzer in detached single-file mode (e.g. leetcode solutions with no
+-- Cargo.toml) emits harmless "Invalid offset" request errors when its document
+-- copy briefly desyncs from the buffer. They're non-fatal, but the notifier
+-- repeats them over the buffer and blocks typing. Drop just those messages.
+-- snacks owns vim.notify by the time this runs (it loads first via priority).
+local function suppress_offset_noise()
+  local orig_notify = vim.notify
+  local function is_offset_noise(msg)
+    return type(msg) == "string" and msg:find("Invalid offset", 1, true) ~= nil
+  end
+  vim.notify = function(msg, level, opts)
+    if is_offset_noise(msg) then return end
+    return orig_notify(msg, level, opts)
+  end
+  local orig_notify_once = vim.notify_once
+  vim.notify_once = function(msg, level, opts)
+    if is_offset_noise(msg) then return end
+    return orig_notify_once(msg, level, opts)
+  end
+end
 
 local function setup_diagnostics()
   for severity, icon in pairs(DIAGNOSTIC_SIGNS) do
@@ -134,6 +156,7 @@ return {
       "saghen/blink.cmp",
     },
     config = function()
+      suppress_offset_noise()
       setup_diagnostics()
       setup_lsp_keymaps()
 
