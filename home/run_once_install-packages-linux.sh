@@ -2,7 +2,7 @@
 # run_once_install-packages-linux.sh
 # Installs packages on Linux via the native package manager.
 # Chezmoi re-runs this when the file content changes — bump the version below to force a re-run.
-# version: 11
+# version: 12
 
 [[ "$(uname)" != "Linux" ]] && exit 0
 
@@ -20,6 +20,18 @@ set -e  # Strict mode for the core apt block below.
 
 # ── Core apt packages ────────────────────────────────────────────────────────
 if command -v apt-get &>/dev/null; then
+    # Neovim PPA (latest stable/unstable builds)
+    if [ ! -f /usr/share/keyrings/neovim-ppa.gpg ]; then
+        curl -fsSL "https://keyserver.ubuntu.com/pks/lookup?op=get&search=0x9DBB0BE9366964F134855E2255F96FCF8231B6DD" | sudo gpg --dearmor -o /usr/share/keyrings/neovim-ppa.gpg
+        echo "deb [signed-by=/usr/share/keyrings/neovim-ppa.gpg] https://ppa.launchpadcontent.net/neovim-ppa/unstable/ubuntu $(lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/neovim-ppa.list > /dev/null
+    fi
+
+    # OBS Studio PPA
+    if [ ! -f /usr/share/keyrings/obsproject.gpg ]; then
+        curl -fsSL "https://keyserver.ubuntu.com/pks/lookup?op=get&search=0xBC7345F522079769F5BBE987EFC71127F425E228" | sudo gpg --dearmor -o /usr/share/keyrings/obsproject.gpg
+        echo "deb [signed-by=/usr/share/keyrings/obsproject.gpg] https://ppa.launchpadcontent.net/obsproject/obs-studio/ubuntu $(lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/obs-studio.list > /dev/null
+    fi
+
     sudo apt-get update -q
     sudo apt-get install -y \
         bash zsh git curl wget jq gnupg \
@@ -27,7 +39,7 @@ if command -v apt-get &>/dev/null; then
         neovim ripgrep fd-find tmux \
         fzf zsh-autosuggestions zsh-syntax-highlighting \
         python3 python3-pip python3-venv \
-        imagemagick \
+        obs-studio imagemagick \
         xclip unzip \
         software-properties-common \
         libfuse2t64
