@@ -29,4 +29,14 @@ else
     chezmoi init "$DOTFILES_REPO"
 fi
 
-exec chezmoi apply -v
+chezmoi apply -v
+
+# Switch default shell to zsh on Linux (zsh is installed by the run_once script above)
+if [[ "$(uname)" == "Linux" ]] && command -v zsh &>/dev/null; then
+    ZSH_PATH="$(command -v zsh)"
+    if [[ "$SHELL" != "$ZSH_PATH" ]]; then
+        echo "Changing default shell to zsh..."
+        sudo usermod -s "$ZSH_PATH" "$USER"
+        echo "Shell changed — log out and back in (or run: exec zsh)"
+    fi
+fi

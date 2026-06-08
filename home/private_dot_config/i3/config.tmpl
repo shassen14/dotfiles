@@ -1,189 +1,103 @@
-# ~/.config/i3/config - Simplistic i3 Config
-# Managed by Chezmoi: {{ .chezmoi.sourceFile }}
+# i3 config — Managed by chezmoi: {{ .chezmoi.sourceFile }}
 
-# --- Monitor Outputs ---
-# Set these based on the output of `xrandr --query`
-# Use names like DP-0, DP-2, HDMI-0, eDP-1 etc.
-# Wrap in quotes if names contain special characters (unlikely for xrandr output)
-set $monitor_left DP-2   # Your identified left monitor
-set $monitor_right DP-0  # Your identified right monitor
-# Optional: Define primary monitor if needed by other rules/scripts
-set $monitor_primary $monitor_left # Or $monitor_right
-
-# -----------------------------------------------------------------------------
-# --- Variables ---
-# -----------------------------------------------------------------------------
-# Set the modifier key. Mod4 is the "Super" key (Windows key).
-set $mod Mod4
-
-# Define your preferred terminal emulator.
-# This uses the 'terminal' variable from your chezmoi.toml's [data] section.
-# If not set there, it defaults to 'x-terminal-emulator', which should
-# point to a system-installed terminal (like gnome-terminal, xfce4-terminal, etc.).
-# Ensure your Ansible playbook installs a terminal (e.g., alacritty, kitty, xfce4-terminal).
+# ── Variables ─────────────────────────────────────────────────────────────────
+set $mod  Mod4
 set $term {{ .terminal_cmd_linux | default "ghostty" }}
+set $menu rofi -show drun -theme {{ .chezmoi.homeDir }}/.config/rofi/simple_theme.rasi
 
-# Define your application launcher.
-# dmenu is very lightweight and traditional with i3.
-# Ensure 'suckless-tools' (provides dmenu) is installed by Ansible.
-# set $menu dmenu_run -fn 'monospace-10' -nb '#222222' -nf '#bbbbbb' -sb '#005577' -sf '#eeeeee'
-# Alternative: Rofi (more features, requires 'rofi' package from Ansible)
-set $menu rofi -show drun -theme {{ .chezmoi.homeDir }}/.config/rofi/simple_theme.rasi # (You'd need to create this theme file)
+# ── Workspaces ────────────────────────────────────────────────────────────────
+set $ws1  "1"
+set $ws2  "2"
+set $ws3  "3"
+set $ws4  "4"
+set $ws5  "5"
+set $ws6  "6"
+set $ws7  "7"
+set $ws8  "8"
+set $ws9  "9"
+set $ws10 "10"
 
-# Font for window titles. Will also be used by the bar unless a different font
-# is used in the bar {} block below. Ensure the icon font is included here.
-font pango:Fira Code Regular 10, Font Awesome 6 Free Solid 10
-# --- OR --- if using Nerd Fonts (replace FiraCodeNerdFont with your actual font name)
-# font pango:FiraCode Nerd Font Mono 10
+# ── Monitor assignments ───────────────────────────────────────────────────────
+# Set based on `xrandr --query` output
+set $monitor_left  {{ .monitor_left | default "DP-2" }}
+set $monitor_right {{ .monitor_right | default "DP-0" }}
 
-# -----------------------------------------------------------------------------
-# --- Colors & Appearance (Dracula Inspired Theme) ---
-# -----------------------------------------------------------------------------
-# Dracula Color Palette
-set $background #282a36
-set $current_line #44475a
-set $foreground #f8f8f2
-set $comment #6272a4
-set $cyan #8be9fd
-set $green #50fa7b
-set $orange #ffb86c
-set $pink #ff79c6
-set $purple #bd93f9
-set $red #ff5555
-set $yellow #f1fa8c
+workspace $ws1  output $monitor_left
+workspace $ws2  output $monitor_left
+workspace $ws3  output $monitor_left
+workspace $ws4  output $monitor_left
+workspace $ws5  output $monitor_right
+workspace $ws6  output $monitor_right
+workspace $ws7  output $monitor_right
 
-# Window Colors (Your existing ones are good)
-client.focused                   $purple     $background $foreground $purple     $purple
-client.focused_inactive          $current_line $background $comment    $current_line $current_line
-client.unfocused                 $background $background $comment    $current_line $background
-client.urgent                    $red        $red        $foreground $red        $red
-client.placeholder               $background $background $foreground $background $background
-client.background $background
+# ── Appearance ────────────────────────────────────────────────────────────────
+font pango:FiraCode Nerd Font 10
 
-# -----------------------------------------------------------------------------
-# --- Window Behavior & Appearance ---
-# -----------------------------------------------------------------------------
-floating_modifier $mod
-
-# --- Borders ---
-# Use normal borders with a width of 2 pixels for better visibility
-default_border normal 2
-default_floating_border normal 2
-# Or if you prefer pixel borders:
-# default_border pixel 2
-# default_floating_border pixel 2
-
-# Hide borders smartly
+default_border pixel 2
+default_floating_border pixel 2
 hide_edge_borders smart
-# Consider enabling smart borders (show border only when needed)
 smart_borders on
-
-# --- Gaps ---
-# Enable gaps for spacing between windows and screen edges
 gaps inner 8
 gaps outer 5
-# Only show gaps when more than one window is present
 smart_gaps on
-
-# Popups during fullscreen mode (keep as is)
 popup_during_fullscreen smart
 
-# -----------------------------------------------------------------------------
-# --- CORE KEYBINDINGS ---
-# -----------------------------------------------------------------------------
+set $bg      #282a36
+set $bg-alt  #44475a
+set $fg      #f8f8f2
+set $comment #6272a4
+set $purple  #bd93f9
+set $red     #ff5555
+set $yellow  #f1fa8c
 
-# Launch a terminal
-# $mod + Shift + t  (cross-platform standard) — $mod + Enter kept as i3 muscle-memory
-bindsym $mod+Shift+t exec $term
-bindsym $mod+Return exec $term
+#                       border    bg        text      indicator  child
+client.focused          $purple   $bg       $fg       $purple    $purple
+client.focused_inactive $bg-alt   $bg       $comment  $bg-alt    $bg-alt
+client.unfocused        $bg       $bg       $comment  $bg        $bg
+client.urgent           $red      $red      $fg       $red       $red
 
-# Kill focused window
-# $mod + Shift + q
-bindsym $mod+Shift+q kill
+# ── Core keybindings ──────────────────────────────────────────────────────────
+floating_modifier $mod
 
-# Launch application launcher (dmenu or rofi)
-# $mod + d
-bindsym $mod+d exec $menu
+bindsym $mod+Return       exec $term
+bindsym $mod+Shift+t      exec $term
+bindsym $mod+Shift+q      kill
+bindsym $mod+d            exec $menu
+bindsym $mod+Shift+Return fullscreen toggle
+bindsym $mod+f            floating toggle
+bindsym $mod+Shift+space  floating toggle
+bindsym $mod+space        focus mode_toggle
 
-# --- Basic i3 Navigation & Manipulation (Vim-like an Arrows) ---
-
-# Change focus
-bindsym $mod+h focus left
-bindsym $mod+j focus down
-bindsym $mod+k focus up
-bindsym $mod+l focus right
-# Or use arrow keys
-bindsym $mod+Left focus left
-bindsym $mod+Down focus down
-bindsym $mod+Up focus up
+# Focus
+bindsym $mod+h     focus left
+bindsym $mod+j     focus down
+bindsym $mod+k     focus up
+bindsym $mod+l     focus right
+bindsym $mod+Left  focus left
+bindsym $mod+Down  focus down
+bindsym $mod+Up    focus up
 bindsym $mod+Right focus right
 
-# Move focused window
-bindsym $mod+Shift+h move left
-bindsym $mod+Shift+j move down
-bindsym $mod+Shift+k move up
-bindsym $mod+Shift+l move right
-# Or use arrow keys
-bindsym $mod+Shift+Left move left
-bindsym $mod+Shift+Down move down
-bindsym $mod+Shift+Up move up
+# Move
+bindsym $mod+Shift+h     move left
+bindsym $mod+Shift+j     move down
+bindsym $mod+Shift+k     move up
+bindsym $mod+Shift+l     move right
+bindsym $mod+Shift+Left  move left
+bindsym $mod+Shift+Down  move down
+bindsym $mod+Shift+Up    move up
 bindsym $mod+Shift+Right move right
 
-# Split orientation (how new windows will open relative to current)
-bindsym $mod+b split h  # horizontal split (new window to the right)
-bindsym $mod+v split v  # vertical split (new window below)
-
-# Toggle fullscreen mode for the focused window
-# $mod + Shift + Enter  (cross-platform standard)
-bindsym $mod+Shift+Return fullscreen toggle
-
-# Change container layout (try these out to see what they do)
-bindsym $mod+s layout stacking # Windows stack on top of each other
-bindsym $mod+w layout tabbed   # Windows become tabs
-bindsym $mod+e layout toggle split # Toggle between splith/splitv for the container
-
-# Toggle tiling / floating for the focused window
-# $mod + f  (cross-platform standard) — $mod + Shift + space kept as i3 muscle-memory
-bindsym $mod+f floating toggle
-bindsym $mod+Shift+space floating toggle
-
-# Change focus between tiling and floating windows
-bindsym $mod+space focus mode_toggle
-
-# --- Resize (cross-platform standard: $mod+minus shrink, $mod+equal grow) ---
+# Layout
+bindsym $mod+b split h
+bindsym $mod+v split v
+bindsym $mod+s layout stacking
+bindsym $mod+w layout tabbed
+bindsym $mod+e layout toggle split
 bindsym $mod+minus resize shrink width 50 px or 5 ppt
 bindsym $mod+equal resize grow width 50 px or 5 ppt
 
-# --- Workspace -> Monitor Assignment ---
-# Assign workspaces 1-4 to the left monitor
-workspace $ws1 output $monitor_left
-workspace $ws2 output $monitor_left
-workspace $ws3 output $monitor_left
-workspace $ws4 output $monitor_left
-
-# Assign workspaces 5-7 (and maybe more) to the right monitor
-workspace $ws5 output $monitor_right
-workspace $ws6 output $monitor_right
-workspace $ws7 output $monitor_right
-# Assign others if you use them frequently on the right
-# workspace $ws8 output $monitor_right
-# workspace $ws9 output $monitor_right
-# workspace $ws10 output $monitor_right # Example: Settings on right
-
-# --- Workspaces ---
-# Define simple workspace names
-set $ws1 "1"
-set $ws2 "2"
-set $ws3 "3"
-set $ws4 "4"
-set $ws5 "5"
-set $ws6 "6"
-set $ws7 "7"
-set $ws8 "8"
-set $ws9 "9"
-set $ws10 "10"
-
-# Switch to workspace
+# Workspace switch
 bindsym $mod+1 workspace number $ws1
 bindsym $mod+2 workspace number $ws2
 bindsym $mod+3 workspace number $ws3
@@ -195,7 +109,7 @@ bindsym $mod+8 workspace number $ws8
 bindsym $mod+9 workspace number $ws9
 bindsym $mod+0 workspace number $ws10
 
-# Move focused container to workspace
+# Move to workspace
 bindsym $mod+Shift+1 move container to workspace number $ws1
 bindsym $mod+Shift+2 move container to workspace number $ws2
 bindsym $mod+Shift+3 move container to workspace number $ws3
@@ -207,154 +121,53 @@ bindsym $mod+Shift+8 move container to workspace number $ws8
 bindsym $mod+Shift+9 move container to workspace number $ws9
 bindsym $mod+Shift+0 move container to workspace number $ws10
 
-# --- i3 Session Control ---
-# Reload the configuration file (after making changes)
-bindsym $mod+Shift+c reload
+# ── App → workspace assignments ───────────────────────────────────────────────
+assign [class="com.mitchellh.ghostty"]    $ws1
+assign [class="Brave-browser"]            $ws2
+assign [class="obsidian"]                 $ws3
+assign [class="com.obsproject.Studio"]    $ws5
+assign [class="Spotify"]                  $ws7
 
-# Restart i3 inplace (preserves layout/session, useful after upgrades)
-bindsym $mod+Shift+r restart
-
-# Exit i3 (logs you out of your X session) - uses i3-nagbar for confirmation
-bindsym $mod+Shift+e exec "i3-nagbar -t warning -m 'You pressed the exit shortcut. Do you really want to exit i3? This will end your X session.' -B 'Yes, exit i3' 'i3-msg exit'"
-
-# -----------------------------------------------------------------------------
-# --- Utility Keybindings ---
-# -----------------------------------------------------------------------------
-
-# --- Suspend / Lock ---
-# Lock screen (already defined)
+# ── Utilities ─────────────────────────────────────────────────────────────────
 bindsym $mod+Control+l exec {{ .chezmoi.homeDir }}/.config/i3/scripts/lock.sh
+bindsym $mod+Shift+s   exec {{ .chezmoi.homeDir }}/.config/i3/scripts/lock_and_suspend.sh
+bindsym $mod+Shift+b   exec {{ .browser_cmd_linux | default "xdg-open http://" }}
+bindsym $mod+Shift+f   exec thunar
+bindsym $mod+p         exec --no-startup-id flameshot gui -p {{ .chezmoi.homeDir }}/Pictures/Screenshots
+bindsym $mod+Shift+p   exec --no-startup-id flameshot full -c
 
-# Lock screen AND Suspend system
-bindsym $mod+Shift+s exec {{ .chezmoi.homeDir }}/.config/i3/scripts/lock_and_suspend.sh
-
-# Screenshot (using flameshot, installed via Ansible)
-# Launch GUI for region selection, save to Screenshots folder
-bindsym $mod+p exec --no-startup-id flameshot gui -p {{ .chezmoi.homeDir }}/Pictures/Screenshots
-# Capture full screen and copy directly to clipboard
-bindsym $mod+Shift+p exec --no-startup-id flameshot full -c
-
-# --- Launch Web Browser ---
-# Uses the '.browser' variable defined in chezmoi.toml data section
-bindsym $mod+Shift+b exec {{ .browser_cmd_linux | default "xdg-open http://localhost" }}
-
-# --- File Manager ---
-bindsym $mod+Shift+f exec thunar
-
-# --- Volume control ---
-# Uses pactl (assuming PulseAudio/PipeWire default sink) and helper script for notifications.
-# Adjust volume and trigger notification script
+# Volume
 bindsym XF86AudioRaiseVolume exec --no-startup-id pactl set-sink-volume @DEFAULT_SINK@ +2% && {{ .chezmoi.homeDir }}/.config/i3/scripts/notify_volume.sh
 bindsym XF86AudioLowerVolume exec --no-startup-id pactl set-sink-volume @DEFAULT_SINK@ -2% && {{ .chezmoi.homeDir }}/.config/i3/scripts/notify_volume.sh
-# Toggle mute and trigger notification script
-bindsym XF86AudioMute exec --no-startup-id pactl set-sink-mute @DEFAULT_SINK@ toggle && {{ .chezmoi.homeDir }}/.config/i3/scripts/notify_volume.sh
+bindsym XF86AudioMute        exec --no-startup-id pactl set-sink-mute @DEFAULT_SINK@ toggle && {{ .chezmoi.homeDir }}/.config/i3/scripts/notify_volume.sh
 
-# --- Media player control ---
-# Uses playerctl (works with Spotify, VLC, web browsers with MPRIS support, etc.)
+# Brightness
+bindsym XF86MonBrightnessUp   exec --no-startup-id brightnessctl set +5% && {{ .chezmoi.homeDir }}/.config/i3/scripts/notify_brightness.sh
+bindsym XF86MonBrightnessDown exec --no-startup-id brightnessctl set 5%- && {{ .chezmoi.homeDir }}/.config/i3/scripts/notify_brightness.sh
+
+# Media
 bindsym XF86AudioPlay exec --no-startup-id playerctl play-pause
 bindsym XF86AudioNext exec --no-startup-id playerctl next
 bindsym XF86AudioPrev exec --no-startup-id playerctl previous
-bindsym XF86AudioStop exec --no-startup-id playerctl stop # Optional: some players don't support stop well
 
-# --- Brightness control ---
-# Uses 'light' command and helper script for notifications.
-# Ensure 'light' package is installed and user has permission (often requires adding user to 'video' group).
-# TODO: Not needed right now. My setup doesn't have this option
-# bindsym XF86MonBrightnessUp exec --no-startup-id light -A 5 && {{ .chezmoi.homeDir }}/.config/i3/scripts/notify_brightness.sh
-# bindsym XF86MonBrightnessDown exec --no-startup-id light -U 5 && {{ .chezmoi.homeDir }}/.config/i3/scripts/notify_brightness.sh
+# i3 session
+bindsym $mod+Shift+c reload
+bindsym $mod+Shift+r restart
+bindsym $mod+Shift+e exec "i3-nagbar -t warning -m 'Exit i3?' -B 'Yes' 'i3-msg exit'"
 
-# --- Optional: Launch GUI Helpers ---
-# Open pavucontrol (PulseAudio Volume Control GUI)
-# bindsym $mod+Shift+v exec pavucontrol
-
-# Open arandr (Screen layout editor)
-# bindsym $mod+Shift+m exec arandr
-
-# Open lxappearance (GTK Theme/Icon/Font Settings)
-# bindsym $mod+Shift+a exec lxappearance
-
-# -----------------------------------------------------------------------------
-# --- Status Bar (using i3status-rust) ---
-# -----------------------------------------------------------------------------
-bar {
-    # NEW: Point to i3status-rust and its config file
-    # status_command i3status-rs {{ .chezmoi.homeDir }}/.config/i3status-rust/config.toml
-    status_command i3status-rs
-
-    position top
-    tray_output primary # Show tray on primary monitor
-    tray_padding 2 px
-    # Pixels padding for tray
-
-    # Font for the bar - MUST include the icon font used in config.toml
-    font pango:Fira Code Regular 10, Font Awesome 6 Free Solid 10
-    # Or: font pango:FiraCode Nerd Font Mono 10
-
-    # Colors for workspace buttons (using your Dracula variables)
-    colors {
-        background $background
-        statusline $foreground # Default text color for i3status-rust output
-        separator  $comment    # Separator line color
-
-        #                   border       background   text
-        focused_workspace   $purple      $purple      $foreground # Currently focused workspace button
-        active_workspace    $current_line $current_line $foreground # Visible but inactive workspace button (on same monitor)
-        inactive_workspace  $background  $background  $comment    # Workspace button on another monitor or inactive
-        urgent_workspace    $red         $red         $foreground # Workspace button with urgent hint
-        binding_mode        $yellow      $background  $foreground # Color when in a binding mode (like resize)
-    }
-}
-
-# -----------------------------------------------------------------------------
-# --- Startup Applications (Optional) ---
-# -----------------------------------------------------------------------------
-# exec --no-startup-id <command>
-
-# Switching caps lock with escape key
+# ── Startup ───────────────────────────────────────────────────────────────────
 exec --no-startup-id setxkbmap -option caps:swapescape
-
-# Example: Set a simple background color (requires xsetroot, usually installed)
-# exec --no-startup-id xsetroot -solid "#333333"
-# Example: Set wallpaper using feh (requires 'feh' package from Ansible)
-# Ensure you have a wallpaper at this path or change it.
 exec --no-startup-id feh --bg-scale {{ .chezmoi.homeDir }}/images/wallpaper.png
-
-# Example: Start a compositor for basic transparency/shadows (requires 'picom' from Ansible)
-# Create a simple picom.conf or use its defaults.
 exec --no-startup-id picom --daemon
-
-# Example: Start a notification daemon (requires 'dunst' from Ansible)
 exec --no-startup-id dunst
+exec --no-startup-id xss-lock -- {{ .chezmoi.homeDir }}/.config/i3/scripts/lock.sh
+exec --no-startup-id autorandr --change
+exec_always --no-startup-id {{ .chezmoi.homeDir }}/.config/polybar/launch.sh
 
-# --- Launch Specific Applications on Startup ---
-# Use 'i3-msg' to execute commands after i3 has started, including switching
-# workspaces and then executing the application. Use 'sleep' to stagger them.
-
-# Workspace 1 (Left Monitor): Terminal
-# Switch to ws 1, then execute terminal. Delay slightly.
-exec --no-startup-id sleep 1 && i3-msg 'workspace number 1; exec $term' # Use number 1
-
-# Workspace 2 (Left Monitor): Brave Browser (Instance 1)
-# Switch to ws 2, then execute Brave. Delay slightly more.
-exec --no-startup-id sleep 2 && i3-msg 'workspace number 2; exec brave-browser' # Use number 2
-
-# Workspace 3 (Left Monitor): Obsidian
-# Switch to ws 3, then execute Obsidian.
-exec --no-startup-id sleep 3 && i3-msg 'workspace number 3; exec obsidian' # Use number 3
-
-# Workspace 5 (Right Monitor): OBS Studio
-# Switch to ws 5, then execute OBS.
-exec --no-startup-id sleep 4 && i3-msg 'workspace number 5; exec obs' # Use number 5
-
-# Workspace 6 (Right Monitor): Brave Browser (Instance 2)
-# Switch to ws 6, then execute Brave.
-exec --no-startup-id sleep 5 && i3-msg 'workspace number 6; exec brave-browser' # Use number 6
-
-# Workspace 7 (Right Monitor): Spotify
-# Switch to ws 7, then execute Spotify.
-exec --no-startup-id sleep 6 && i3-msg 'workspace number 7; exec spotify' # Use number 6
-
-# Optional: Switch back to workspace 1 after launching everything
-exec --no-startup-id sleep 7 && i3-msg 'workspace number 1' # Use number 1
-
-# --- End of i3 Configuration ---
+# Startup apps — workspace placement handled by assign rules above
+exec --no-startup-id {{ .terminal_cmd_linux | default "ghostty" }}
+exec --no-startup-id brave-browser
+exec --no-startup-id obsidian
+exec --no-startup-id obs
+exec --no-startup-id spotify
+exec --no-startup-id i3-msg 'workspace number 1'

@@ -1,5 +1,5 @@
 # ~/.config/dunst/dunstrc
-# Managed by Chezmoi: {{ .chezmoi.sourceFile }}
+# Managed by Chezmoi: home/private_dot_config/dunst/dunstrc
 
 [global]
     # Display & Font
@@ -43,8 +43,7 @@
     # Icons
     icon_position = left # left, right, off
     max_icon_size = 32
-    icon_path = /usr/share/icons/Papirus/16x16/actions/:/usr/share/icons/Papirus/16x16/apps/:/usr/share/icons/Papirus/22x22/actions/:/usr/share/icons/Papirus/22x22/apps/:/usr/share/icons/Papirus/24x24/actions/:/usr/share/icons/Papirus/24x24/apps/:/usr/share/icons/Papirus/32x32/actions/:/usr/share/icons/Papirus/32x32/apps/:/usr/share/icons/Papirus/48x48/actions/:/usr/share/icons/Papirus/48x48/apps/:/usr/share/icons/Papirus/64x64/actions/:/usr/share/icons/Papirus/64x64/apps/:/usr/share/icons/Papirus/scalable/actions/:/usr/share/icons/Papirus/scalable/apps/
-    # Adjust icon_path based on your installed icon themes
+    icon_path = /usr/share/icons/hicolor/32x32/apps/:/usr/share/icons/hicolor/48x48/apps/:/usr/share/icons/hicolor/scalable/apps/:/usr/share/pixmaps/
 
     # Frame / Colors (Dracula-ish)
     frame_width = 2

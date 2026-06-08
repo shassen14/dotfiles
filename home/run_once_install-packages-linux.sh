@@ -2,7 +2,7 @@
 # run_once_install-packages-linux.sh
 # Installs packages on Linux via the native package manager.
 # Chezmoi re-runs this when the file content changes — bump the version below to force a re-run.
-# version: 12
+# version: 15
 
 [[ "$(uname)" != "Linux" ]] && exit 0
 
@@ -42,7 +42,12 @@ if command -v apt-get &>/dev/null; then
         obs-studio imagemagick \
         xclip unzip \
         software-properties-common \
-        libfuse2t64
+        libfuse2t64 \
+        i3 i3lock rofi picom dunst feh \
+        flameshot playerctl thunar polybar \
+        blender pre-commit \
+        pavucontrol xss-lock arandr \
+        brightnessctl lxappearance papirus-icon-theme
 
     # Ubuntu names the fd binary 'fdfind' — symlink it to 'fd'
     if command -v fdfind &>/dev/null && ! command -v fd &>/dev/null; then
@@ -76,6 +81,47 @@ https://packages.microsoft.com/repos/vscode stable main" \
         sudo apt-get install -y ghostty
     fi
 
+    # Brave Browser
+    if ! command -v brave-browser &>/dev/null; then
+        curl -fsSL https://brave-browser-apt-release.s3.brave.com/brave-browser-archive-keyring.gpg \
+            | sudo gpg --dearmor -o /usr/share/keyrings/brave-browser-archive-keyring.gpg
+        echo "deb [signed-by=/usr/share/keyrings/brave-browser-archive-keyring.gpg arch=amd64] https://brave-browser-apt-release.s3.brave.com/ stable main" \
+            | sudo tee /etc/apt/sources.list.d/brave-browser-release.list > /dev/null
+        sudo apt-get update -q
+        sudo apt-get install -y brave-browser
+    fi
+
+    # GitHub CLI
+    if ! command -v gh &>/dev/null; then
+        curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg \
+            | sudo gpg --dearmor -o /usr/share/keyrings/githubcli-archive-keyring.gpg
+        echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" \
+            | sudo tee /etc/apt/sources.list.d/github-cli.list > /dev/null
+        sudo apt-get update -q
+        sudo apt-get install -y gh
+    fi
+
+    # Spotify
+    if ! command -v spotify &>/dev/null; then
+        curl -fsSL https://download.spotify.com/debian/pubkey_C85668DF69375001.gpg \
+            | sudo gpg --dearmor -o /usr/share/keyrings/spotify-archive-keyring.gpg
+        echo "deb [signed-by=/usr/share/keyrings/spotify-archive-keyring.gpg] http://repository.spotify.com stable non-free" \
+            | sudo tee /etc/apt/sources.list.d/spotify.list > /dev/null
+        sudo apt-get update -q
+        sudo apt-get install -y spotify-client
+    fi
+
+    # Docker CE
+    if ! command -v docker &>/dev/null; then
+        curl -fsSL https://download.docker.com/linux/ubuntu/gpg \
+            | sudo gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
+        echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" \
+            | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+        sudo apt-get update -q
+        sudo apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+        sudo usermod -aG docker "$USER"
+    fi
+
 elif command -v dnf &>/dev/null; then
     sudo dnf install -y \
         bash zsh git curl wget jq \
@@ -85,7 +131,13 @@ elif command -v dnf &>/dev/null; then
         nodejs npm \
         python3 python3-pip \
         ghostty imagemagick \
-        xclip unzip
+        xclip unzip \
+        i3 i3lock rofi picom dunst feh \
+        flameshot playerctl thunar polybar \
+        blender pre-commit gh \
+        docker docker-compose \
+        pavucontrol xss-lock arandr autorandr \
+        brightnessctl lxappearance papirus-icon-theme
 
 elif command -v pacman &>/dev/null; then
     sudo pacman -Sy --noconfirm \
@@ -96,7 +148,13 @@ elif command -v pacman &>/dev/null; then
         nodejs npm \
         python python-pip \
         ghostty imagemagick \
-        xclip unzip
+        xclip unzip \
+        i3-wm i3lock rofi picom dunst feh \
+        flameshot playerctl thunar polybar \
+        blender pre-commit github-cli \
+        docker docker-compose \
+        pavucontrol xss-lock arandr autorandr \
+        brightnessctl lxappearance papirus-icon-theme
 
 else
     echo "Unsupported Linux distribution" >&2
@@ -105,6 +163,40 @@ fi
 
 # Remaining installs are optional — failures are logged but don't abort.
 set +e
+
+# ── autorandr from source (apt package has Python 3.12 SyntaxWarnings) ───────
+if ! command -v autorandr &>/dev/null && command -v apt-get &>/dev/null; then
+    install_autorandr() {
+        local build_dir
+        build_dir=$(mktemp -d)
+        git clone --depth=1 https://github.com/phillipberndt/autorandr.git "$build_dir"
+        sudo make -C "$build_dir" install
+        rm -rf "$build_dir"
+        sudo systemctl daemon-reload
+        sudo systemctl enable --now autorandr.service autorandr-lid-listener.service
+        sudo udevadm control --reload-rules
+    }
+    try "autorandr" install_autorandr
+fi
+
+# ── i3lock-color (Dracula themed lock screen) ────────────────────────────────
+if ! command -v i3lock-color &>/dev/null && command -v apt-get &>/dev/null; then
+    install_i3lock_color() {
+        sudo apt-get install -y \
+            libpam0g-dev libcairo2-dev libfontconfig1-dev libx11-xcb-dev \
+            libev-dev libxcb-util0-dev libxcb-image0-dev libxcb-shape0-dev \
+            libxcb-xinerama0-dev libxcb-randr0-dev libxcb-xkb-dev \
+            libxkbcommon-dev libxkbcommon-x11-dev libjpeg-dev autoconf
+        local build_dir
+        build_dir=$(mktemp -d)
+        git clone --depth=1 https://github.com/Raymo111/i3lock-color.git "$build_dir"
+        cd "$build_dir"
+        ./install-i3lock-color.sh
+        cd - > /dev/null
+        rm -rf "$build_dir"
+    }
+    try "i3lock-color" install_i3lock_color
+fi
 
 # ── Starship prompt ──────────────────────────────────────────────────────────
 if ! command -v starship &>/dev/null; then
@@ -129,8 +221,7 @@ if ! command -v orcaslicer &>/dev/null; then
         mkdir -p "$dir" "$HOME/.local/bin"
         local url
         url=$(curl -fsSL --retry 3 https://api.github.com/repos/SoftFever/OrcaSlicer/releases/latest \
-            | grep -o '"browser_download_url": "[^"]*Linux[^"]*\.AppImage"' \
-            | head -1 | cut -d'"' -f4)
+            | jq -r '[.assets[] | select(.name | test("Linux.*\\.AppImage$")) | .browser_download_url][0]')
         [[ -z "$url" ]] && { echo "Could not resolve OrcaSlicer download URL" >&2; return 1; }
         curl -fsSL --retry 3 "$url" -o "$dir/OrcaSlicer.AppImage"
         chmod +x "$dir/OrcaSlicer.AppImage"
@@ -147,4 +238,76 @@ fi
 # ── OpenCode ─────────────────────────────────────────────────────────────────
 if ! command -v opencode &>/dev/null; then
     try "opencode" bash -c 'curl -fsSL https://opencode.ai/install | bash'
+fi
+
+# ── Nerd Fonts ───────────────────────────────────────────────────────────────
+if ! fc-list | grep -qi "FiraCode Nerd Font"; then
+    install_nerd_font() {
+        local name="$1"
+        local fonts_dir="$HOME/.local/share/fonts/NerdFonts"
+        mkdir -p "$fonts_dir"
+        curl -fsSL "https://github.com/ryanoasis/nerd-fonts/releases/latest/download/${name}.tar.xz" \
+            -o "/tmp/${name}.tar.xz"
+        tar -xf "/tmp/${name}.tar.xz" -C "$fonts_dir"
+        rm -f "/tmp/${name}.tar.xz"
+    }
+    try "FiraCode Nerd Font" install_nerd_font "FiraCode"
+    try "Hack Nerd Font"     install_nerd_font "Hack"
+    fc-cache -f "$HOME/.local/share/fonts"
+fi
+
+# ── Font Awesome 6 ───────────────────────────────────────────────────────────
+if ! fc-list | grep -qi "Font Awesome 6"; then
+    install_font_awesome() {
+        local dir="$HOME/.local/share/fonts/FontAwesome6"
+        mkdir -p "$dir"
+        local url
+        url=$(curl -fsSL https://api.github.com/repos/FortAwesome/Font-Awesome/releases/latest \
+            | jq -r '.assets[] | select(.name | contains("desktop")) | .browser_download_url' \
+            | head -1)
+        [[ -z "$url" ]] && { echo "Could not resolve Font Awesome download URL" >&2; return 1; }
+        curl -fsSL "$url" -o /tmp/fontawesome.zip
+        unzip -j /tmp/fontawesome.zip "*/otfs/*.otf" -d "$dir"
+        rm -f /tmp/fontawesome.zip
+        fc-cache -f "$HOME/.local/share/fonts"
+    }
+    try "Font Awesome 6" install_font_awesome
+fi
+
+# ── Obsidian ─────────────────────────────────────────────────────────────────
+if ! command -v obsidian &>/dev/null && command -v apt-get &>/dev/null; then
+    install_obsidian() {
+        local url
+        url=$(curl -fsSL https://api.github.com/repos/obsidianmd/obsidian-releases/releases/latest \
+            | jq -r '[.assets[] | select(.name | endswith(".deb")) | .browser_download_url][0]')
+        [[ -z "$url" ]] && { echo "Could not resolve Obsidian download URL" >&2; return 1; }
+        curl -fsSL "$url" -o /tmp/obsidian.deb
+        sudo dpkg -i /tmp/obsidian.deb || sudo apt-get install -f -y
+        rm -f /tmp/obsidian.deb
+    }
+    try "obsidian" install_obsidian
+fi
+
+# ── Discord ──────────────────────────────────────────────────────────────────
+if ! command -v discord &>/dev/null && command -v apt-get &>/dev/null; then
+    install_discord() {
+        curl -fsSL "https://discord.com/api/download?platform=linux&format=deb" -o /tmp/discord.deb
+        sudo dpkg -i /tmp/discord.deb || sudo apt-get install -f -y
+        rm -f /tmp/discord.deb
+    }
+    try "discord" install_discord
+fi
+
+# ── Bitwarden ────────────────────────────────────────────────────────────────
+if ! command -v bitwarden &>/dev/null && command -v apt-get &>/dev/null; then
+    install_bitwarden() {
+        local url
+        url=$(curl -fsSL https://api.github.com/repos/bitwarden/clients/releases/latest \
+            | jq -r '[.assets[] | select(.name | test("amd64\\.deb$")) | .browser_download_url][0]')
+        [[ -z "$url" ]] && { echo "Could not resolve Bitwarden download URL" >&2; return 1; }
+        curl -fsSL "$url" -o /tmp/bitwarden.deb
+        sudo dpkg -i /tmp/bitwarden.deb || sudo apt-get install -f -y
+        rm -f /tmp/bitwarden.deb
+    }
+    try "bitwarden" install_bitwarden
 fi

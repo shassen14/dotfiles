@@ -1,6 +1,6 @@
 #!/bin/bash
 # ~/.config/i3/scripts/lock.sh
-# Managed by Chezmoi: {{ .chezmoi.sourceFile }}
+# Managed by Chezmoi: home/private_dot_config/i3/scripts/executable_lock.sh
 # Locks the screen, preferring i3lock-color for feedback.
 
 # --- Configuration ---

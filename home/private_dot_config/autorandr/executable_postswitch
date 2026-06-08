@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+# autorandr postswitch hook — runs after every profile switch (hotplug or manual).
+# Ensures polybar and wallpaper reflect the new monitor layout.
+
+export DISPLAY="${DISPLAY:-:0}"
+export DBUS_SESSION_BUS_ADDRESS="${DBUS_SESSION_BUS_ADDRESS:-unix:path=/run/user/$(id -u)/bus}"
+
+# Restart polybar so it spawns on the correct monitors
+if [[ -x "$HOME/.config/polybar/launch.sh" ]]; then
+    "$HOME/.config/polybar/launch.sh" &
+fi
+
+# Re-apply wallpaper
+if command -v feh &>/dev/null && [[ -f "$HOME/images/wallpaper.png" ]]; then
+    feh --bg-scale "$HOME/images/wallpaper.png" &
+fi
