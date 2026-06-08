@@ -183,10 +183,13 @@ fi
 if ! command -v i3lock-color &>/dev/null && command -v apt-get &>/dev/null; then
     install_i3lock_color() {
         sudo apt-get install -y \
-            libpam0g-dev libcairo2-dev libfontconfig1-dev libx11-xcb-dev \
-            libev-dev libxcb-util0-dev libxcb-image0-dev libxcb-shape0-dev \
-            libxcb-xinerama0-dev libxcb-randr0-dev libxcb-xkb-dev \
-            libxkbcommon-dev libxkbcommon-x11-dev libjpeg-dev autoconf
+            autoconf gcc make pkg-config \
+            libpam0g-dev libcairo2-dev libfontconfig1-dev \
+            libxcb-composite0-dev libev-dev libx11-xcb-dev \
+            libxcb-xkb-dev libxcb-xinerama0-dev libxcb-randr0-dev \
+            libxcb-image0-dev libxcb-util0-dev libxcb-xrm-dev \
+            libxcb-shape0-dev \
+            libxkbcommon-dev libxkbcommon-x11-dev libjpeg-dev libgif-dev
         local build_dir
         build_dir=$(mktemp -d)
         git clone --depth=1 https://github.com/Raymo111/i3lock-color.git "$build_dir"
