@@ -6,7 +6,7 @@ configuration {
     icon-theme: "Papirus"; /* Or your preferred icon theme, e.g., Material-Icon-Theme */
     show-icons: true;
 
-    terminal: "{{ .terminal | default "alacritty" }}";
+    terminal: "{{ .terminal | default "ghostty" }}";
     ssh-client: "ssh";
     ssh-command: "{terminal} -e {ssh-client} {host} [-p {port}]";
     run-command: "{cmd}";

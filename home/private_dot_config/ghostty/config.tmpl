@@ -2,7 +2,7 @@
 # Kitty Graphics Protocol (KGP) enabled by default in Ghostty
 
 font-family = FiraCode Nerd Font
-font-size = 30
+{{ if eq .chezmoi.os "darwin" }}font-size = 30{{ else }}font-size = 20{{ end }}
 
 theme = TokyoNight
 
