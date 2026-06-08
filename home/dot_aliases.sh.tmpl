@@ -66,6 +66,24 @@ alias update='brew update && brew upgrade && brew cleanup && brew doctor'
   {{ end -}}
 {{ end -}}
 
+# --- WiFi / Network ---
+# Same interface on every OS: wifi (scan), wific (connect), wifi-status, etc.
+{{ if eq .chezmoi.os "darwin" -}}
+alias wifi='system_profiler SPAirPortDataType'              # Show current + nearby networks
+wific() { networksetup -setairportnetwork en0 "$1" "$2"; } # wific "SSID" [password]
+alias wifi-status='networksetup -getairportnetwork en0'     # Current SSID
+alias wifi-saved='networksetup -listpreferredwirelessnetworks en0'
+alias wifi-on='networksetup -setairportpower en0 on'
+alias wifi-off='networksetup -setairportpower en0 off'
+{{ else -}}
+alias wifi='nmcli device wifi list --rescan yes'           # Scan nearby networks
+wific() { nmcli device wifi connect "$1" --ask; }          # wific "SSID" (prompts for password)
+alias wifi-status='nmcli device status'                    # Connection state per device
+alias wifi-saved='nmcli connection show'                   # Saved/known networks
+alias wifi-on='nmcli radio wifi on'
+alias wifi-off='nmcli radio wifi off'
+{{ end -}}
+
 # --- Editor ---
 alias vi='nvim'
 alias vim='nvim'

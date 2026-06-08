@@ -1,0 +1,43 @@
+{
+  "$schema": "https://raw.githubusercontent.com/LGUG2Z/komorebi/master/schema.json",
+  "app_specific_configuration_path": "~/.config/komorebi/apps.json",
+  "float_rules": [
+    { "kind": "Exe", "id": "1Password.exe", "matching_strategy": "Equals" },
+    { "kind": "Exe", "id": "Taskmgr.exe",   "matching_strategy": "Equals" }
+  ],
+  "manage_rules": [],
+  "workspace_rules": [],
+  "monitors": [
+    {
+      "workspaces": [
+        { "name": "1", "layout": "BSP" },
+        { "name": "2", "layout": "BSP" },
+        { "name": "3", "layout": "BSP" },
+        { "name": "4", "layout": "BSP" },
+        { "name": "5", "layout": "BSP" },
+        { "name": "6", "layout": "BSP" },
+        { "name": "7", "layout": "BSP" },
+        { "name": "8", "layout": "BSP" },
+        { "name": "9", "layout": "BSP" }
+      ]
+    }
+  ],
+  "border": true,
+  "border_width": 2,
+  "border_style": "System",
+  "border_colours": {
+    "single": {
+      "light_mode": "7aa2f7",
+      "dark_mode":  "7aa2f7"
+    },
+    "stack": {
+      "light_mode": "bb9af7",
+      "dark_mode":  "bb9af7"
+    },
+    "monocle": {
+      "light_mode": "e0af68",
+      "dark_mode":  "e0af68"
+    }
+  },
+  "gap": 8
+}

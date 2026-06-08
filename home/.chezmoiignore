@@ -4,3 +4,8 @@ Library
 {{ if ne .chezmoi.os "linux" }}
 .config/obs-studio
 {{ end }}
+{{ if ne .chezmoi.os "windows" }}
+Documents/PowerShell
+.config/komorebi
+.config/windows-terminal
+{{ end }}

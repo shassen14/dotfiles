@@ -1,0 +1,47 @@
+{{ if eq .chezmoi.os "windows" -}}
+# run_once_install-packages-windows.ps1
+# Installs Windows packages via winget.
+# Chezmoi re-runs this when file content changes — bump the version below to force a re-run.
+# version: 1
+
+$packages = @(
+    # Shell / terminal
+    "Microsoft.WindowsTerminal",
+    "Microsoft.PowerShell",
+
+    # Editor
+    "Neovim.Neovim",
+    "Microsoft.VisualStudioCode",
+
+    # Version control
+    "Git.Git",
+    "GitHub.cli",
+
+    # Tiling WM
+    "LGUG2Z.komorebi",
+    "LGUG2Z.whkd",
+
+    # Languages / runtimes
+    "OpenJS.NodeJS.LTS",
+    "Python.Python.3.13",
+    "Rustlang.Rustup",
+    "GoLang.Go",
+
+    # CLI tools
+    "junegunn.fzf",
+    "ajeetdsouza.zoxide",
+    "sharkdp.bat",
+    "eza-community.eza",
+    "BurntSushi.ripgrep.MSVC",
+    "jqlang.jq",
+    "tldr-pages.tlrc",
+
+    # Fonts
+    "Nerd-Fonts.FiraCode"
+)
+
+foreach ($pkg in $packages) {
+    Write-Host "Installing $pkg..."
+    winget install --id $pkg --exact --accept-source-agreements --accept-package-agreements --silent 2>&1
+}
+{{ end -}}

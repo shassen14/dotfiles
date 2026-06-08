@@ -1,0 +1,81 @@
+{{ if eq .chezmoi.os "windows" -}}
+# Microsoft.PowerShell_profile.ps1 - Managed by Chezmoi
+# PowerShell 7 (pwsh) profile. Mirrors the zsh/bash aliases so the
+# interface matches macOS/Linux: wifi, wific, wifi-status, git shortcuts, etc.
+
+# --- Navigation ---
+function .. { Set-Location .. }
+function ... { Set-Location ../.. }
+function .... { Set-Location ../../.. }
+
+# --- WiFi / Network (same names as the unix aliases) ---
+function wifi { netsh wlan show networks mode=bssid }          # Scan nearby networks
+function wifi-status { netsh wlan show interfaces }            # Current connection
+function wifi-saved { netsh wlan show profiles }              # Saved/known networks
+function wifi-on { netsh interface set interface "Wi-Fi" enable }
+function wifi-off { netsh interface set interface "Wi-Fi" disable }
+
+# wific "SSID" [password]
+# Connects to a known network, or creates a WPA2-PSK profile on the fly if a password is given.
+function wific {
+    param(
+        [Parameter(Mandatory = $true)] [string]$Ssid,
+        [string]$Password
+    )
+    $existing = (netsh wlan show profiles) | Select-String -SimpleMatch $Ssid
+    if (-not $existing -and $Password) {
+        $xml = @"
+<?xml version="1.0"?>
+<WLANProfile xmlns="http://www.microsoft.com/networking/WLAN/profile/v1">
+  <name>$Ssid</name>
+  <SSIDConfig><SSID><name>$Ssid</name></SSID></SSIDConfig>
+  <connectionType>ESS</connectionType>
+  <connectionMode>auto</connectionMode>
+  <MSM><security>
+    <authEncryption><authentication>WPA2PSK</authentication><encryption>AES</encryption><useOneX>false</useOneX></authEncryption>
+    <sharedKey><keyType>passPhrase</keyType><protected>false</protected><keyMaterial>$Password</keyMaterial></sharedKey>
+  </security></MSM>
+</WLANProfile>
+"@
+        $tmp = Join-Path $env:TEMP "wlan-$Ssid.xml"
+        $xml | Out-File -FilePath $tmp -Encoding utf8
+        netsh wlan add profile filename="$tmp" user=current | Out-Null
+        Remove-Item $tmp -Force
+    }
+    netsh wlan connect name="$Ssid"
+}
+
+# --- Git ---
+function g { git @args }
+function ga { git add @args }
+function gaa { git add --all }
+function gc { git commit -m @args }
+function gco { git checkout @args }
+function gcb { git checkout -b @args }
+function gd { git diff @args }
+function gf { git fetch --all --prune }
+function gp { git push @args }
+function gs { git status -sb }
+function gst { git status }
+
+# --- System Update (winget) ---
+function update { winget upgrade --all --accept-source-agreements --accept-package-agreements }
+
+# --- Editor ---
+function vi { nvim @args }
+function vim { nvim @args }
+
+# --- Dotfiles Sync (chezmoi - identical everywhere) ---
+function dots-push { chezmoi re-add; chezmoi cd; git add -A; git commit -m "update"; git push }
+function dots-pull { chezmoi update }
+function dots-diff { chezmoi diff }
+function dots-status { chezmoi status }
+
+# --- Tooling init (only if installed) ---
+if (Get-Command zoxide -ErrorAction SilentlyContinue) {
+    Invoke-Expression (& { (zoxide init powershell | Out-String) })
+}
+if (Get-Command starship -ErrorAction SilentlyContinue) {
+    Invoke-Expression (&starship init powershell)
+}
+{{ end -}}

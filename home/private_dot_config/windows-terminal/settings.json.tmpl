@@ -1,0 +1,72 @@
+{{- if eq .chezmoi.os "windows" -}}
+{
+    "$schema": "https://aka.ms/terminal-profiles-schema",
+    "defaultProfile": "{574e775e-4f2a-5b96-ac1e-a2962a402336}",
+    "copyOnSelect": false,
+    "copyFormatting": "none",
+    "profiles": {
+        "defaults": {
+            "font": {
+                "face": "FiraCode Nerd Font",
+                "size": 13
+            },
+            "colorScheme": "tokyonight",
+            "opacity": 95,
+            "useAcrylic": true,
+            "padding": "8"
+        },
+        "list": [
+            {
+                "guid": "{574e775e-4f2a-5b96-ac1e-a2962a402336}",
+                "name": "PowerShell",
+                "source": "Windows.Terminal.PowershellCore",
+                "startingDirectory": "%USERPROFILE%"
+            },
+            {
+                "guid": "{61c54bbd-c2c6-5271-96e7-009a87ff44bf}",
+                "name": "Windows PowerShell",
+                "commandline": "powershell.exe",
+                "hidden": false,
+                "startingDirectory": "%USERPROFILE%"
+            },
+            {
+                "guid": "{2c4de342-38b7-51cf-b940-2309a097f518}",
+                "name": "Ubuntu (WSL)",
+                "source": "Windows.Terminal.Wsl",
+                "hidden": false
+            }
+        ]
+    },
+    "schemes": [
+        {
+            "name": "tokyonight",
+            "background": "#1a1b26",
+            "foreground": "#c0caf5",
+            "black": "#15161e",
+            "red": "#f7768e",
+            "green": "#9ece6a",
+            "yellow": "#e0af68",
+            "blue": "#7aa2f7",
+            "purple": "#bb9af7",
+            "cyan": "#7dcfff",
+            "white": "#a9b1d6",
+            "brightBlack": "#414868",
+            "brightRed": "#f7768e",
+            "brightGreen": "#9ece6a",
+            "brightYellow": "#e0af68",
+            "brightBlue": "#7aa2f7",
+            "brightPurple": "#bb9af7",
+            "brightCyan": "#7dcfff",
+            "brightWhite": "#c0caf5",
+            "cursorColor": "#c0caf5",
+            "selectionBackground": "#283457"
+        }
+    ],
+    "actions": [
+        { "command": { "action": "copy", "singleLine": false }, "keys": "ctrl+c" },
+        { "command": "paste", "keys": "ctrl+v" },
+        { "command": "find", "keys": "ctrl+shift+f" },
+        { "command": { "action": "splitPane", "split": "auto", "splitMode": "duplicate" }, "keys": "alt+shift+d" }
+    ]
+}
+{{- end -}}

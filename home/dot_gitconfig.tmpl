@@ -8,7 +8,7 @@
 [core]
 	editor     = {{ .editor | quote }}
 	pager      = less -R
-	autocrlf   = input
+	autocrlf   = {{ if eq .chezmoi.os "windows" }}true{{ else }}input{{ end }}
 	whitespace = fix,trailing-space,space-before-tab
 
 [init]
