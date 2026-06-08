@@ -156,12 +156,16 @@ bindsym $mod+Shift+r restart
 bindsym $mod+Shift+e exec "i3-nagbar -t warning -m 'Exit i3?' -B 'Yes' 'i3-msg exit'"
 
 # ── Startup ───────────────────────────────────────────────────────────────────
+# Bring displays up FIRST, before anything paints — guarantees a 2nd monitor
+# lights up even when no autorandr profile matches. See scripts/setup_displays.sh.
+exec --no-startup-id {{ .chezmoi.homeDir }}/.config/i3/scripts/setup_displays.sh
 exec --no-startup-id setxkbmap -option caps:swapescape
 exec --no-startup-id feh --bg-scale {{ .chezmoi.homeDir }}/images/wallpaper.png
-exec --no-startup-id picom --daemon
+# picom DISABLED: GLX backend on NVIDIA renders windows transparent/garbled.
+# Re-enable once xrender-sync-fence is verified working (picom.conf:141).
+# exec --no-startup-id picom --daemon
 exec --no-startup-id dunst
 exec --no-startup-id xss-lock -- {{ .chezmoi.homeDir }}/.config/i3/scripts/lock.sh
-exec --no-startup-id autorandr --change
 exec_always --no-startup-id {{ .chezmoi.homeDir }}/.config/polybar/launch.sh
 
 # Startup apps — workspace placement handled by assign rules above
