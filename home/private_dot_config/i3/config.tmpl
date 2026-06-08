@@ -93,7 +93,8 @@ popup_during_fullscreen smart
 # -----------------------------------------------------------------------------
 
 # Launch a terminal
-# $mod + Enter
+# $mod + Shift + t  (cross-platform standard) — $mod + Enter kept as i3 muscle-memory
+bindsym $mod+Shift+t exec $term
 bindsym $mod+Return exec $term
 
 # Kill focused window
@@ -133,7 +134,8 @@ bindsym $mod+b split h  # horizontal split (new window to the right)
 bindsym $mod+v split v  # vertical split (new window below)
 
 # Toggle fullscreen mode for the focused window
-bindsym $mod+f fullscreen toggle
+# $mod + Shift + Enter  (cross-platform standard)
+bindsym $mod+Shift+Return fullscreen toggle
 
 # Change container layout (try these out to see what they do)
 bindsym $mod+s layout stacking # Windows stack on top of each other
@@ -141,10 +143,16 @@ bindsym $mod+w layout tabbed   # Windows become tabs
 bindsym $mod+e layout toggle split # Toggle between splith/splitv for the container
 
 # Toggle tiling / floating for the focused window
+# $mod + f  (cross-platform standard) — $mod + Shift + space kept as i3 muscle-memory
+bindsym $mod+f floating toggle
 bindsym $mod+Shift+space floating toggle
 
 # Change focus between tiling and floating windows
 bindsym $mod+space focus mode_toggle
+
+# --- Resize (cross-platform standard: $mod+minus shrink, $mod+equal grow) ---
+bindsym $mod+minus resize shrink width 50 px or 5 ppt
+bindsym $mod+equal resize grow width 50 px or 5 ppt
 
 # --- Workspace -> Monitor Assignment ---
 # Assign workspaces 1-4 to the left monitor

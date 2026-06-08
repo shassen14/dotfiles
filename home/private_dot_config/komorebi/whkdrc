@@ -6,7 +6,12 @@
 # --- Launch apps ---
 alt + shift + t  : wt
 alt + shift + b  : start msedge
+alt + shift + f  : explorer.exe
 alt + shift + q  : komorebic close
+
+# --- Session ---
+alt + shift + r      : komorebic reload-configuration
+alt + shift + s      : rundll32.exe user32.dll,LockWorkStation
 
 # --- Focus ---
 alt + h          : komorebic focus left
@@ -26,6 +31,7 @@ alt + oem_plus   : komorebic resize-axis horizontal increase 50
 
 # --- Layout ---
 alt + f          : komorebic toggle-float
+alt + shift + return : komorebic toggle-monocle
 alt + oem_2      : komorebic cycle-layout next
 
 # --- Workspaces ---
