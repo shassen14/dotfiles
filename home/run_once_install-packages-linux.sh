@@ -2,30 +2,66 @@
 # run_once_install-packages-linux.sh
 # Installs packages on Linux via the native package manager.
 # Chezmoi re-runs this when the file content changes — bump the version below to force a re-run.
-# version: 6
+# version: 11
 
 [[ "$(uname)" != "Linux" ]] && exit 0
 
-set -e
+# Helper: run an optional install step — logs failure but never aborts the script.
+try() {
+    local desc="$1"; shift
+    if "$@"; then
+        echo "OK: $desc"
+    else
+        echo "WARN: $desc failed (exit $?) — install manually if needed" >&2
+    fi
+}
 
+set -e  # Strict mode for the core apt block below.
+
+# ── Core apt packages ────────────────────────────────────────────────────────
 if command -v apt-get &>/dev/null; then
     sudo apt-get update -q
     sudo apt-get install -y \
-        bash zsh git curl wget jq \
+        bash zsh git curl wget jq gnupg \
         cmake pkg-config make build-essential \
         neovim ripgrep fd-find tmux \
         fzf zsh-autosuggestions zsh-syntax-highlighting \
-        nodejs npm \
         python3 python3-pip python3-venv \
         imagemagick \
-        xclip unzip
+        xclip unzip \
+        software-properties-common \
+        libfuse2t64
 
-    # Ghostty not in apt repos — install via Flatpak
-    if command -v flatpak &>/dev/null; then
-        flatpak remote-add --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
-        flatpak install --noninteractive flathub com.mitchellh.ghostty
-    else
-        echo "Ghostty: install flatpak then re-run, or install Ghostty manually." >&2
+    # Ubuntu names the fd binary 'fdfind' — symlink it to 'fd'
+    if command -v fdfind &>/dev/null && ! command -v fd &>/dev/null; then
+        mkdir -p "$HOME/.local/bin"
+        ln -sf "$(command -v fdfind)" "$HOME/.local/bin/fd"
+    fi
+
+    # Node.js via NodeSource (Ubuntu's apt nodejs+npm packages conflict)
+    if ! command -v node &>/dev/null; then
+        curl -fsSL https://deb.nodesource.com/setup_lts.x | sudo -E bash -
+        sudo apt-get install -y nodejs
+    fi
+
+    # VS Code
+    if ! command -v code &>/dev/null; then
+        curl -fsSL https://packages.microsoft.com/keys/microsoft.asc \
+            | gpg --dearmor -o /tmp/microsoft.gpg
+        sudo install -D -o root -g root -m 644 /tmp/microsoft.gpg \
+            /usr/share/keyrings/microsoft-archive-keyring.gpg
+        echo "deb [arch=amd64 signed-by=/usr/share/keyrings/microsoft-archive-keyring.gpg] \
+https://packages.microsoft.com/repos/vscode stable main" \
+            | sudo tee /etc/apt/sources.list.d/vscode.list > /dev/null
+        sudo apt-get update -q
+        sudo apt-get install -y code
+    fi
+
+    # Ghostty via community PPA — updates via apt upgrade
+    if ! command -v ghostty &>/dev/null; then
+        sudo add-apt-repository -y ppa:mkasberg/ghostty-ubuntu
+        sudo apt-get update -q
+        sudo apt-get install -y ghostty
     fi
 
 elif command -v dnf &>/dev/null; then
@@ -55,35 +91,48 @@ else
     exit 1
 fi
 
-# Starship (not in most distro repos)
+# Remaining installs are optional — failures are logged but don't abort.
+set +e
+
+# ── Starship prompt ──────────────────────────────────────────────────────────
 if ! command -v starship &>/dev/null; then
-    curl -fsSL https://starship.rs/install.sh | sh -s -- -y
+    try "starship" curl -fsSL https://starship.rs/install.sh | sh -s -- -y
 fi
 
-# zoxide (not in apt repos — install via official script)
+# ── zoxide (smarter cd) ──────────────────────────────────────────────────────
 if ! command -v zoxide &>/dev/null && command -v apt-get &>/dev/null; then
-    curl -sSfL https://raw.githubusercontent.com/ajeetdsouza/zoxide/main/install.sh | sh
+    mkdir -p "$HOME/.local/bin"
+    try "zoxide" bash -c 'curl -sSfL https://raw.githubusercontent.com/ajeetdsouza/zoxide/main/install.sh | sh'
 fi
 
-# Rustup
+# ── Rustup ───────────────────────────────────────────────────────────────────
 if ! command -v rustup &>/dev/null; then
-    curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --no-modify-path
+    try "rustup" bash -c 'curl --proto "=https" --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --no-modify-path'
 fi
 
-# OrcaSlicer (via Flatpak — not in distro repos)
-if command -v flatpak &>/dev/null; then
-    flatpak remote-add --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
-    flatpak install --noninteractive flathub com.bambulab.OrcaSlicer
-else
-    echo "OrcaSlicer: install flatpak then re-run, or install OrcaSlicer manually." >&2
+# ── OrcaSlicer AppImage (no apt/PPA available) ───────────────────────────────
+if ! command -v orcaslicer &>/dev/null; then
+    install_orcaslicer() {
+        local dir="$HOME/.local/share/OrcaSlicer"
+        mkdir -p "$dir" "$HOME/.local/bin"
+        local url
+        url=$(curl -fsSL --retry 3 https://api.github.com/repos/SoftFever/OrcaSlicer/releases/latest \
+            | grep -o '"browser_download_url": "[^"]*Linux[^"]*\.AppImage"' \
+            | head -1 | cut -d'"' -f4)
+        [[ -z "$url" ]] && { echo "Could not resolve OrcaSlicer download URL" >&2; return 1; }
+        curl -fsSL --retry 3 "$url" -o "$dir/OrcaSlicer.AppImage"
+        chmod +x "$dir/OrcaSlicer.AppImage"
+        ln -sf "$dir/OrcaSlicer.AppImage" "$HOME/.local/bin/orcaslicer"
+    }
+    try "OrcaSlicer" install_orcaslicer
 fi
 
-# Ollama (local LLM runner)
+# ── Ollama ───────────────────────────────────────────────────────────────────
 if ! command -v ollama &>/dev/null; then
-    curl -fsSL https://ollama.com/install.sh | sh
+    try "ollama" bash -c 'curl -fsSL https://ollama.com/install.sh | bash'
 fi
 
-# OpenCode (terminal AI coding agent)
+# ── OpenCode ─────────────────────────────────────────────────────────────────
 if ! command -v opencode &>/dev/null; then
-    curl -fsSL https://opencode.ai/install | sh
+    try "opencode" bash -c 'curl -fsSL https://opencode.ai/install | bash'
 fi
