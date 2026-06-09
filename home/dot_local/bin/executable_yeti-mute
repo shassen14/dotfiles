@@ -1,0 +1,12 @@
+#!/bin/bash
+# Toggle Blue Yeti mute. Falls back to default source.
+SOURCE=$(pactl list sources short | awk '/Blue_Microphones_Yeti/{print $2; exit}')
+: "${SOURCE:=@DEFAULT_SOURCE@}"
+pactl set-source-mute "$SOURCE" toggle
+
+MUTE=$(pactl get-source-mute "$SOURCE" | awk '{print $2}')
+if [ "$MUTE" = "yes" ]; then
+    notify-send -u low -t 1500 -i audio-input-microphone-muted "Mic Muted" "Yeti is muted"
+else
+    notify-send -u low -t 1500 -i audio-input-microphone "Mic Live" "Yeti is live"
+fi

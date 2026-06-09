@@ -1,0 +1,4 @@
+#!/bin/bash
+# Mute/unmute the Yeti for all apps (including Discord).
+# Discord on Linux has no reliable IPC for per-app mute.
+exec yeti-mute

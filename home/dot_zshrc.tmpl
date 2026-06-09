@@ -89,13 +89,7 @@ fi
 # --- fzf (fuzzy finder) ---
 # Ctrl+R: fuzzy history | Ctrl+T: fuzzy file | Alt+C: fuzzy cd
 if command -v fzf >/dev/null; then
-{{ if eq .chezmoi.os "darwin" -}}
   eval "$(fzf --zsh)"
-{{ else -}}
-  # Ubuntu apt fzf (< 0.48) doesn't support --zsh; source keybindings manually
-  [ -r /usr/share/doc/fzf/examples/key-bindings.zsh ] && source /usr/share/doc/fzf/examples/key-bindings.zsh
-  [ -r /usr/share/doc/fzf/examples/completion.zsh ] && source /usr/share/doc/fzf/examples/completion.zsh
-{{ end -}}
 fi
 
 # --- zoxide (smarter cd with frecency) ---

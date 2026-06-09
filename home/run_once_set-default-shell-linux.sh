@@ -10,7 +10,7 @@ if [[ -z "$ZSH_PATH" ]]; then
     exit 0
 fi
 
-if [[ "$SHELL" == "$ZSH_PATH" ]]; then
+if [[ "$(getent passwd "$USER" | cut -d: -f7)" == "$ZSH_PATH" ]]; then
     echo "Default shell is already zsh ($ZSH_PATH)"
     exit 0
 fi

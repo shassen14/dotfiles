@@ -35,7 +35,7 @@ $character\
 [os]
 format = "[$symbol]($style) "
 style = "bg:#555555 fg:#DDDDDD bold"
-disabled = true # Set to true to disable
+disabled = false
 symbols.Macos = "󰀵" # Nerd Font symbol for Apple
 symbols.Ubuntu = "󰕈" # Nerd Font symbol for Ubuntu
 symbols.Arch = "󰣇" # Nerd Font symbol for Arch

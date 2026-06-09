@@ -1,0 +1,19 @@
+#!/usr/bin/env python3
+# Switch OBS scene via WebSocket. Usage: obs-scene "Scene Name"
+# Requires: OBS_WS_PASSWORD env var, OBS WebSocket enabled on port 4455
+import sys, os
+try:
+    import obsws_python as obs
+except ImportError:
+    sys.exit("obsws-python not installed. Run: pip3 install --user obsws-python")
+
+if len(sys.argv) < 2:
+    sys.exit("Usage: obs-scene 'Scene Name'")
+
+cl = obs.ReqClient(
+    host="localhost",
+    port=4455,
+    password=os.environ.get("OBS_WS_PASSWORD", ""),
+    timeout=3,
+)
+cl.set_current_program_scene(sys.argv[1])

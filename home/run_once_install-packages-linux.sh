@@ -6,6 +6,9 @@
 
 [[ "$(uname)" != "Linux" ]] && exit 0
 
+# Ensure tools installed to user dirs are findable within this script.
+export PATH="$HOME/.local/bin:$HOME/.cargo/bin:/usr/local/bin:$PATH"
+
 # Helper: run an optional install step — logs failure but never aborts the script.
 try() {
     local desc="$1"; shift
@@ -37,8 +40,8 @@ if command -v apt-get &>/dev/null; then
         bash zsh git curl wget jq gnupg \
         cmake pkg-config make build-essential \
         neovim ripgrep fd-find tmux \
-        fzf zsh-autosuggestions zsh-syntax-highlighting \
-        python3 python3-pip python3-venv \
+        zsh-autosuggestions zsh-syntax-highlighting \
+        python3 python3-pip python3-venv pipx flatpak \
         obs-studio imagemagick \
         xclip unzip \
         software-properties-common \
@@ -47,7 +50,9 @@ if command -v apt-get &>/dev/null; then
         flameshot playerctl thunar polybar \
         blender pre-commit \
         pavucontrol xss-lock arandr \
-        brightnessctl lxappearance papirus-icon-theme
+        brightnessctl lxappearance papirus-icon-theme \
+        easyeffects qpwgraph
+        # autorandr: installed from source below (apt package has Python 3.12 SyntaxWarnings)
 
     # Ubuntu names the fd binary 'fdfind' — symlink it to 'fd'
     if command -v fdfind &>/dev/null && ! command -v fd &>/dev/null; then
@@ -164,6 +169,11 @@ fi
 # Remaining installs are optional — failures are logged but don't abort.
 set +e
 
+# ── fzf (apt version is too old for --zsh; install via upstream script) ──────
+if ! command -v fzf &>/dev/null && command -v apt-get &>/dev/null; then
+    try "fzf" bash -c 'curl -fsSL https://raw.githubusercontent.com/junegunn/fzf/master/install | bash -s -- --bin'
+fi
+
 # ── autorandr from source (apt package has Python 3.12 SyntaxWarnings) ───────
 if ! command -v autorandr &>/dev/null && command -v apt-get &>/dev/null; then
     install_autorandr() {
@@ -238,10 +248,6 @@ if ! command -v ollama &>/dev/null; then
     try "ollama" bash -c 'curl -fsSL https://ollama.com/install.sh | bash'
 fi
 
-# ── OpenCode ─────────────────────────────────────────────────────────────────
-if ! command -v opencode &>/dev/null; then
-    try "opencode" bash -c 'curl -fsSL https://opencode.ai/install | bash'
-fi
 
 # ── Nerd Fonts ───────────────────────────────────────────────────────────────
 if ! fc-list | grep -qi "FiraCode Nerd Font"; then

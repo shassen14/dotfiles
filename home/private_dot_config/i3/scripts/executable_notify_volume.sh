@@ -59,21 +59,17 @@ else
     TEXT="Vol: ${VOLUME}%"
 fi
 
-# Select icon based on USE_FONT_AWESOME setting
-if [[ "$USE_FONT_AWESOME" = true ]]; then
-    FINAL_ICON=$ICON_FA
-else
-    FINAL_ICON=$ICON # Use standard themed icon names
-fi
-
-
 # --- Send Notification ---
 # -h int:value: Provides a hint for progress bars in dunst
 # -h string:x-canonical-private-synchronous: Hint to replace previous notifications with same ID
 # -t: Timeout
 # -u: Urgency
-# -i: Icon
-notify-send -h int:value:"$VOLUME" -h string:x-canonical-private-synchronous:"$REPLACE_ID" -u "$URGENCY" -t "$TIMEOUT" -i "$FINAL_ICON" "$TEXT"
+# -i: Icon (must be a themed icon name or file path, not a glyph)
+if [[ "$USE_FONT_AWESOME" = true ]]; then
+    notify-send -h int:value:"$VOLUME" -h string:x-canonical-private-synchronous:"$REPLACE_ID" -u "$URGENCY" -t "$TIMEOUT" "${ICON_FA} ${TEXT}"
+else
+    notify-send -h int:value:"$VOLUME" -h string:x-canonical-private-synchronous:"$REPLACE_ID" -u "$URGENCY" -t "$TIMEOUT" -i "$ICON" "$TEXT"
+fi
 
 # Optional: Play a sound feedback (requires a sound player like paplay or mpv)
 # paplay /usr/share/sounds/freedesktop/stereo/audio-volume-change.oga &

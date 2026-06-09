@@ -3,7 +3,8 @@
 # ── Variables ─────────────────────────────────────────────────────────────────
 set $mod  Mod4
 set $term {{ .terminal_cmd_linux | default "ghostty" }}
-set $menu rofi -show drun -theme {{ .chezmoi.homeDir }}/.config/rofi/simple_theme.rasi
+set $menu    rofi -show drun   -theme {{ .chezmoi.homeDir }}/.config/rofi/simple_theme.rasi
+set $windows rofi -show window -theme {{ .chezmoi.homeDir }}/.config/rofi/simple_theme.rasi
 
 # ── Workspaces ────────────────────────────────────────────────────────────────
 set $ws1  "1"
@@ -65,6 +66,7 @@ bindsym $mod+Return       exec $term
 bindsym $mod+Shift+t      exec $term
 bindsym $mod+Shift+q      kill
 bindsym $mod+d            exec $menu
+bindsym $mod+Tab          exec $windows
 bindsym $mod+Shift+Return fullscreen toggle
 bindsym $mod+f            floating toggle
 bindsym $mod+Shift+space  floating toggle
@@ -98,6 +100,25 @@ bindsym $mod+w layout tabbed
 bindsym $mod+e layout toggle split
 bindsym $mod+minus resize shrink width 50 px or 5 ppt
 bindsym $mod+equal resize grow width 50 px or 5 ppt
+
+# Resize mode
+mode "resize" {
+    bindsym h resize shrink width  5 px or 5 ppt
+    bindsym l resize grow   width  5 px or 5 ppt
+    bindsym k resize shrink height 5 px or 5 ppt
+    bindsym j resize grow   height 5 px or 5 ppt
+    bindsym Left  resize shrink width  5 px or 5 ppt
+    bindsym Right resize grow   width  5 px or 5 ppt
+    bindsym Up    resize shrink height 5 px or 5 ppt
+    bindsym Down  resize grow   height 5 px or 5 ppt
+    bindsym Return mode "default"
+    bindsym Escape mode "default"
+}
+bindsym $mod+r mode "resize"
+
+# Scratchpad terminal
+bindsym $mod+grave scratchpad show
+bindsym $mod+Shift+grave move scratchpad
 
 # Workspace switch
 bindsym $mod+1 workspace number $ws1
@@ -133,7 +154,7 @@ assign [class="Spotify"]                  $ws7
 # ── Utilities ─────────────────────────────────────────────────────────────────
 bindsym $mod+Control+l exec {{ .chezmoi.homeDir }}/.config/i3/scripts/lock.sh
 bindsym $mod+Shift+s   exec {{ .chezmoi.homeDir }}/.config/i3/scripts/lock_and_suspend.sh
-bindsym $mod+Shift+b   exec {{ .browser_cmd_linux | default "xdg-open http://" }}
+bindsym $mod+Shift+b   exec {{ .browser_cmd_linux | default "brave-browser" }}
 bindsym $mod+Shift+f   exec thunar
 bindsym $mod+p         exec --no-startup-id flameshot gui -p {{ .chezmoi.homeDir }}/Pictures/Screenshots
 bindsym $mod+Shift+p   exec --no-startup-id flameshot full -c
@@ -168,12 +189,13 @@ exec --no-startup-id feh --bg-scale {{ .chezmoi.homeDir }}/images/wallpaper.png
 # exec --no-startup-id picom --daemon
 exec --no-startup-id dunst
 exec --no-startup-id xss-lock -- {{ .chezmoi.homeDir }}/.config/i3/scripts/lock.sh
+exec --no-startup-id easyeffects --gapplication-service
+exec --no-startup-id flatpak run com.core447.StreamController
 exec_always --no-startup-id {{ .chezmoi.homeDir }}/.config/polybar/launch.sh
 
 # Startup apps — workspace placement handled by assign rules above
 exec --no-startup-id {{ .terminal_cmd_linux | default "ghostty" }}
 exec --no-startup-id brave-browser
 exec --no-startup-id obsidian
-exec --no-startup-id obs
 exec --no-startup-id spotify
 exec --no-startup-id i3-msg 'workspace number 1'

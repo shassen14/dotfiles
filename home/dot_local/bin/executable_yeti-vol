@@ -1,0 +1,5 @@
+#!/bin/bash
+# Adjust Blue Yeti input volume. Usage: yeti-vol +5% | -5%
+SOURCE=$(pactl list sources short | awk '/Blue_Microphones_Yeti/{print $2; exit}')
+: "${SOURCE:=@DEFAULT_SOURCE@}"
+pactl set-source-volume "$SOURCE" "${1:?Usage: yeti-vol +5% or -5%}"

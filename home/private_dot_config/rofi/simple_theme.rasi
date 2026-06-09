@@ -2,27 +2,26 @@
 /* Managed by Chezmoi: {{ .chezmoi.sourceFile }} */
 
 * {
-    background-color: #222222;
-    text-color:       #bbbbbb;
-    bordercolor:      #005577; /* Renamed from border-color to avoid potential keyword clash, though unlikely */
-                               /* Or keep as border-color if you prefer, just be consistent */
-    main-bg:          @background-color; /* Example of an alias, not strictly needed here */
-    main-fg:          @text-color;
-    selected-bg:      #005577;
-    selected-fg:      #eeeeee;
+    bg:           #282a36;
+    bg-alt:       #44475a;
+    fg:           #f8f8f2;
+    fg-dim:       #6272a4;
+    accent:       #bd93f9;
+    selected-bg:  #44475a;
+    selected-fg:  #f8f8f2;
 
-    font:             "monospace 10";
+    background-color: @bg;
+    text-color:       @fg;
+    font:             "FiraCode Nerd Font 11";
 }
 
 window {
     width:            30%;
     padding:          10px;
-    /* Explicit border properties */
-    border:           1px;      /* This often just sets the width */
-    border-style:     "solid";    /* Explicitly set style */
-    border-color:     @bordercolor; /* Explicitly set color */
-    border-radius:    0px;
-    background-color: @background-color;
+    border:           2px;
+    border-color:     @accent;
+    border-radius:    4px;
+    background-color: @bg;
 }
 
 mainbox {
@@ -33,70 +32,55 @@ mainbox {
 inputbar {
     children:   [ prompt, textbox-prompt-colon, entry, case-indicator ];
     spacing:    5px;
-    text-color: @text-color;
+    text-color: @fg;
     padding:    5px;
-    /* Explicit border properties */
-    border:           1px;
-    border-style:     "solid";
-    border-color:     @bordercolor;
+    border:     0 0 1px 0;
+    border-color: @fg-dim;
 }
 
 prompt {
     enabled:    true;
-    text-color: @text-color;
+    text-color: @accent;
 }
 textbox-prompt-colon {
     enabled:    true;
     expand:     false;
-    str:        ">";
-    text-color: inherit;
+    str:        "";
+    text-color: @accent;
 }
 entry {
-    text-color: @text-color;
+    text-color: @fg;
 }
 case-indicator {
-    text-color: @text-color;
+    text-color: @fg-dim;
 }
 
 listview {
     padding:      5px;
-    /* Explicit border properties */
-    border:       1px;
-    border-style: "solid";
-    border-color: @bordercolor;
+    border:       0;
     columns:      1;
     lines:        8;
-    spacing:      5px;
+    spacing:      2px;
     fixed-height: false;
-    scrollbar:    true;
+    scrollbar:    false;
 }
 
 element {
-    padding: 5px;
-    spacing: 5px;
-    border: 0px; /* Explicitly no border for elements themselves unless selected */
+    padding:          6px 8px;
+    spacing:          5px;
+    border-radius:    3px;
+    background-color: transparent;
 }
 
 element-text {
-    text-color:       inherit;
+    text-color: inherit;
 }
 
 element.selected {
     background-color: @selected-bg;
     text-color:       @selected-fg;
-    /* Optional: border for selected element */
-    border:           1px;
-    border-style:     "solid";
-    border-color:     @selected-bg; /* Or a different highlight color */
 }
 
-scrollbar {
-    handle-width:     5px ;
-    handle-color:     @bordercolor ; /* Using our variable for scrollbar handle */
-    border-radius:    0px;
-    background-color: @background-color;
-    /* Explicit border properties if needed for scrollbar itself */
-    border:           0px; 
-    /* border-style:  none; */
-    /* border-color:  transparent; */
+element-icon {
+    size: 1.2em;
 }

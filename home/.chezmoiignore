@@ -1,9 +1,7 @@
 {{ if ne .chezmoi.os "darwin" }}
 Library
 {{ end }}
-{{ if ne .chezmoi.os "linux" }}
 .config/obs-studio
-{{ end }}
 {{ if ne .chezmoi.os "windows" }}
 Documents/PowerShell
 .config/komorebi

@@ -1,0 +1,3 @@
+#!/bin/bash
+# Adjust master output volume. Usage: vol-master +5% | -5%
+pactl set-sink-volume @DEFAULT_SINK@ "${1:?Usage: vol-master +5% or -5%}"

@@ -1,0 +1,25 @@
+#!/bin/bash
+# Send a Twitch chat message via twitch-cli.
+# One-time setup: twitch token -u -s 'user:write:chat'
+# Usage: twitch-say "!lurk"
+MSG="${1:?Usage: twitch-say 'message'}"
+
+# Resolve and cache broadcaster/sender IDs (same account if streaming yourself)
+CACHE="${XDG_CACHE_HOME:-$HOME/.cache}/twitch-ids.env"
+if [ ! -f "$CACHE" ]; then
+    USER_JSON=$(twitch api get /users 2>/dev/null)
+    USER_ID=$(echo "$USER_JSON" | jq -r '.data[0].id // empty')
+    USER_LOGIN=$(echo "$USER_JSON" | jq -r '.data[0].login // empty')
+    if [ -z "$USER_ID" ]; then
+        echo "twitch-say: not authenticated. Run: twitch token -u -s 'user:write:chat'" >&2
+        exit 1
+    fi
+    mkdir -p "$(dirname "$CACHE")"
+    printf 'TWITCH_USER_ID=%s\nTWITCH_USER_LOGIN=%s\n' "$USER_ID" "$USER_LOGIN" > "$CACHE"
+fi
+# shellcheck source=/dev/null
+source "$CACHE"
+
+twitch api post /chat/messages -b \
+    "{\"broadcaster_id\":\"${TWITCH_USER_ID}\",\"sender_id\":\"${TWITCH_USER_ID}\",\"message\":\"${MSG}\"}" \
+    > /dev/null
