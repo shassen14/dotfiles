@@ -46,3 +46,6 @@ o.timeoutlen = TIMEOUT_MS
 
 -- Clipboard (sync with system)
 o.clipboard = "unnamedplus"
+
+-- Project-local config: auto-source .nvim.lua/.nvimrc from cwd (trust-gated)
+o.exrc = true
