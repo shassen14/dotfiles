@@ -89,7 +89,13 @@ fi
 # --- fzf (fuzzy finder) ---
 # Ctrl+R: fuzzy history | Ctrl+T: fuzzy file | Alt+C: fuzzy cd
 if command -v fzf >/dev/null; then
-  eval "$(fzf --zsh)"
+  if fzf --zsh &>/dev/null; then
+    eval "$(fzf --zsh)"
+  else
+    # fzf < 0.48 (e.g. Debian apt): source key bindings and completions manually
+    [[ -f /usr/share/doc/fzf/examples/key-bindings.zsh ]] && source /usr/share/doc/fzf/examples/key-bindings.zsh
+    [[ -f /usr/share/doc/fzf/examples/completion.zsh ]] && source /usr/share/doc/fzf/examples/completion.zsh
+  fi
 fi
 
 # --- zoxide (smarter cd with frecency) ---
