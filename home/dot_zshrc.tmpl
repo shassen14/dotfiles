@@ -98,12 +98,6 @@ if command -v fzf >/dev/null; then
   fi
 fi
 
-# --- zoxide (smarter cd with frecency) ---
-# Usage: z <partial-path>  e.g. "z nvim" jumps to ~/.config/nvim
-if command -v zoxide >/dev/null; then
-  eval "$(zoxide init zsh --cmd cd)"
-fi
-
 # --- zsh plugins ---
 # autosuggestions: accept gray inline suggestion with → (right arrow)
 # syntax-highlighting: commands turn green when valid, red when not
@@ -120,6 +114,14 @@ _BREW_PREFIX="${HOMEBREW_PREFIX:-/opt/homebrew}"
 [ -r /usr/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh ] && \
   source /usr/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
 {{ end -}}
+
+# --- zoxide (smarter cd with frecency) ---
+# Usage: z <partial-path>  e.g. "z nvim" jumps to ~/.config/nvim
+# Initialized after the zsh plugins so its precmd hook is registered last
+# (zoxide's doctor warns if other tools add hooks after it).
+if command -v zoxide >/dev/null; then
+  eval "$(zoxide init zsh --cmd cd)"
+fi
 
 # --- Haskell (ghcup) ---
 # Only active when ghcup is installed; no-op otherwise.
