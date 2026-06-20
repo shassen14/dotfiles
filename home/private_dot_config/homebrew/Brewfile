@@ -54,6 +54,8 @@ cask "docker"
 cask "gimp"
 cask "krita"
 cask "obs"
+cask "elgato-stream-deck"   # Stream Deck — profiles stored in repo elgato/stream-deck/
+cask "elgato-wave-link"     # Wave Link — backups stored in repo elgato/wave-link/macos/
 cask "orcaslicer"
 cask "obsidian"
 cask "spotify"

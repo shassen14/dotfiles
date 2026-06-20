@@ -2,7 +2,7 @@
 # run_once_install-packages-windows.ps1
 # Installs Windows packages via winget.
 # Chezmoi re-runs this when file content changes — bump the version below to force a re-run.
-# version: 1
+# version: 2
 
 $packages = @(
     # Shell / terminal
@@ -37,7 +37,11 @@ $packages = @(
     "tldr-pages.tlrc",
 
     # Fonts
-    "Nerd-Fonts.FiraCode"
+    "Nerd-Fonts.FiraCode",
+
+    # Streaming / Elgato — Stream Deck profiles & Wave Link backups live in repo elgato/
+    "Elgato.StreamDeck",
+    "Elgato.WaveLink"
 )
 
 foreach ($pkg in $packages) {
