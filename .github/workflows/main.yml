@@ -22,3 +22,23 @@ jobs:
 
       - name: Apply dotfiles
         run: chezmoi apply --source "$GITHUB_WORKSPACE/home" --destination ~ --force
+
+  # Windows can't run a full apply in CI (winget installs), so validate that every
+  # template renders for the windows target. --dry-run renders without running the
+  # run_once_ package scripts. Catches template breakage before real hardware.
+  chezmoi-dry-run-windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install chezmoi
+        shell: pwsh
+        run: choco install chezmoi -y --no-progress
+
+      - name: Render all templates (dry-run, no installs)
+        shell: pwsh
+        run: |
+          chezmoi apply `
+            --source "$env:GITHUB_WORKSPACE\home" `
+            --destination "$env:RUNNER_TEMP\cm-dest" `
+            --dry-run --verbose --force

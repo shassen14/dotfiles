@@ -1,0 +1,15 @@
+# ~/.config/mise/config.toml — global runtime versions (same on macOS/Linux/Windows)
+# mise replaces per-OS node/go/python installs so versions can't drift between machines.
+# Project overrides: drop a .mise.toml in a repo. Apply changes with: mise install
+#
+# Rust intentionally stays on rustup (installed per-OS) — mise's rust just wraps rustup,
+# and rustup owns components/toolchains better. Don't add rust here.
+
+[tools]
+node = "lts"
+go = "latest"
+python = "3.13"
+
+[settings]
+# Don't auto-install on cd; install explicitly with `mise install` so shells stay fast.
+not_found_auto_install = false

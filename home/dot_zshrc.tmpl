@@ -115,6 +115,12 @@ _BREW_PREFIX="${HOMEBREW_PREFIX:-/opt/homebrew}"
   source /usr/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
 {{ end -}}
 
+# --- mise (runtime version manager: node, go, python) ---
+# Activated before zoxide so zoxide's precmd hook stays last (zoxide doctor warns otherwise).
+if command -v mise >/dev/null; then
+  eval "$(mise activate zsh)"
+fi
+
 # --- zoxide (smarter cd with frecency) ---
 # Usage: z <partial-path>  e.g. "z nvim" jumps to ~/.config/nvim
 # Initialized after the zsh plugins so its precmd hook is registered last

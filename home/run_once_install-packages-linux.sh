@@ -60,11 +60,8 @@ if command -v apt-get &>/dev/null; then
         ln -sf "$(command -v fdfind)" "$HOME/.local/bin/fd"
     fi
 
-    # Node.js via NodeSource (Ubuntu's apt nodejs+npm packages conflict)
-    if ! command -v node &>/dev/null; then
-        curl -fsSL https://deb.nodesource.com/setup_lts.x | sudo -E bash -
-        sudo apt-get install -y nodejs
-    fi
+    # Node.js is provided by mise (installed below), not apt — keeps versions
+    # consistent with macOS/Windows. See ~/.config/mise/config.toml.
 
     # VS Code
     if ! command -v code &>/dev/null; then
@@ -133,7 +130,6 @@ elif command -v dnf &>/dev/null; then
         cmake pkg-config make \
         neovim ripgrep fd tmux \
         fzf zoxide zsh-autosuggestions zsh-syntax-highlighting \
-        nodejs npm \
         python3 python3-pip \
         ghostty imagemagick \
         xclip unzip \
@@ -150,7 +146,6 @@ elif command -v pacman &>/dev/null; then
         cmake pkg-config make base-devel \
         neovim ripgrep fd tmux \
         fzf zoxide zsh-autosuggestions zsh-syntax-highlighting \
-        nodejs npm \
         python python-pip \
         ghostty imagemagick \
         xclip unzip \
@@ -225,6 +220,13 @@ fi
 # ── Rustup ───────────────────────────────────────────────────────────────────
 if ! command -v rustup &>/dev/null; then
     try "rustup" bash -c 'curl --proto "=https" --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --no-modify-path'
+fi
+
+# ── mise (runtime version manager: node/go/python) ───────────────────────────
+# Installs to ~/.local/bin; shells activate it via .zshrc/.bashrc.
+# Run `mise install` after first apply to fetch the versions in ~/.config/mise/config.toml.
+if ! command -v mise &>/dev/null && [ ! -x "$HOME/.local/bin/mise" ]; then
+    try "mise" bash -c 'curl -fsSL https://mise.run | sh'
 fi
 
 # ── OrcaSlicer AppImage (no apt/PPA available) ───────────────────────────────

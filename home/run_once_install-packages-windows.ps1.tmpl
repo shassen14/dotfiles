@@ -2,7 +2,7 @@
 # run_once_install-packages-windows.ps1
 # Installs Windows packages via winget.
 # Chezmoi re-runs this when file content changes — bump the version below to force a re-run.
-# version: 2
+# version: 3
 
 $packages = @(
     # Shell / terminal
@@ -22,10 +22,9 @@ $packages = @(
     "LGUG2Z.whkd",
 
     # Languages / runtimes
-    "OpenJS.NodeJS.LTS",
-    "Python.Python.3.13",
+    # node/go/python are managed by mise (see ~/.config/mise/config.toml), not winget.
+    "jdx.mise",
     "Rustlang.Rustup",
-    "GoLang.Go",
 
     # CLI tools
     "junegunn.fzf",

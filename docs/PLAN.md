@@ -169,3 +169,24 @@ Requires the physical Stream Deck + the apps installed:
 - Build a profile, **export** it into `elgato/stream-deck/profiles/`, commit.
 - Add per-OS variants for launch/command buttons.
 - Export Wave Link backups per OS into `elgato/wave-link/<os>/`.
+
+---
+
+## Phase 9 — Unified runtimes (mise) ✓
+
+Replaced per-OS node/go/python installs with [mise](https://mise.jdx.dev) so versions
+match across machines.
+
+- `home/private_dot_config/mise/config.toml`: global `node=lts`, `go=latest`, `python=3.13`.
+- Installed via Brewfile (`mise`), winget (`jdx.mise`), Linux (`curl https://mise.run`).
+- Removed: `brew node`; winget `OpenJS.NodeJS.LTS` / `Python.Python.3.13` / `GoLang.Go`;
+  Linux NodeSource block + `nodejs npm` from dnf/pacman. (System `python3` kept on Linux as a base dep.)
+- Activated in `.zshrc` (before zoxide), `.bashrc`, and the PowerShell profile.
+- **Rust stays on rustup** everywhere (mise's rust just wraps rustup).
+- First run after apply: `mise install` to fetch the pinned versions.
+
+### Windows CI ✓
+
+`main.yml` gained a `chezmoi-dry-run-windows` job (windows-latest): installs chezmoi via
+choco, runs `chezmoi apply --dry-run` so every template renders for the Windows target
+without executing the winget install script. Catches template breakage before real hardware.

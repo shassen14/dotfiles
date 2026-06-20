@@ -59,6 +59,11 @@ fi
 # Enable Vi mode at the prompt
 # set -o vi
 
+# --- mise (runtime version manager: node, go, python) ---
+if command -v mise >/dev/null; then
+  eval "$(mise activate bash)"
+fi
+
 # --- Starship Prompt ---
 # Initialize Starship (must be last thing that affects prompt)
 if command -v starship >/dev/null; then
