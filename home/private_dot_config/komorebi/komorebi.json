@@ -1,7 +1,11 @@
 {
   "$schema": "https://raw.githubusercontent.com/LGUG2Z/komorebi/master/schema.json",
   "app_specific_configuration_path": "~/.config/komorebi/applications.json",
-  "global_work_area_offset": { "left": 0, "top": 32, "right": 0, "bottom": 32 },
+  "global_work_area_offset": { "left": 0, "top": 32, "right": 0, "bottom": 8 },
+  "display_index_preferences": {
+    "0": "C4P4293",
+    "1": "74P4293"
+  },
   "ignore_rules": [
     { "kind": "Exe", "id": "1Password.exe", "matching_strategy": "Equals" },
     { "kind": "Exe", "id": "Taskmgr.exe",   "matching_strategy": "Equals" }
@@ -14,7 +18,11 @@
         { "name": "1", "layout": "BSP" },
         { "name": "2", "layout": "BSP" },
         { "name": "3", "layout": "BSP" },
-        { "name": "4", "layout": "BSP" },
+        { "name": "4", "layout": "BSP" }
+      ]
+    },
+    {
+      "workspaces": [
         { "name": "5", "layout": "BSP" },
         { "name": "6", "layout": "BSP" },
         { "name": "7", "layout": "BSP" },
@@ -31,6 +39,6 @@
     "stack": "#bb9af7",
     "monocle": "#e0af68"
   },
-  "default_container_padding": 8,
-  "default_workspace_padding": 8
+  "default_container_padding": 4,
+  "default_workspace_padding": 4
 }

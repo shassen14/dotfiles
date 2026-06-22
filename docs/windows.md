@@ -43,9 +43,18 @@ Two different layers, easy to confuse:
   - `Ctrl+Tab` / `Ctrl+Shift+Tab` — next / previous tab
   - `Ctrl+Alt+1..9` — jump straight to tab N
 - **komorebi workspaces** (the tiling WM, handled by **whkd**):
-  - `alt+1..9` — focus workspace · `alt+shift+1..9` — move window there
+  - `alt+1..4` — workspaces on the **left** monitor · `alt+5..9` — the **right**
+    monitor · `alt+shift+N` moves the focused window to workspace N
   - `alt+h/j/k/l` — focus window · `alt+shift+h/j/k/l` — move window
   - `alt+shift+b` — Brave · `alt+shift+t` — terminal · `alt+f` — toggle float
+
+> **Dual-monitor layout:** workspaces 1-4 are pinned to the left monitor and 5-9
+> to the right via `komorebi.json` (`monitors[]` split + `display_index_preferences`
+> by serial number, so they don't swap on reboot). Because each workspace lives on
+> a specific monitor, the `alt+N` keys use `focus-monitor-workspace <mon> <ws>`
+> rather than a bare workspace index. If your two monitors are physically swapped
+> from this, flip the two serials in `display_index_preferences` (`komorebic
+> monitor-information` lists them — the one with a negative `left` is on the left).
 
 If the `alt+...` bindings do nothing, **whkd isn't running** — see Known gaps.
 Note `alt+tab` is rebound by komorebi to "focus last workspace," so it no longer

@@ -25,7 +25,7 @@ bars:
     padding:
       top: 4
       left: 8
-      bottom: 0
+      bottom: 4
       right: 8
     widgets:
       left: ["komorebi_workspaces", "komorebi_active_layout", "active_window"]
@@ -37,9 +37,9 @@ widgets:
     type: "komorebi.workspaces.WorkspaceWidget"
     options:
       label_offline: "komorebi offline"
-      label_workspace_btn: "{index}"
-      label_workspace_active_btn: "{index}"
-      label_workspace_populated_btn: "{index}"
+      label_workspace_btn: "{name}"
+      label_workspace_active_btn: "{name}"
+      label_workspace_populated_btn: "{name}"
       label_zero_index: false
       hide_empty_workspaces: false
 
@@ -66,6 +66,7 @@ widgets:
       label_no_window: "—"
       max_length: 60
       max_length_ellipsis: "…"
+      monitor_exclusive: true
 
   media:
     type: "yasb.media.MediaWidget"

@@ -2,7 +2,7 @@
 # run_once_install-packages-windows.ps1
 # Installs Windows packages via winget.
 # Chezmoi re-runs this when file content changes — bump the version below to force a re-run.
-# version: 5
+# version: 6
 
 $packages = @(
     # Shell / terminal
@@ -36,8 +36,9 @@ $packages = @(
     "jqlang.jq",
     "tldr-pages.tlrc",
 
-    # Fonts
-    "Nerd-Fonts.FiraCode",
+    # Fonts: FiraCode Nerd Font is NOT in winget (the only Nerd Font there is
+    # DEVCOM.JetBrainsMonoNerdFont). It's installed from the Nerd Fonts release
+    # further down — see the "FiraCode Nerd Font" block.
 
     # GUI apps — parity with macOS Brewfile / Linux installer
     "Brave.Brave",
@@ -64,6 +65,43 @@ if (-not (Get-Command spotify -ErrorAction SilentlyContinue)) {
     $sp = winget install --id Spotify.Spotify --exact --accept-source-agreements --accept-package-agreements --silent 2>&1
     if ($LASTEXITCODE -ne 0) {
         Write-Host "Spotify install failed (winget blocks it when elevated). Run this in a NON-admin PowerShell: winget install --id Spotify.Spotify -e"
+    }
+}
+
+# FiraCode Nerd Font — used by Windows Terminal + YASB (matches macOS/Linux).
+# Not available via winget, so install per-user (no admin) straight from the Nerd
+# Fonts GitHub release: copy the .ttf files into the user fonts folder and register
+# them under HKCU. Idempotent — skips if the font is already present.
+$userFontsDir = Join-Path $env:LOCALAPPDATA "Microsoft\Windows\Fonts"
+if (-not (Test-Path (Join-Path $userFontsDir "FiraCodeNerdFont-Regular.ttf"))) {
+    Write-Host "Installing FiraCode Nerd Font..."
+    try {
+        Add-Type @"
+using System;
+using System.Runtime.InteropServices;
+public class FontInstallHelper {
+  [DllImport("gdi32.dll")] public static extern int AddFontResource(string lpFileName);
+  [DllImport("user32.dll")] public static extern IntPtr SendMessage(IntPtr hWnd, uint Msg, IntPtr wParam, IntPtr lParam);
+}
+"@
+        $fontUrl = "https://github.com/ryanoasis/nerd-fonts/releases/latest/download/FiraCode.zip"
+        $fontZip = Join-Path $env:TEMP "FiraCodeNF.zip"
+        $fontExt = Join-Path $env:TEMP "FiraCodeNF"
+        Invoke-WebRequest -Uri $fontUrl -OutFile $fontZip
+        if (Test-Path $fontExt) { Remove-Item $fontExt -Recurse -Force }
+        Expand-Archive -Path $fontZip -DestinationPath $fontExt -Force
+        New-Item -ItemType Directory -Force -Path $userFontsDir | Out-Null
+        $fontReg = "HKCU:\Software\Microsoft\Windows NT\CurrentVersion\Fonts"
+        foreach ($ttf in Get-ChildItem $fontExt -Filter *.ttf -Recurse) {
+            $fontDest = Join-Path $userFontsDir $ttf.Name
+            Copy-Item $ttf.FullName $fontDest -Force
+            New-ItemProperty -Path $fontReg -Name "$($ttf.BaseName) (TrueType)" -Value $fontDest -PropertyType String -Force | Out-Null
+            [void][FontInstallHelper]::AddFontResource($fontDest)
+        }
+        [void][FontInstallHelper]::SendMessage([IntPtr]0xffff, 0x001D, [IntPtr]::Zero, [IntPtr]::Zero)
+        Remove-Item $fontZip, $fontExt -Recurse -Force -ErrorAction SilentlyContinue
+    } catch {
+        Write-Host "FiraCode Nerd Font install failed: $_ — install it manually from https://github.com/ryanoasis/nerd-fonts/releases"
     }
 }
 
