@@ -6,6 +6,8 @@ Library
 Documents/PowerShell
 .config/komorebi
 .config/windows-terminal
+# Windows-only Claude statusline script (mac/linux use the .sh)
+.claude/statusline-command.ps1
 {{ end }}
 {{ if eq .chezmoi.os "windows" }}
 # Unix-only run scripts — bash cannot execute on Windows, so chezmoi must not
@@ -13,6 +15,7 @@ Documents/PowerShell
 # launch the .sh first). The Windows package install runs from
 # install-packages-windows.ps1, which is NOT ignored here.
 configure-nvidia-suspend-linux.sh
+install-claude.sh
 install-opencode-linux.sh
 install-packages-darwin.sh
 install-packages-linux.sh
@@ -20,6 +23,8 @@ install-tpm.sh
 set-default-shell-linux.sh
 setup-streaming.sh
 install_vscode_extensions.sh
+# mac/linux Claude statusline script (Windows uses the .ps1)
+.claude/statusline-command.sh
 # Unix-only window-manager / status-bar configs (no effect on Windows)
 .config/sketchybar
 .config/aerospace

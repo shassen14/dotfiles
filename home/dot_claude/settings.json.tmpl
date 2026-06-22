@@ -1,0 +1,19 @@
+{
+  "model": "opus",
+  "statusLine": {
+    "type": "command",
+{{- if eq .chezmoi.os "windows" }}
+    "command": "pwsh -NoProfile -File {{ .chezmoi.homeDir }}/.claude/statusline-command.ps1"
+{{- else }}
+    "command": "bash {{ .chezmoi.homeDir }}/.claude/statusline-command.sh"
+{{- end }}
+  },
+  "enabledPlugins": {
+    "frontend-design@claude-plugins-official": true,
+    "swift-lsp@claude-plugins-official": true
+  },
+  "effortLevel": "medium",
+  "awaySummaryEnabled": false,
+  "showClearContextOnPlanAccept": true,
+  "theme": "dark-ansi"
+}

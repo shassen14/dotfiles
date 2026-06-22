@@ -47,4 +47,10 @@ foreach ($pkg in $packages) {
     Write-Host "Installing $pkg..."
     winget install --id $pkg --exact --accept-source-agreements --accept-package-agreements --silent 2>&1
 }
+
+# Claude Code — installed via the official native installer (not in winget).
+if (-not (Get-Command claude -ErrorAction SilentlyContinue)) {
+    Write-Host "Installing Claude Code..."
+    irm https://claude.ai/install.ps1 | iex
+}
 {{ end -}}
