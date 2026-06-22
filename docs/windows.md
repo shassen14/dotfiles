@@ -13,6 +13,20 @@ support already exists in the repo — this is the runbook for *running* it.
 | Ghostty / Alacritty | Windows Terminal (`private_dot_config/windows-terminal/`) |
 | `.zshrc` | PowerShell profile (`Documents/PowerShell/Microsoft.PowerShell_profile.ps1`) |
 
+## Use PowerShell 7, not Windows PowerShell 5.1
+
+Windows ships with **Windows PowerShell 5.1** (the default "PowerShell" on
+Windows 10). This repo's profile, aliases, and `~/.local/bin` PATH setup target
+**PowerShell 7** (`pwsh`) — its profile lives in `Documents\PowerShell\`, while
+5.1 reads `Documents\WindowsPowerShell\` and won't load any of it.
+
+- Check your shell: `$PSVersionTable.PSVersion` (5.x = the old one).
+- Launch v7 by running `pwsh`, or open **PowerShell 7** from the Start menu.
+- Make it the default: Windows Terminal → Settings (`Ctrl+,`) → Startup →
+  Default profile → **PowerShell** (the 7.x entry, *not* "Windows PowerShell").
+- Note: anything added to the persistent user PATH works in *both* shells, so a
+  binary like `claude` may run in 5.1 even though the profile didn't load.
+
 ## First-time bootstrap
 
 1. Install **Git** and **PowerShell 7** (so you have a clean shell + git):
@@ -47,11 +61,11 @@ chezmoi diff          # preview pending changes
 chezmoi apply -v      # re-apply
 ```
 
-Start the tiling WM:
+Start the tiling WM (no reboot needed — tiling kicks in immediately):
 ```powershell
-komorebic start --whkd
+komorebic start --whkd            # start now
+komorebic enable-autostart --whkd # start automatically on every login
 ```
-Add `komorebic start --whkd` to a startup task if you want it on login.
 
 ## Status bar (YASB)
 
