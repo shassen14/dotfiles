@@ -3,6 +3,13 @@
 # PowerShell 7 (pwsh) profile. Mirrors the zsh/bash aliases so the
 # interface matches macOS/Linux: wifi, wific, wifi-status, git shortcuts, etc.
 
+# --- PATH: ensure ~/.local/bin is on PATH (Claude Code + native installers
+#     install here, mirroring the unix ~/.local/bin convention) ---
+$localBin = Join-Path $HOME ".local\bin"
+if ((Test-Path $localBin) -and ($env:Path -notlike "*$localBin*")) {
+    $env:Path = "$localBin;$env:Path"
+}
+
 # --- Navigation ---
 function .. { Set-Location .. }
 function ... { Set-Location ../.. }
