@@ -6,6 +6,7 @@ Library
 Documents/PowerShell
 .config/komorebi
 .config/windows-terminal
+.config/yasb
 # Windows-only Claude statusline script (mac/linux use the .sh)
 .claude/statusline-command.ps1
 {{ end }}

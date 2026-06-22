@@ -17,9 +17,10 @@ $packages = @(
     "Git.Git",
     "GitHub.cli",
 
-    # Tiling WM
+    # Tiling WM + status bar
     "LGUG2Z.komorebi",
     "LGUG2Z.whkd",
+    "AmN.yasb",
 
     # Languages / runtimes
     # node/go/python are managed by mise (see ~/.config/mise/config.toml), not winget.
@@ -52,5 +53,16 @@ foreach ($pkg in $packages) {
 if (-not (Get-Command claude -ErrorAction SilentlyContinue)) {
     Write-Host "Installing Claude Code..."
     irm https://claude.ai/install.ps1 | iex
+}
+
+# YASB status bar: register login autostart and start it now. Config lives in
+# ~/.config/yasb (managed by chezmoi). Wrapped so a yasbc hiccup doesn't abort.
+if (Get-Command yasbc -ErrorAction SilentlyContinue) {
+    try {
+        yasbc enable-autostart 2>&1 | Out-Null
+        yasbc start 2>&1 | Out-Null
+    } catch {
+        Write-Host "YASB installed; start it manually with: yasbc start"
+    }
 }
 {{ end -}}

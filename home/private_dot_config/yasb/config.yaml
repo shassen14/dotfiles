@@ -1,0 +1,121 @@
+# YASB (Yet Another Status Bar) — Windows status bar for komorebi.
+# Themed to match SketchyBar (macOS) and polybar (Linux): Tokyonight Night
+# palette + FiraCode Nerd Font. Colors live in styles.css.
+# Module set kept consistent across all three bars:
+#   left:   workspaces | layout | active window
+#   center: media (spotify-equivalent)
+#   right:  cpu | memory | volume | battery | clock
+# Icons use \u escapes (Nerd Font codepoints) so they render deterministically.
+
+watch_stylesheet: true
+watch_config: true
+debug: false
+show_systray: true
+
+bars:
+  status-bar:
+    enabled: true
+    screens: ['*']
+    alignment:
+      position: "top"
+      align: "center"
+    dimensions:
+      width: "100%"
+      height: 32
+    padding:
+      top: 4
+      left: 8
+      bottom: 0
+      right: 8
+    widgets:
+      left: ["komorebi_workspaces", "komorebi_active_layout", "active_window"]
+      center: ["media"]
+      right: ["cpu", "memory", "volume", "battery", "clock"]
+
+widgets:
+  komorebi_workspaces:
+    type: "komorebi.workspaces.WorkspaceWidget"
+    options:
+      label_offline: "komorebi offline"
+      label_workspace_btn: "{index}"
+      label_workspace_active_btn: "{index}"
+      label_workspace_populated_btn: "{index}"
+      label_zero_index: false
+      hide_empty_workspaces: false
+
+  komorebi_active_layout:
+    type: "komorebi.active_layout.ActiveLayoutWidget"
+    options:
+      hide_if_offline: true
+      label: "{icon}"
+      layouts:
+        ['bsp', 'columns', 'rows', 'grid', 'vertical_stack', 'horizontal_stack', 'ultrawide_vertical_stack']
+      layout_icons:
+        bsp: "BSP"
+        columns: "COLS"
+        rows: "ROWS"
+        grid: "GRID"
+        vertical_stack: "V-STACK"
+        horizontal_stack: "H-STACK"
+        ultrawide_vertical_stack: "W-STACK"
+
+  active_window:
+    type: "yasb.active_window.ActiveWindowWidget"
+    options:
+      label: "{win[title]}"
+      label_no_window: "—"
+      max_length: 60
+      max_length_ellipsis: "…"
+
+  media:
+    type: "yasb.media.MediaWidget"
+    options:
+      label: " {title} - {artist}"
+      label_alt: " {title}"
+      max_field_size:
+        label: 50
+        label_alt: 30
+      show_thumbnail: false
+      controls_only: false
+      hide_empty: true
+
+  cpu:
+    type: "yasb.cpu.CpuWidget"
+    options:
+      label: " {info[percent][total]}%"
+      label_alt: " {info[histograms][cpu_percent]}"
+      update_interval: 2000
+
+  memory:
+    type: "yasb.memory.MemoryWidget"
+    options:
+      label: " {virtual_mem_percent}%"
+      label_alt: " {virtual_mem_free}"
+      update_interval: 4000
+
+  volume:
+    type: "yasb.volume.VolumeWidget"
+    options:
+      label: "{icon} {level}%"
+      label_alt: "{icon} {level}%"
+      volume_icons:
+        - ""
+        - ""
+        - ""
+        - ""
+
+  battery:
+    type: "yasb.battery.BatteryWidget"
+    options:
+      label: "{icon} {percent}%"
+      label_alt: "{icon} {percent}% ({time_remaining})"
+      hide_unsupported: true
+
+  clock:
+    type: "yasb.clock.ClockWidget"
+    options:
+      label: " {%a %d %b  %H:%M}"
+      label_alt: "{%A %d %B %Y  %H:%M:%S}"
+      callbacks:
+        on_left: "toggle_calendar"
+        on_right: "toggle_label"

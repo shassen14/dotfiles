@@ -43,8 +43,9 @@ docs/PLAN.md                                  # Full improvement roadmap
 ## Platforms
 
 - **macOS**: AeroSpace (tiling WM) + SketchyBar (status bar) + Homebrew
-- **Linux**: i3wm + apt/dnf/pacman
-- **Windows**: komorebi + whkd (tiling WM) + winget; bootstrap via `bootstrap.ps1`. See `docs/windows.md`.
+- **Linux**: i3wm + polybar (status bar) + apt/dnf/pacman
+- **Windows**: komorebi + whkd (tiling WM) + YASB (status bar) + winget; bootstrap via `bootstrap.ps1`. See `docs/windows.md`.
+- **Status bars** share one look: **Tokyonight Night** palette + **FiraCode Nerd Font** + matching module set across SketchyBar / polybar / YASB.
 - **Terminal**: Ghostty (primary, KGP image support) + Alacritty (fallback); Windows Terminal on Windows
 - **Streaming/Elgato**: Stream Deck + Wave Link; shared exports in repo `elgato/`. See `docs/elgato.md`.
 

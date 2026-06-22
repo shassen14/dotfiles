@@ -1,0 +1,95 @@
+/* YASB stylesheet — Tokyonight Night, matching SketchyBar (macOS) + polybar (Linux).
+ *
+ * Shared palette (Tokyonight Night):
+ *   bg #24283b   bg-alt #414868   fg #a9b1d6   dim #565f89
+ *   magenta #bb9af7  blue #7aa2f7  cyan #7dcfff
+ *   green #9ece6a  yellow #e0af68  orange #ff9e64  red #f7768e
+ */
+
+* {
+    font-family: "FiraCode Nerd Font", "Segoe UI";
+    font-size: 12px;
+    font-weight: 500;
+    color: #a9b1d6;
+}
+
+.yasb-bar {
+    background-color: rgba(36, 40, 59, 0.92);
+}
+
+.widget {
+    padding: 0 6px;
+    margin: 0 2px;
+}
+
+.widget .label {
+    padding: 0 2px;
+}
+
+.widget .label.alt {
+    color: #c0caf5;
+}
+
+/* --- Workspaces --- */
+.komorebi-workspaces {
+    margin: 0 4px;
+}
+
+.komorebi-workspaces .ws-btn {
+    font-size: 13px;
+    background-color: transparent;
+    color: #565f89;
+    margin: 0 2px;
+    padding: 0 6px;
+    border-radius: 6px;
+}
+
+.komorebi-workspaces .ws-btn.populated {
+    color: #a9b1d6;
+}
+
+.komorebi-workspaces .ws-btn.active {
+    color: #1a1b26;
+    background-color: #7aa2f7;
+}
+
+.komorebi-workspaces .ws-btn:hover {
+    background-color: #414868;
+    color: #c0caf5;
+}
+
+/* --- Active layout --- */
+.komorebi-active-layout {
+    color: #bb9af7;
+}
+
+/* --- Active window --- */
+.active-window-widget {
+    color: #565f89;
+}
+
+/* --- Media (spotify-equivalent) --- */
+.media-widget {
+    color: #9ece6a;
+}
+
+/* --- Right-side system widgets (icon-colored to match polybar) --- */
+.cpu-widget {
+    color: #7dcfff;
+}
+
+.memory-widget {
+    color: #bb9af7;
+}
+
+.volume-widget {
+    color: #e0af68;
+}
+
+.battery-widget {
+    color: #9ece6a;
+}
+
+.clock-widget {
+    color: #7aa2f7;
+}

@@ -73,8 +73,10 @@ chezmoi apply
 ## Platforms
 
 - **macOS**: AeroSpace (tiling WM) + SketchyBar + Homebrew
-- **Linux**: i3wm + apt/dnf/pacman (Debian, Fedora, Arch)
-- **Windows**: komorebi + whkd (tiling WM) + winget + Windows Terminal — see [`docs/windows.md`](docs/windows.md)
+- **Linux**: i3wm + polybar + apt/dnf/pacman (Debian, Fedora, Arch)
+- **Windows**: komorebi + whkd (tiling WM) + YASB + winget + Windows Terminal — see [`docs/windows.md`](docs/windows.md)
+
+Status bars (SketchyBar / polybar / YASB) share a **Tokyonight Night** palette + **FiraCode Nerd Font** and matching modules across all three OSes.
 
 ## Structure
 

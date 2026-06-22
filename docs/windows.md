@@ -9,6 +9,7 @@ support already exists in the repo — this is the runbook for *running* it.
 |---|---|
 | Homebrew / apt | winget (`run_once_install-packages-windows.ps1`) |
 | AeroSpace / i3 | komorebi + whkd (`private_dot_config/komorebi/`) |
+| SketchyBar / polybar | YASB (`private_dot_config/yasb/`) |
 | Ghostty / Alacritty | Windows Terminal (`private_dot_config/windows-terminal/`) |
 | `.zshrc` | PowerShell profile (`Documents/PowerShell/Microsoft.PowerShell_profile.ps1`) |
 
@@ -51,6 +52,23 @@ Start the tiling WM:
 komorebic start --whkd
 ```
 Add `komorebic start --whkd` to a startup task if you want it on login.
+
+## Status bar (YASB)
+
+The Windows status bar is **YASB** (`AmN.yasb`), themed to match SketchyBar
+(macOS) and polybar (Linux): **Tokyonight Night** palette + **FiraCode Nerd
+Font**, with the same module set (workspaces · layout · window | media | cpu ·
+memory · volume · battery · clock). Config lives in `~/.config/yasb/`
+(`config.yaml` + `styles.css`).
+
+The install script registers login autostart and starts it. Manual control:
+```powershell
+yasbc start          # start the bar
+yasbc reload         # reload after editing config.yaml / styles.css
+yasbc enable-autostart
+```
+Workspace numbers come from komorebi, so komorebi must be running for that
+widget to populate.
 
 ## Elgato
 

@@ -37,7 +37,8 @@ LABEL_COLOR=$WHITE # Color of all labels
 ITEM_DIR="$HOME/.config/sketchybar/items"
 PLUGIN_DIR="$HOME/.config/sketchybar/plugins"
 
-FONT="Hack Nerd Font:Regular:13.0"
+# FiraCode Nerd Font — shared typeface across SketchyBar, polybar, and YASB
+FONT="FiraCode Nerd Font:Regular:13.0"
 
 PADDINGS=3
 BACKGROUND_HEIGHT=22
