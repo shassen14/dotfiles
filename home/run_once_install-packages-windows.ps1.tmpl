@@ -2,7 +2,7 @@
 # run_once_install-packages-windows.ps1
 # Installs Windows packages via winget.
 # Chezmoi re-runs this when file content changes — bump the version below to force a re-run.
-# version: 4
+# version: 5
 
 $packages = @(
     # Shell / terminal
@@ -86,13 +86,28 @@ if ($parts -notcontains $localBin) {
     Write-Host "Added $localBin to the persistent user PATH."
 }
 
-# whkd hotkey daemon: it ONLY reads $WHKD_CONFIG_HOME\whkdrc (default ~/.config),
-# but this repo keeps whkdrc under ~/.config/komorebi/. Without this env var whkd
-# crashes on startup ("could not load whkdrc") and NO komorebi keybindings work.
-$whkdHome = Join-Path $HOME ".config\komorebi"
-if ([System.Environment]::GetEnvironmentVariable("WHKD_CONFIG_HOME", "User") -ne $whkdHome) {
-    [System.Environment]::SetEnvironmentVariable("WHKD_CONFIG_HOME", $whkdHome, "User")
-    Write-Host "Set WHKD_CONFIG_HOME to $whkdHome (so whkd finds whkdrc)."
+# komorebi + whkd config location: BOTH tools default to looking in ~ for their
+# config, but this repo keeps komorebi.json/whkdrc under ~/.config/komorebi/.
+# Without these env vars komorebi silently runs on built-in DEFAULTS (no work-area
+# offset, so windows tile OVER the YASB bar; wrong workspaces) and whkd crashes
+# ("could not load whkdrc"), so no keybindings work.
+$komoHome = Join-Path $HOME ".config\komorebi"
+foreach ($var in "KOMOREBI_CONFIG_HOME", "WHKD_CONFIG_HOME") {
+    if ([System.Environment]::GetEnvironmentVariable($var, "User") -ne $komoHome) {
+        [System.Environment]::SetEnvironmentVariable($var, $komoHome, "User")
+        Write-Host "Set $var to $komoHome."
+    }
+}
+
+# Fetch the community application-specific config (applications.json) that
+# komorebi.json references — improves tiling for apps that need special handling.
+if (Get-Command komorebic -ErrorAction SilentlyContinue) {
+    try { komorebic fetch-asc 2>&1 | Out-Null } catch { }
+    # Autostart komorebi + whkd at login with the config path baked in, so it never
+    # depends on env-var timing. (komorebi must start from an interactive login
+    # session — it needs foreground rights — so we register autostart, not start now.)
+    $komoCfg = Join-Path $komoHome "komorebi.json"
+    try { komorebic enable-autostart --config "$komoCfg" --whkd 2>&1 | Out-Null } catch { }
 }
 
 # YASB status bar: register login autostart and start it now. Config lives in

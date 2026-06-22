@@ -128,10 +128,20 @@ profiles/backups afterward — see `docs/elgato.md` and `elgato/README.md`.
   ```
 - komorebi keybindings mirror AeroSpace (alt+hjkl, alt+1-9); confirm they don't
   collide with anything you run.
-- **No keybindings work / whkd won't start:** whkd only reads
-  `$Env:WHKD_CONFIG_HOME\whkdrc` (default `~/.config`), but this repo keeps
-  `whkdrc` under `~/.config/komorebi/`. The installer sets
-  `WHKD_CONFIG_HOME=~/.config/komorebi` for this reason — if whkd crashes with
-  "could not load whkdrc", that env var is missing. Set it, then
-  `komorebic enable-autostart --whkd` and restart komorebi.
+- **komorebi ignores the config / whkd won't start (config-home bug):** both
+  komorebi and whkd default to looking in `~` for their config, but this repo
+  keeps `komorebi.json` + `whkdrc` under `~/.config/komorebi/`. If the
+  `KOMOREBI_CONFIG_HOME` / `WHKD_CONFIG_HOME` env vars aren't set, komorebi
+  silently runs on **built-in defaults** (windows tile over the YASB bar, wrong
+  workspaces) and whkd crashes ("could not load whkdrc"). The installer sets both
+  to `~/.config/komorebi`. Verify with `komorebic check` (should say
+  "KOMOREBI_CONFIG_HOME detected" and find both files). The autostart shortcut
+  bakes the path in: `komorebic enable-autostart --config <path>\komorebi.json --whkd`.
+- **komorebi won't start from a script/automation shell** (`failed call to
+  AllowSetForegroundWindow`): it needs an interactive foreground session. Start it
+  from your own terminal (`komorebic start --config ~/.config/komorebi/komorebi.json --whkd`)
+  or just let the login autostart handle it.
+- After editing `komorebi.json`, reload with `komorebic reload-configuration`
+  (bound to `alt+shift+r`); some changes (work-area offset) need a full
+  `komorebic stop --whkd` + `start ... --whkd`.
 - WSL profile in Windows Terminal assumes a WSL distro is installed.
