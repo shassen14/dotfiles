@@ -2,7 +2,7 @@
 # run_once_install-packages-windows.ps1
 # Installs Windows packages via winget.
 # Chezmoi re-runs this when file content changes — bump the version below to force a re-run.
-# version: 3
+# version: 4
 
 $packages = @(
     # Shell / terminal
@@ -39,6 +39,14 @@ $packages = @(
     # Fonts
     "Nerd-Fonts.FiraCode",
 
+    # GUI apps — parity with macOS Brewfile / Linux installer
+    "Brave.Brave",
+    "Bitwarden.Bitwarden",
+    "Discord.Discord",
+    "Obsidian.Obsidian",
+    "OBSProject.OBSStudio",
+    "SoftFever.OrcaSlicer",
+
     # Streaming / Elgato — Stream Deck profiles & Wave Link backups live in repo elgato/
     "Elgato.StreamDeck",
     "Elgato.WaveLink"
@@ -49,10 +57,42 @@ foreach ($pkg in $packages) {
     winget install --id $pkg --exact --accept-source-agreements --accept-package-agreements --silent 2>&1
 }
 
+# Spotify — winget REFUSES to install it from an elevated/admin prompt, and the
+# bootstrap runs elevated. Try non-elevated-friendly; if it fails, tell the user.
+if (-not (Get-Command spotify -ErrorAction SilentlyContinue)) {
+    Write-Host "Installing Spotify..."
+    $sp = winget install --id Spotify.Spotify --exact --accept-source-agreements --accept-package-agreements --silent 2>&1
+    if ($LASTEXITCODE -ne 0) {
+        Write-Host "Spotify install failed (winget blocks it when elevated). Run this in a NON-admin PowerShell: winget install --id Spotify.Spotify -e"
+    }
+}
+
 # Claude Code — installed via the official native installer (not in winget).
 if (-not (Get-Command claude -ErrorAction SilentlyContinue)) {
     Write-Host "Installing Claude Code..."
     irm https://claude.ai/install.ps1 | iex
+}
+
+# Persistent PATH: ensure ~/.local/bin (Claude Code + native installers land here)
+# is on the USER PATH as a FOLDER, so `claude` and the helper scripts resolve in
+# every shell — Windows PowerShell 5.1 and GUI launches included, not just pwsh.
+# (The pwsh profile also prepends it per-session; this makes it durable.)
+$localBin = Join-Path $HOME ".local\bin"
+$userPath = [System.Environment]::GetEnvironmentVariable("PATH", "User")
+$parts = $userPath -split ';' | Where-Object { $_ -and $_ -ne (Join-Path $localBin "claude.exe") }
+if ($parts -notcontains $localBin) {
+    $parts += $localBin
+    [System.Environment]::SetEnvironmentVariable("PATH", ($parts -join ';'), "User")
+    Write-Host "Added $localBin to the persistent user PATH."
+}
+
+# whkd hotkey daemon: it ONLY reads $WHKD_CONFIG_HOME\whkdrc (default ~/.config),
+# but this repo keeps whkdrc under ~/.config/komorebi/. Without this env var whkd
+# crashes on startup ("could not load whkdrc") and NO komorebi keybindings work.
+$whkdHome = Join-Path $HOME ".config\komorebi"
+if ([System.Environment]::GetEnvironmentVariable("WHKD_CONFIG_HOME", "User") -ne $whkdHome) {
+    [System.Environment]::SetEnvironmentVariable("WHKD_CONFIG_HOME", $whkdHome, "User")
+    Write-Host "Set WHKD_CONFIG_HOME to $whkdHome (so whkd finds whkdrc)."
 }
 
 # YASB status bar: register login autostart and start it now. Config lives in

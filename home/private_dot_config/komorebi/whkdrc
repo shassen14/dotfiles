@@ -5,7 +5,7 @@
 
 # --- Launch apps ---
 alt + shift + t  : wt
-alt + shift + b  : start msedge
+alt + shift + b  : start brave
 alt + shift + f  : explorer.exe
 alt + shift + q  : komorebic close
 

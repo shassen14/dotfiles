@@ -10,8 +10,14 @@ support already exists in the repo — this is the runbook for *running* it.
 | Homebrew / apt | winget (`run_once_install-packages-windows.ps1`) |
 | AeroSpace / i3 | komorebi + whkd (`private_dot_config/komorebi/`) |
 | SketchyBar / polybar | YASB (`private_dot_config/yasb/`) |
-| Ghostty / Alacritty | Windows Terminal (`private_dot_config/windows-terminal/`) |
+| Ghostty / Alacritty | Windows Terminal (`AppData/Local/Packages/Microsoft.WindowsTerminal_8wekyb3d8bbwe/LocalState/settings.json`) |
 | `.zshrc` | PowerShell profile (`Documents/PowerShell/Microsoft.PowerShell_profile.ps1`) |
+| Brave / Bitwarden / Discord / Spotify / Obsidian / OBS / OrcaSlicer | winget (`run_once_install-packages-windows.ps1`) |
+
+> Windows Terminal **only** reads its `LocalState\settings.json` — a config under
+> `~/.config/windows-terminal/` is ignored. That's why the source lives at the
+> `AppData\Local\Packages\...\LocalState` target above; chezmoi writes it to the
+> exact path WT loads.
 
 ## Use PowerShell 7, not Windows PowerShell 5.1
 
@@ -22,10 +28,28 @@ Windows 10). This repo's profile, aliases, and `~/.local/bin` PATH setup target
 
 - Check your shell: `$PSVersionTable.PSVersion` (5.x = the old one).
 - Launch v7 by running `pwsh`, or open **PowerShell 7** from the Start menu.
-- Make it the default: Windows Terminal → Settings (`Ctrl+,`) → Startup →
-  Default profile → **PowerShell** (the 7.x entry, *not* "Windows PowerShell").
+- The managed Windows Terminal config already sets **PowerShell 7** as the
+  default profile, so new tabs/windows open `pwsh` automatically. (Override:
+  Settings `Ctrl+,` → Startup → Default profile.)
 - Note: anything added to the persistent user PATH works in *both* shells, so a
   binary like `claude` may run in 5.1 even though the profile didn't load.
+
+## Keybindings: switching tabs vs. workspaces
+
+Two different layers, easy to confuse:
+
+- **Windows Terminal tabs** (built-in WT shortcuts):
+  - `Ctrl+Shift+T` — new tab · `Ctrl+Shift+W` — close tab
+  - `Ctrl+Tab` / `Ctrl+Shift+Tab` — next / previous tab
+  - `Ctrl+Alt+1..9` — jump straight to tab N
+- **komorebi workspaces** (the tiling WM, handled by **whkd**):
+  - `alt+1..9` — focus workspace · `alt+shift+1..9` — move window there
+  - `alt+h/j/k/l` — focus window · `alt+shift+h/j/k/l` — move window
+  - `alt+shift+b` — Brave · `alt+shift+t` — terminal · `alt+f` — toggle float
+
+If the `alt+...` bindings do nothing, **whkd isn't running** — see Known gaps.
+Note `alt+tab` is rebound by komorebi to "focus last workspace," so it no longer
+does the Windows app-switcher while whkd is active.
 
 ## First-time bootstrap
 
@@ -104,4 +128,10 @@ profiles/backups afterward — see `docs/elgato.md` and `elgato/README.md`.
   ```
 - komorebi keybindings mirror AeroSpace (alt+hjkl, alt+1-9); confirm they don't
   collide with anything you run.
+- **No keybindings work / whkd won't start:** whkd only reads
+  `$Env:WHKD_CONFIG_HOME\whkdrc` (default `~/.config`), but this repo keeps
+  `whkdrc` under `~/.config/komorebi/`. The installer sets
+  `WHKD_CONFIG_HOME=~/.config/komorebi` for this reason — if whkd crashes with
+  "could not load whkdrc", that env var is missing. Set it, then
+  `komorebic enable-autostart --whkd` and restart komorebi.
 - WSL profile in Windows Terminal assumes a WSL distro is installed.
