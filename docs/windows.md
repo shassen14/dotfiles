@@ -19,8 +19,13 @@ support already exists in the repo — this is the runbook for *running* it.
    winget install --id Git.Git --exact
    winget install --id Microsoft.PowerShell --exact
    ```
-2. Clone the repo:
+2. Clone the repo **into your home folder** (`C:\Users\<you>`, the Windows
+   equivalent of `~`) — *not* the Desktop or Downloads. The chezmoi config hard-
+   codes the source as `~/dotfiles/home`, so the repo must live at
+   `C:\Users\<you>\dotfiles`. A fresh PowerShell prompt already starts in your
+   home folder, so just run:
    ```powershell
+   cd $HOME
    git clone https://github.com/shassen14/dotfiles.git
    cd dotfiles
    ```
@@ -56,6 +61,15 @@ profiles/backups afterward — see `docs/elgato.md` and `elgato/README.md`.
 
 - winget package IDs occasionally change — if one fails, `winget search <name>`
   and update the ID in `run_once_install-packages-windows.ps1.tmpl`.
+- **"The system cannot find the path specified." / chezmoi points at
+  `~/.local/share/chezmoi`**: chezmoi lost track of the source dir (e.g. the repo
+  isn't in your home folder, or `init --source` didn't persist). Re-run apply with
+  an explicit source once to rewrite the config:
+  ```powershell
+  cd $HOME\dotfiles
+  chezmoi apply --source "$HOME\dotfiles\home" -v
+  chezmoi source-path   # should now print C:\Users\<you>\dotfiles\home
+  ```
 - komorebi keybindings mirror AeroSpace (alt+hjkl, alt+1-9); confirm they don't
   collide with anything you run.
 - WSL profile in Windows Terminal assumes a WSL distro is installed.

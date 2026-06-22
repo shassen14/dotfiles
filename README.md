@@ -27,6 +27,23 @@ Or pipe directly (chezmoi clones from the remote instead):
 curl -fsSL https://raw.githubusercontent.com/shassen14/dotfiles/main/bootstrap.sh | bash
 ```
 
+### Windows
+
+From an **elevated** PowerShell prompt (Run as administrator). Clone into your
+home folder (`C:\Users\<you>`) — *not* the Desktop — since chezmoi's `sourceDir`
+is hardcoded to `~/dotfiles/home`:
+
+```powershell
+winget install --id Git.Git --exact
+cd $HOME
+git clone https://github.com/shassen14/dotfiles.git
+cd dotfiles
+Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass -Force
+.\bootstrap.ps1
+```
+
+This installs chezmoi, points it at the local `home/` source, and runs `chezmoi apply` — which installs winget packages and lays down the PowerShell profile, Windows Terminal, and komorebi/whkd configs. See **[`docs/windows.md`](docs/windows.md)** for the full runbook and troubleshooting.
+
 ## Day-to-day
 
 A `Makefile` is included for common workflows:
@@ -57,6 +74,7 @@ chezmoi apply
 
 - **macOS**: AeroSpace (tiling WM) + SketchyBar + Homebrew
 - **Linux**: i3wm + apt/dnf/pacman (Debian, Fedora, Arch)
+- **Windows**: komorebi + whkd (tiling WM) + winget + Windows Terminal — see [`docs/windows.md`](docs/windows.md)
 
 ## Structure
 

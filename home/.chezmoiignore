@@ -7,3 +7,22 @@ Documents/PowerShell
 .config/komorebi
 .config/windows-terminal
 {{ end }}
+{{ if eq .chezmoi.os "windows" }}
+# Unix-only run scripts — bash cannot execute on Windows, so chezmoi must not
+# even try (the scripts' internal `uname` guard never runs; Windows fails to
+# launch the .sh first). The Windows package install runs from
+# install-packages-windows.ps1, which is NOT ignored here.
+configure-nvidia-suspend-linux.sh
+install-opencode-linux.sh
+install-packages-darwin.sh
+install-packages-linux.sh
+install-tpm.sh
+set-default-shell-linux.sh
+setup-streaming.sh
+install_vscode_extensions.sh
+# Unix-only window-manager / status-bar configs (no effect on Windows)
+.config/sketchybar
+.config/aerospace
+.config/i3
+.config/polybar
+{{ end }}
