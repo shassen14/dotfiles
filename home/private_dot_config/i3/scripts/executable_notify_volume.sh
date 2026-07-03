@@ -18,11 +18,11 @@ USE_FONT_AWESOME=true
 
 # --- Get Volume and Mute Status ---
 get_volume() {
-    pactl get-sink-volume @DEFAULT_SINK@ | grep -Po '[0-9]{1,3}(?=%)' | head -n 1
+    pactl get-sink-volume alsa_output.usb-TTGK_Technology_USB_Audio_33022920230925-00.analog-stereo | grep -Po '[0-9]{1,3}(?=%)' | head -n 1
 }
 
 get_mute_status() {
-    pactl get-sink-mute @DEFAULT_SINK@ | awk '{print $2}'
+    pactl get-sink-mute alsa_output.usb-TTGK_Technology_USB_Audio_33022920230925-00.analog-stereo | awk '{print $2}'
 }
 
 VOLUME=$(get_volume)

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Sets up Stream Deck udev access and installs streaming tools.
-# version: 5
+# version: 6
 
 [[ "$(uname)" != "Linux" ]] && exit 0
 
@@ -31,6 +31,15 @@ flatpak remote-add --user --if-not-exists flathub https://flathub.org/repo/flath
 if ! flatpak list --app 2>/dev/null | grep -q com.core447.StreamController; then
     try "StreamController" flatpak install --user -y flathub com.core447.StreamController
 fi
+
+# ── qpwgraph (PipeWire patchbay GUI — wire Personal Mix → headphones here) ───
+try "qpwgraph" sudo apt-get install -y qpwgraph
+
+# ── Set sink.system as default output ────────────────────────────────────────
+# Apps that don't have a saved routing target will land here.
+# pactl set-default-sink is transient; WirePlumber persistence handles the rest
+# once apps are manually routed the first time via pavucontrol/qpwgraph.
+pactl set-default-sink sink.system 2>/dev/null || true
 
 # ── obsws-python (OBS WebSocket client for scene switching) ──────────────────
 if ! python3 -c 'import obsws_python' &>/dev/null; then

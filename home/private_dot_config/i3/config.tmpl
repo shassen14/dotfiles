@@ -160,9 +160,9 @@ bindsym $mod+p         exec --no-startup-id flameshot gui -p {{ .chezmoi.homeDir
 bindsym $mod+Shift+p   exec --no-startup-id flameshot full -c
 
 # Volume
-bindsym XF86AudioRaiseVolume exec --no-startup-id pactl set-sink-volume @DEFAULT_SINK@ +2% && {{ .chezmoi.homeDir }}/.config/i3/scripts/notify_volume.sh
-bindsym XF86AudioLowerVolume exec --no-startup-id pactl set-sink-volume @DEFAULT_SINK@ -2% && {{ .chezmoi.homeDir }}/.config/i3/scripts/notify_volume.sh
-bindsym XF86AudioMute        exec --no-startup-id pactl set-sink-mute @DEFAULT_SINK@ toggle && {{ .chezmoi.homeDir }}/.config/i3/scripts/notify_volume.sh
+bindsym XF86AudioRaiseVolume exec --no-startup-id pactl set-sink-volume alsa_output.usb-TTGK_Technology_USB_Audio_33022920230925-00.analog-stereo +2% && {{ .chezmoi.homeDir }}/.config/i3/scripts/notify_volume.sh
+bindsym XF86AudioLowerVolume exec --no-startup-id pactl set-sink-volume alsa_output.usb-TTGK_Technology_USB_Audio_33022920230925-00.analog-stereo -2% && {{ .chezmoi.homeDir }}/.config/i3/scripts/notify_volume.sh
+bindsym XF86AudioMute        exec --no-startup-id pactl set-sink-mute alsa_output.usb-TTGK_Technology_USB_Audio_33022920230925-00.analog-stereo toggle && {{ .chezmoi.homeDir }}/.config/i3/scripts/notify_volume.sh
 
 # Brightness
 bindsym XF86MonBrightnessUp   exec --no-startup-id brightnessctl set +5% && {{ .chezmoi.homeDir }}/.config/i3/scripts/notify_brightness.sh
