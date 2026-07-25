@@ -34,7 +34,7 @@ Windows 10). This repo's profile, aliases, and `~/.local/bin` PATH setup target
 - Note: anything added to the persistent user PATH works in *both* shells, so a
   binary like `claude` may run in 5.1 even though the profile didn't load.
 
-## Keybindings: switching tabs vs. workspaces
+## Keybindings
 
 Two different layers, easy to confuse:
 
@@ -42,11 +42,39 @@ Two different layers, easy to confuse:
   - `Ctrl+Shift+T` — new tab · `Ctrl+Shift+W` — close tab
   - `Ctrl+Tab` / `Ctrl+Shift+Tab` — next / previous tab
   - `Ctrl+Alt+1..9` — jump straight to tab N
-- **komorebi workspaces** (the tiling WM, handled by **whkd**):
-  - `alt+1..4` — workspaces on the **left** monitor · `alt+5..9` — the **right**
-    monitor · `alt+shift+N` moves the focused window to workspace N
-  - `alt+h/j/k/l` — focus window · `alt+shift+h/j/k/l` — move window
-  - `alt+shift+b` — Brave · `alt+shift+t` — terminal · `alt+f` — toggle float
+- **komorebi** (the tiling WM, handled by **whkd**) — full reference below.
+
+The komorebi bindings live in `private_dot_config/komorebi/whkdrc` and mirror the
+macOS AeroSpace bindings (`dot_aerospace.toml.tmpl`) and Linux i3 (`i3/config.tmpl`)
+so the same muscle memory works on every machine. `alt` is the modifier (= the macOS
+`alt`/Linux `$mod`).
+
+| Action | Windows (whkd) | macOS / Linux equivalent |
+|---|---|---|
+| Terminal | `alt+shift+t` | same |
+| Browser (Brave) | `alt+shift+b` | same |
+| File manager | `alt+shift+f` | same |
+| Close window | `alt+shift+q` | same |
+| Focus left/down/up/right | `alt+h/j/k/l` | same |
+| Move window | `alt+shift+h/j/k/l` | same |
+| Shrink / grow | `alt+-` / `alt+=` | same |
+| Toggle float | `alt+f` | same |
+| Fullscreen / monocle | `alt+shift+enter` | same |
+| Cycle layout | `alt+/` | same |
+| Workspace N (left mon 1-4, right mon 5-9) | `alt+1..9` | same |
+| Move window to workspace N | `alt+shift+1..9` | same |
+| Cycle monitor | `alt+shift+right` | same |
+| Focus last workspace | `alt+tab` | same (back-and-forth) |
+| Lock + sleep | `alt+shift+s` | same |
+| Reload config (soft) | `alt+shift+r` | `alt+shift+r` |
+| Restart komorebi (hard) | `alt+ctrl+r` | — (Windows-specific) |
+
+> **`alt+shift+s` = lock + sleep.** It locks the screen, then calls
+> `SetSuspendState` to sleep the machine — matching Linux's `lock_and_suspend.sh`
+> and macOS's `CGSession -suspend`. If your PC **hibernates instead of sleeping**,
+> run `powercfg /hibernate off` once (rundll32's `SetSuspendState` follows the
+> system hibernate setting). Windows requires sign-in on wake by default, so the
+> screen stays secured.
 
 > **Dual-monitor layout:** workspaces 1-4 are pinned to the left monitor and 5-9
 > to the right via `komorebi.json` (`monitors[]` split + `display_index_preferences`
@@ -116,6 +144,31 @@ yasbc enable-autostart
 ```
 Workspace numbers come from komorebi, so komorebi must be running for that
 widget to populate.
+
+## Debloat (`run_once_debloat-windows.ps1`)
+
+A one-time script that strips Windows consumer bloat and applies privacy/QoL
+tweaks. It's **conservative and reversible** — every removed app reinstalls from
+the Store, every registry value flips back. Because this box is for gaming +
+video editing, **Xbox / Game Bar, Media Player, Photos, Snipping Tool, Paint,
+Calculator, Terminal, Store and all user-installed apps are kept.** What it does:
+
+- **Removes AppX bloat:** Bing News/Weather, Solitaire, Candy Crush, To Do,
+  Office Hub, new Outlook, Maps, People, Feedback Hub, Get Help, Tips, Mixed
+  Reality Portal, 3D Viewer, Power Automate, Dev Home, Cortana, consumer Teams,
+  Clipchamp, and assorted preinstalled third-party junk.
+- **QoL:** show file extensions + hidden files, dark mode, hide Widgets / Chat /
+  Task View / taskbar search box, restore the Win11 classic right-click menu.
+- **Privacy:** disable advertising ID, tailored experiences, background UWP apps,
+  and the "suggested content" ads in Start / Settings / lock screen. Run elevated
+  (the bootstrap is) to also lower telemetry and disable activity-history upload.
+
+It restarts Explorer at the end so the taskbar/theme changes apply immediately.
+Re-run by bumping the `version:` comment then `chezmoi apply -v`. To undo a
+specific tweak, flip its registry value back (or reinstall an app from the Store).
+
+> Deliberately **not** included: power-plan / GPU-scheduling changes, and any
+> dev tooling or WSL. Revisit if this machine ever becomes a dev box.
 
 ## Elgato
 

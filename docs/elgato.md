@@ -8,8 +8,39 @@ is the reference: install commands, raw config locations, and what's portable.
 | OS | Stream Deck | Wave Link |
 |---|---|---|
 | macOS | `brew install --cask elgato-stream-deck` (in Brewfile) | `brew install --cask elgato-wave-link` (in Brewfile) |
-| Windows | `winget install Elgato.StreamDeck` (in run_once) | `winget install Elgato.WaveLink` (in run_once) |
+| Windows | `winget install Elgato.StreamDeck` (in run_once) | Wave Link v3 handled specially in run_once (see note) |
 | Linux | StreamController (Flatpak, in `run_once_setup-streaming.sh`) | No official Wave Link |
+
+### Wave Link version on Windows (v2 vs v3)
+
+**Wave Link 3 requires Windows 11.** The v3 MSIX declares `MinimumOSVersion
+10.0.22000.0`, so on **Windows 10** winget reports "no applicable installer" and
+falls back to **v2.0.6.3780** — the last version that runs on Win10. That fallback
+is correct, not a bug: there is no v3 for Windows 10.
+
+On **Windows 11**, v3 ships as an **MSIX**, a separate package from the old Win32
+**v2**, and neither obvious upgrade route works:
+
+- `winget upgrade Elgato.WaveLink` → exit 43 ("no applicable upgrade") — can't
+  upgrade a Win32 install into an MSIX one.
+- v2's **in-app "Check for updates"** only offers the newest **v2**, never v3.
+- A plain `winget install` skips because it sees v2 in Add/Remove Programs as
+  "already installed".
+
+`run_once_install-packages-windows.ps1` handles both: on Win11 it removes any
+legacy (non-v3) Wave Link first (needs admin — bootstrap runs elevated) then
+installs the v3 MSIX; on Win10 it just installs the newest supported (v2). Mixer
+settings survive either way (they live in `%APPDATA%\Elgato\WaveLink`).
+
+By hand on **Windows 11**, in an **elevated** PowerShell:
+
+```powershell
+winget uninstall --id Elgato.WaveLink -e
+winget install   --id Elgato.WaveLink -e --accept-source-agreements --accept-package-agreements
+```
+
+On **Windows 10**, `winget install --id Elgato.WaveLink -e` gets you v2 (the latest
+that runs there).
 
 ## Portability summary
 

@@ -19,6 +19,14 @@ bars:
     alignment:
       position: "top"
       align: "center"
+    # Don't intrude on games/video: hide the bar whenever a fullscreen app is
+    # focused. windows_app_bar is false so YASB does NOT reserve OS work-area
+    # space — komorebi's global_work_area_offset.top handles the reservation,
+    # so avoid double-counting (which pushed tiled windows too far down).
+    window_flags:
+      always_on_top: false
+      windows_app_bar: false
+      hide_on_fullscreen: true
     dimensions:
       width: "100%"
       height: 32
@@ -97,8 +105,9 @@ widgets:
   volume:
     type: "yasb.volume.VolumeWidget"
     options:
-      label: "{icon} {level}%"
-      label_alt: "{icon} {level}%"
+      # {level} already includes a trailing "%", so don't add another (avoids "50%%").
+      label: "{icon} {level}"
+      label_alt: "{icon} {level}"
       volume_icons:
         - ""
         - ""

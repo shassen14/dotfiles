@@ -3,6 +3,8 @@ Library
 {{ end }}
 .config/obs-studio
 {{ if ne .chezmoi.os "windows" }}
+# Windows-only OBS config (mac uses Library/, linux uses none)
+AppData
 Documents/PowerShell
 .config/komorebi
 .config/windows-terminal

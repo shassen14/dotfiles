@@ -2,7 +2,7 @@
 # run_once_install-packages-windows.ps1
 # Installs Windows packages via winget.
 # Chezmoi re-runs this when file content changes — bump the version below to force a re-run.
-# version: 6
+# version: 7
 
 $packages = @(
     # Shell / terminal
@@ -49,13 +49,40 @@ $packages = @(
     "SoftFever.OrcaSlicer",
 
     # Streaming / Elgato — Stream Deck profiles & Wave Link backups live in repo elgato/
-    "Elgato.StreamDeck",
-    "Elgato.WaveLink"
+    # (Wave Link is handled separately below — v3 is an MSIX that needs the legacy
+    #  Win32 v2 removed first, or winget sees "already installed" and never upgrades.)
+    "Elgato.StreamDeck"
 )
 
 foreach ($pkg in $packages) {
     Write-Host "Installing $pkg..."
     winget install --id $pkg --exact --accept-source-agreements --accept-package-agreements --silent 2>&1
+}
+
+# Elgato Wave Link — version depends on the OS:
+#   * v3 ships as an MSIX that requires Windows 11 (MinimumOSVersion 10.0.22000).
+#   * v2.0.6 is the LAST version that runs on Windows 10 — on Win10, winget sees the
+#     v3 MSIX as "no applicable installer" and correctly falls back to v2.
+# On Windows 11, v2->v3 can't be a winget *upgrade* (can't cross Win32->MSIX) and a
+# plain install skips when the v2 ARP entry is present, so we remove any legacy
+# (non-v3) Wave Link first, then install the latest. On Windows 10 we just install
+# the newest applicable (v2). Mixer settings live in %APPDATA%\Elgato\WaveLink and
+# survive an uninstall either way.
+Write-Host "Installing Elgato Wave Link..."
+$osBuild = [int](Get-CimInstance Win32_OperatingSystem).BuildNumber
+if ($osBuild -ge 22000) {
+    $wlLine = winget list --id Elgato.WaveLink --exact --accept-source-agreements 2>$null |
+        Select-String -Pattern 'Elgato\.WaveLink'
+    if ($wlLine -and ($wlLine -notmatch '\b3\.')) {
+        Write-Host "Windows 11 detected — removing legacy Wave Link before installing v3 (MSIX)..."
+        winget uninstall --id Elgato.WaveLink --exact --silent --disable-interactivity 2>&1 | Out-Null
+    }
+} else {
+    Write-Host "Windows 10 detected — Wave Link v3 needs Win11; installing latest supported (v2)."
+}
+winget install --id Elgato.WaveLink --exact --accept-source-agreements --accept-package-agreements --silent 2>&1
+if ($LASTEXITCODE -ne 0) {
+    Write-Host "Wave Link install returned $LASTEXITCODE. On Win11 retry: winget install --id Elgato.WaveLink -e --force"
 }
 
 # Spotify — winget REFUSES to install it from an elevated/admin prompt, and the

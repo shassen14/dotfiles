@@ -1,7 +1,7 @@
 {
   "$schema": "https://raw.githubusercontent.com/LGUG2Z/komorebi/master/schema.json",
   "app_specific_configuration_path": "~/.config/komorebi/applications.json",
-  "global_work_area_offset": { "left": 0, "top": 32, "right": 0, "bottom": 8 },
+  "global_work_area_offset": { "left": 7, "top": 35, "right": 7, "bottom": 25 },
   "display_index_preferences": {
     "0": "C4P4293",
     "1": "74P4293"

@@ -10,8 +10,18 @@ alt + shift + f  : explorer.exe
 alt + shift + q  : komorebic close
 
 # --- Session ---
+# Soft reload: picks up rules/border/padding changes only.
 alt + shift + r      : komorebic reload-configuration
-alt + shift + s      : rundll32.exe user32.dll,LockWorkStation
+# HARD restart: relaunches komorebi from this (interactive) session so it regains
+# foreground rights AND re-reads komorebi.json fully — needed for work-area-offset,
+# monitor, and workspace changes that reload-configuration silently ignores.
+# whkd is left running, so this binding's shell survives the restart.
+alt + ctrl + r : komorebic stop; Start-Sleep -Milliseconds 500; komorebic start --config "$env:USERPROFILE\.config\komorebi\komorebi.json"
+# Lock + sleep, mirroring Linux's lock_and_suspend.sh and macOS's CGSession -suspend.
+# Locks first so the screen is secured even before the machine sleeps; Windows then
+# also requires sign-in on wake. NOTE: SetSuspendState sleeps only if hibernation is
+# off — run `powercfg /hibernate off` once, otherwise this hibernates instead.
+alt + shift + s      : rundll32.exe 'user32.dll,LockWorkStation'; Start-Sleep -Milliseconds 300; rundll32.exe 'powrprof.dll,SetSuspendState' '0,1,0'
 
 # --- Focus ---
 alt + h          : komorebic focus left

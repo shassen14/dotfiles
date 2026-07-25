@@ -1,0 +1,132 @@
+{{ if eq .chezmoi.os "windows" -}}
+# run_once_debloat-windows.ps1
+# Strips Windows consumer bloat and applies privacy / QoL tweaks. Conservative and
+# reversible: every AppX can be reinstalled from the Store, and every registry value
+# can be flipped back. This machine is for GAMING + VIDEO EDITING, so Xbox / Game Bar,
+# Media Player, Photos, Snipping Tool, Calculator, Paint, Terminal, Store and all
+# user-installed apps are deliberately KEPT.
+# Chezmoi re-runs this when content changes — bump the version below to force a re-run.
+# version: 1
+
+$ErrorActionPreference = "SilentlyContinue"
+$isAdmin = ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltinRole]::Administrator)
+
+# --- Helper: set a registry value, creating the key path if needed -----------------
+function Set-Reg {
+    param([string]$Path, [string]$Name, $Value, [string]$Type = "DWord")
+    if (-not (Test-Path $Path)) { New-Item -Path $Path -Force | Out-Null }
+    New-ItemProperty -Path $Path -Name $Name -Value $Value -PropertyType $Type -Force | Out-Null
+}
+
+# =============================================================================
+# 1. Remove consumer AppX bloat (per-user; also de-provision if elevated so it
+#    doesn't reappear). Xbox*, GamingApp and Game Bar are intentionally omitted.
+# =============================================================================
+$bloat = @(
+    "Microsoft.BingNews",
+    "Microsoft.BingWeather",
+    "Microsoft.BingSearch",
+    "Microsoft.MicrosoftSolitaireCollection",
+    "Microsoft.Todos",
+    "Microsoft.MicrosoftOfficeHub",
+    "Microsoft.OutlookForWindows",
+    "Microsoft.WindowsMaps",
+    "Microsoft.People",
+    "Microsoft.WindowsFeedbackHub",
+    "Microsoft.GetHelp",
+    "Microsoft.Getstarted",
+    "Microsoft.MixedReality.Portal",
+    "Microsoft.Microsoft3DViewer",
+    "Microsoft.PowerAutomateDesktop",
+    "Microsoft.Windows.DevHome",
+    "Microsoft.549981C3F5F10",          # Cortana
+    "MicrosoftTeams",                    # consumer Teams / Chat
+    "MicrosoftCorporationII.MicrosoftFamily",
+    "Clipchamp.Clipchamp",
+    "*CandyCrush*",
+    "*Disney*",
+    "*Spotify*AB*",                      # Store-stub Spotify; real one comes via winget
+    "*Facebook*",
+    "*Twitter*",
+    "*TikTok*"
+)
+foreach ($name in $bloat) {
+    Get-AppxPackage -Name $name | Remove-AppxPackage -ErrorAction SilentlyContinue
+    if ($isAdmin) {
+        Get-AppxProvisionedPackage -Online |
+            Where-Object { $_.DisplayName -like $name } |
+            ForEach-Object { Remove-AppxProvisionedPackage -Online -PackageName $_.PackageName -ErrorAction SilentlyContinue | Out-Null }
+    }
+}
+Write-Host "Removed consumer AppX bloat (Xbox/Game Bar and installed apps kept)."
+
+# =============================================================================
+# 2. QoL: Explorer + taskbar
+# =============================================================================
+$adv = "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced"
+Set-Reg $adv "HideFileExt"        0   # show file extensions
+Set-Reg $adv "Hidden"             1   # show hidden files
+Set-Reg $adv "ShowTaskViewButton" 0   # hide Task View button
+Set-Reg $adv "TaskbarDa"          0   # hide Widgets (Win11)
+Set-Reg $adv "TaskbarMn"          0   # hide Chat (Win11)
+Set-Reg "HKCU:\Software\Microsoft\Windows\CurrentVersion\Search" "SearchboxTaskbarMode" 0  # collapse taskbar search to icon
+
+# Dark mode (apps + system)
+$theme = "HKCU:\Software\Microsoft\Windows\CurrentVersion\Themes\Personalize"
+Set-Reg $theme "AppsUseLightTheme"   0
+Set-Reg $theme "SystemUsesLightTheme" 0
+
+# Win11: restore the classic right-click context menu (empty InprocServer32 default)
+$clsid = "HKCU:\Software\Classes\CLSID\{86ca1aa0-34aa-4e8b-a509-50c905bae2a2}\InprocServer32"
+if (-not (Test-Path $clsid)) { New-Item -Path $clsid -Force | Out-Null }
+Set-ItemProperty -Path $clsid -Name "(Default)" -Value "" -Force
+Write-Host "Applied Explorer/taskbar QoL tweaks."
+
+# =============================================================================
+# 3. Privacy / telemetry hardening (HKCU is per-user; HKLM needs admin)
+# =============================================================================
+# Advertising ID
+Set-Reg "HKCU:\Software\Microsoft\Windows\CurrentVersion\AdvertisingInfo" "Enabled" 0
+# Tailored experiences with diagnostic data
+Set-Reg "HKCU:\Software\Microsoft\Windows\CurrentVersion\Privacy" "TailoredExperiencesWithDiagnosticDataEnabled" 0
+# Background apps off (global UWP toggle) — doesn't touch desktop app autostart
+Set-Reg "HKCU:\Software\Microsoft\Windows\CurrentVersion\BackgroundAccessApplications" "GlobalUserDisabled" 1
+Set-Reg "HKCU:\Software\Microsoft\Windows\CurrentVersion\Search" "BackgroundAppGlobalToggle" 0
+
+# "Suggested content" / installed-app ads in Start, Settings and lock screen
+$cdm = "HKCU:\Software\Microsoft\Windows\CurrentVersion\ContentDeliveryManager"
+foreach ($v in @(
+    "SubscribedContent-338388Enabled",   # Start suggestions
+    "SubscribedContent-338389Enabled",    # Settings suggestions
+    "SubscribedContent-338387Enabled",    # lock screen tips
+    "SubscribedContent-310093Enabled",    # welcome/"get the most out of Windows"
+    "SubscribedContent-353698Enabled",    # timeline suggestions
+    "SystemPaneSuggestionsEnabled",
+    "SilentInstalledAppsEnabled",
+    "PreInstalledAppsEnabled",
+    "OemPreInstalledAppsEnabled",
+    "RotatingLockScreenOverlayEnabled",
+    "SoftLandingEnabled"
+)) { Set-Reg $cdm $v 0 }
+Set-Reg $cdm "ContentDeliveryAllowed" 0
+
+if ($isAdmin) {
+    # Telemetry to the lowest level (Security/0 is Enterprise-only; 1 = Basic on Pro)
+    Set-Reg "HKLM:\SOFTWARE\Policies\Microsoft\Windows\DataCollection" "AllowTelemetry" 0
+    Set-Reg "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\DataCollection" "AllowTelemetry" 0
+    # Activity history / timeline upload
+    $sysPol = "HKLM:\SOFTWARE\Policies\Microsoft\Windows\System"
+    Set-Reg $sysPol "EnableActivityFeed"     0
+    Set-Reg $sysPol "PublishUserActivities"  0
+    Set-Reg $sysPol "UploadUserActivities"   0
+    Write-Host "Applied privacy + telemetry hardening (system-wide)."
+} else {
+    Write-Host "Applied per-user privacy tweaks. Re-run elevated to also lower telemetry + activity history (HKLM)."
+}
+
+# =============================================================================
+# Restart Explorer so taskbar / theme / context-menu changes take effect now.
+# =============================================================================
+Stop-Process -Name explorer -Force -ErrorAction SilentlyContinue
+Write-Host "Debloat complete. Explorer restarted to apply changes."
+{{ end -}}
