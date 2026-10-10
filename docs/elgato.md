@@ -42,6 +42,50 @@ winget install   --id Elgato.WaveLink -e --accept-source-agreements --accept-pac
 On **Windows 10**, `winget install --id Elgato.WaveLink -e` gets you v2 (the latest
 that runs there).
 
+## Windows audio routing (Wave Link 3)
+
+Unlike macOS, Windows apps can't output to a **mix**. Apps play into Wave Link
+**channels** (Windows *output* devices); the **mixes** (Personal, Stream) are
+built inside Wave Link and appear in Windows as *input* devices.
+
+```
+Spotify      → Music       ─┐
+Discord      → Discord     ─┼─► Personal Mix → speakers / headphones (what you hear)
+OBS          → OBS Studio  ─┤
+everything   → System      ─┴─► Stream Mix   → OBS input (what viewers hear)
+else / games
+```
+
+Required setup:
+
+- **Windows default output = `System (Elgato Virtual Audio)`**, set in Wave Link
+  Settings → default output device, with **lock on**. Wave Link re-applies its
+  saved default on every start, so setting it only in Windows Sound settings
+  gets reverted. With System as default, any unassigned app or game is captured.
+- **Headphones/speakers are Personal Mix outputs** in Wave Link — never the
+  Windows default (that bypasses Wave Link entirely).
+- **OBS** captures `Stream Mix (Elgato Virtual Audio)` and
+  `Microphone (Elgato Virtual Audio)` as audio inputs; keep **Desktop Audio
+  disabled** to avoid doubled audio. Either add both as global Mic/Aux devices
+  (Settings → Audio) *or* as per-scene sources — never both. Browser-source
+  alerts can leave "Control audio via OBS" off; they reach the stream via System.
+- Balance stream vs. personal levels with the per-channel sliders in Wave Link,
+  not in OBS.
+
+Troubleshooting:
+
+- **Apps play but you hear nothing** (channel meters move, mixes silent): Wave
+  Link's engine stalled after a device change (`AUDCLNT_E_DEVICE_INVALIDATED` in
+  the log at `%LOCALAPPDATA%\Packages\Elgato.WaveLink_*\LocalState\Logs`). Quit
+  Wave Link from the tray and reopen it.
+- **An app/game skips Wave Link** even though System is default: it has a stale
+  per-app output override (Windows remembers one per exe, including for devices
+  that no longer exist). Reset it in Settings → System → Sound → Volume mixer, or
+  delete its entry under
+  `HKCU\Software\Microsoft\Internet Explorer\LowRegistry\Audio\PolicyConfig\PropertyStore`
+  (export the key first). Also check the game's own audio device setting is
+  "Default".
+
 ## Portability summary
 
 - **Stream Deck profiles** (`.streamDeckProfile`): shareable across mac/Windows.
