@@ -125,7 +125,24 @@ chezmoi apply -v      # re-apply
 Start the tiling WM (no reboot needed — tiling kicks in immediately):
 ```powershell
 komorebic start --whkd            # start now
-komorebic enable-autostart --whkd # start automatically on every login
+```
+
+At login, the **komorebi watchdog** (`~/.config/komorebi/watchdog.ps1`, launched
+hidden by the `komorebi-watchdog` Startup shortcut) starts komorebi + whkd and
+**restarts komorebi within a few seconds if it dies**. If tiling stops anyway,
+press `alt+ctrl+r`.
+
+Every run is logged to `%LOCALAPPDATA%\komorebi\logs\`:
+- `watchdog.log`: each start and exit. Exit code 0 means a clean stop; anything
+  else is a crash.
+- `komorebi-<time>.log` / `.err.log`: komorebi's output for that run (warn level;
+  panics land in `.err.log`). The newest 10 runs are kept.
+
+To stop tiling on purpose, end the watchdog first, otherwise it brings komorebi back:
+```powershell
+Get-CimInstance Win32_Process -Filter "Name='pwsh.exe'" |
+  ? CommandLine -match 'watchdog' | % { Stop-Process -Id $_.ProcessId }
+komorebic stop --whkd
 ```
 
 ## Status bar (YASB)
@@ -197,12 +214,16 @@ profiles/backups afterward — see `docs/elgato.md` and `elgato/README.md`.
   silently runs on **built-in defaults** (windows tile over the YASB bar, wrong
   workspaces) and whkd crashes ("could not load whkdrc"). The installer sets both
   to `~/.config/komorebi`. Verify with `komorebic check` (should say
-  "KOMOREBI_CONFIG_HOME detected" and find both files). The autostart shortcut
-  bakes the path in: `komorebic enable-autostart --config <path>\komorebi.json --whkd`.
+  "KOMOREBI_CONFIG_HOME detected" and find both files). The watchdog bakes the
+  config path in, so autostart doesn't depend on these env vars.
 - **komorebi won't start from a script/automation shell** (`failed call to
-  AllowSetForegroundWindow`): it needs an interactive foreground session. Start it
-  from your own terminal (`komorebic start --config ~/.config/komorebi/komorebi.json --whkd`)
-  or just let the login autostart handle it.
+  AllowSetForegroundWindow`): it needs an interactive foreground session. This can
+  also happen now and then on a watchdog restart; the watchdog simply retries.
+  Starting it manually from your own terminal also works
+  (`komorebic start --config ~/.config/komorebi/komorebi.json --whkd`).
+- **`komorebic stop` keeps force-killing new komorebi processes for a few seconds
+  after the stop.** That's why the watchdog waits about 4 s after a clean stop
+  before restarting, and why `alt+ctrl+r` waits before its fallback start.
 - After editing `komorebi.json`, reload with `komorebic reload-configuration`
   (bound to `alt+shift+r`); some changes (work-area offset) need a full
   `komorebic stop --whkd` + `start ... --whkd`.

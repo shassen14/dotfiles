@@ -2,7 +2,7 @@
 # run_once_install-packages-windows.ps1
 # Installs Windows packages via winget.
 # Chezmoi re-runs this when file content changes — bump the version below to force a re-run.
-# version: 7
+# version: 8
 
 $packages = @(
     # Shell / terminal
@@ -168,11 +168,19 @@ foreach ($var in "KOMOREBI_CONFIG_HOME", "WHKD_CONFIG_HOME") {
 # komorebi.json references — improves tiling for apps that need special handling.
 if (Get-Command komorebic -ErrorAction SilentlyContinue) {
     try { komorebic fetch-asc 2>&1 | Out-Null } catch { }
-    # Autostart komorebi + whkd at login with the config path baked in, so it never
-    # depends on env-var timing. (komorebi must start from an interactive login
+    # Autostart komorebi + whkd at login via the watchdog (~/.config/komorebi/watchdog.ps1),
+    # which bakes in the config path, restarts komorebi if it dies, and logs each run
+    # to %LOCALAPPDATA%\komorebi\logs. Replaces komorebi's own autostart shortcut so
+    # two launchers don't race. (komorebi must start from an interactive login
     # session — it needs foreground rights — so we register autostart, not start now.)
-    $komoCfg = Join-Path $komoHome "komorebi.json"
-    try { komorebic enable-autostart --config "$komoCfg" --whkd 2>&1 | Out-Null } catch { }
+    # `conhost --headless` keeps pwsh windowless (-WindowStyle Hidden still flashes a
+    # Windows Terminal tab when WT is the default terminal).
+    try { komorebic disable-autostart 2>&1 | Out-Null } catch { }
+    $startup = [Environment]::GetFolderPath("Startup")
+    $lnk = (New-Object -ComObject WScript.Shell).CreateShortcut((Join-Path $startup "komorebi-watchdog.lnk"))
+    $lnk.TargetPath = "$env:WINDIR\System32\conhost.exe"
+    $lnk.Arguments = "--headless pwsh.exe -NoProfile -ExecutionPolicy Bypass -File `"$(Join-Path $komoHome 'watchdog.ps1')`""
+    $lnk.Save()
 }
 
 # YASB status bar: register login autostart and start it now. Config lives in

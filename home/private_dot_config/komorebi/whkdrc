@@ -16,7 +16,9 @@ alt + shift + r      : komorebic reload-configuration
 # foreground rights AND re-reads komorebi.json fully — needed for work-area-offset,
 # monitor, and workspace changes that reload-configuration silently ignores.
 # whkd is left running, so this binding's shell survives the restart.
-alt + ctrl + r : komorebic stop; Start-Sleep -Milliseconds 500; komorebic start --config "$env:USERPROFILE\.config\komorebi\komorebi.json"
+# The watchdog (watchdog.ps1) restarts komorebi within ~4-7s with logging; the
+# direct start is only a fallback for when the watchdog isn't running.
+alt + ctrl + r : komorebic stop; Start-Sleep -Seconds 10; if (-not (Get-Process komorebi -ErrorAction SilentlyContinue)) { komorebic start --config "$env:USERPROFILE\.config\komorebi\komorebi.json" }
 # Lock + sleep, mirroring Linux's lock_and_suspend.sh and macOS's CGSession -suspend.
 # Locks first so the screen is secured even before the machine sleeps; Windows then
 # also requires sign-in on wake. NOTE: SetSuspendState sleeps only if hibernation is
